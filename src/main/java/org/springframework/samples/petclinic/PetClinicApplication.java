@@ -16,6 +16,8 @@
 
 package org.springframework.samples.petclinic;
 
+import jakarta.annotation.PostConstruct;
+import org.apache.commons.lang3.SystemUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ImportRuntimeHints;
@@ -32,6 +34,24 @@ public class PetClinicApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(PetClinicApplication.class, args);
+	}
+
+
+	@PostConstruct
+	public void logInfo() {
+		System.out.println();
+		System.out.println(
+				"JVM: "
+						+ SystemUtils.JAVA_VM_VENDOR
+						+ " "
+						+ SystemUtils.JAVA_VM_NAME
+						+ " "
+						+ SystemUtils.JAVA_VM_VERSION);
+		System.out.println();
+
+		var pid = ProcessHandle.current().pid();
+		System.out.println("My process ID: " + pid);
+		System.out.println();
 	}
 
 }
