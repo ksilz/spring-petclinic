@@ -52,16 +52,8 @@ fi
 # ────────────────────────────────────────────────────────────────
 # 3. SDKMAN (optional)
 # ────────────────────────────────────────────────────────────────
-SDKMAN_INIT="$HOME/.sdkman/bin/sdkman-init.sh"
-sdk_available=false
-if [[ -s $SDKMAN_INIT ]]; then # shellcheck source=/dev/null
-  set +u
-  source "$SDKMAN_INIT"
-  set -u
-  sdk_available=true
-else
-  echo "SDKMAN is not available. Please install SDKMAN to manage JDKs. Run 'sdk help' for more information."
-fi
+# Note: This script requires specific Java versions. Use SDKMAN to manage them:
+#   sdk install java <version> && sdk use java <version>
 
 # ────────────────────────────────────────────────────────────────
 # 4. Variant metadata
@@ -83,17 +75,17 @@ PARAMETERS[crac]='-Dspring.aot.enabled=false'
 PARAMETERS[graalvm]='-Dspring.aot.enabled=true'
 
 JAVA[baseline]='21.0.7-tem'
-EXPECT[baseline]='21.0.7'
+EXPECT[baseline]='21'
 JAVA[tuning]='21.0.7-tem'
-EXPECT[tuning]='21.0.7'
+EXPECT[tuning]='21'
 JAVA[cds]='21.0.7-tem'
-EXPECT[cds]='21.0.7'
+EXPECT[cds]='21'
 JAVA[leyden]='25.ea.27-open'
-EXPECT[leyden]='25-ea'
+EXPECT[leyden]='25'
 JAVA[crac]='24.0.1-zulu-crac'
-EXPECT[crac]='CRaC'
+EXPECT[crac]='24'
 JAVA[graalvm]='24.0.1-graalce'
-EXPECT[graalvm]='GraalVM CE 24.0.1'
+EXPECT[graalvm]='24'
 
 if [[ $BUILD_SYS == gradle ]]; then
   CMD[baseline]="./gradlew clean bootJar"
@@ -132,27 +124,17 @@ for label in "${REQUESTED[@]}"; do
   expected="${EXPECT[$label]}"
 
   # ----- Java selection ---------------------------------------------------
-  if java --version 2>&1 | grep -q "$expected"; then
+  current_java_version=$(java --version 2>&1 | head -n1 | grep -oE '[0-9]+' | head -n1)
+  if [[ "$current_java_version" == "$expected" ]]; then
     echo "=== $stage ($BUILD_SYS, current Java) ==="
   else
-    if ! $sdk_available; then
-      echo "$stage – need Java with '$expected', but SDKMAN absent. Skipping."
-      echo
-      continue
-    fi
     jdk="${JAVA[$label]}"
-    if [[ ! -d "$SDKMAN_DIR/candidates/java/$jdk" ]]; then
-      echo "$stage – install missing JDK:  sdk install java $jdk"
-      echo
-      continue
-    fi
-    sdk use java "$jdk" >/dev/null
-    if ! java --version 2>&1 | grep -q "$expected"; then
-      echo "$stage – wrong Java even after sdk use. Skipping."
-      echo
-      continue
-    fi
-    echo "=== $stage ($BUILD_SYS, Java $jdk) ==="
+    echo "The $stage scenario needs Java $expected. But you currently run Java $current_java_version here."
+    echo
+    echo "If you have SDKMAN, you can install and use the needed Java version easily:"
+    echo "  sdk install java $jdk && sdk use java $jdk"
+    echo
+    continue
   fi
 
   # ----- build ------------------------------------------------------------
@@ -175,4 +157,8 @@ for label in "${REQUESTED[@]}"; do
   echo
 done
 
-echo "Done. Result CSVs: *_results.csv"
+# Only show results message if CSV files exist
+if ls *_results.csv 1>/dev/null 2>&1; then
+  csv_files=$(ls *_results.csv | tr '\n' ' ')
+  echo "Done. Result CSVs: $csv_files"
+fi

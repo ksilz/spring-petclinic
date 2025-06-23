@@ -26,8 +26,8 @@ fi
 # ---------------- Configuration -----------------------
 APP_CMD="java ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
 CSV_FILE="${LABEL}_results.csv"
-WARMUPS=3
-RUNS=7
+WARMUPS=1
+RUNS=4
 
 # list of URLs to hit
 URLS=(
