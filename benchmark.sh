@@ -18,16 +18,22 @@ AOT_FLAG="${3:-}" # optional third param
   echo "ERROR: missing LABEL"
   exit 1
 }
-if [[ -n $AOT_FLAG && $AOT_FLAG != "-Dspring.aot.enabled=true" ]]; then
-  echo "ERROR: third param must be '-Dspring.aot.enabled=true' (or omitted)"
-  exit 1
-fi
 
 # ---------------- Configuration -----------------------
 APP_CMD="java ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
 CSV_FILE="${LABEL}_results.csv"
 WARMUPS=1
 RUNS=4
+
+echo
+echo "****************************************************************"
+echo
+echo "Running application"
+echo
+echo "-> $APP_CMD"
+echo
+echo "****************************************************************"
+echo
 
 # list of URLs to hit
 URLS=(
