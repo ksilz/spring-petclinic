@@ -157,7 +157,7 @@ for label in "${REQUESTED[@]}"; do
   echo
   echo " BUILDING APPLICATION"
   echo
-  echo "-> ${CMD[$label]}"
+  echo "-> ${CMD[$label]}" | sed 's/ && / \&\& \\\n    /g'
   echo
   echo "****************************************************************"
   echo
@@ -181,8 +181,8 @@ done
 if [[ ${#executed_stages[@]} -gt 0 ]]; then
   csv_files=""
   for stage in "${executed_stages[@]}"; do
-    if [[ -f "${stage}_results.csv" ]]; then
-      csv_files="$csv_files ${stage}_results.csv"
+    if [[ -f "result_${stage}.csv" ]]; then
+      csv_files="$csv_files result_${stage}.csv"
     fi
   done
   if [[ -n "$csv_files" ]]; then

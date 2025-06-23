@@ -21,7 +21,7 @@ AOT_FLAG="${3:-}" # optional third param
 
 # ---------------- Configuration -----------------------
 APP_CMD="java ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
-CSV_FILE="${LABEL}_results.csv"
+CSV_FILE="result_${LABEL}.csv"
 WARMUPS=1
 RUNS=4
 
