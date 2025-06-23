@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-JAR_NAME="spring-petclinic.jar"
+JAR_NAME="spring-petclinic-3.5.0.jar"
 
 # ────────────────────────────────────────────────────────────────
 # 1. Parse CLI: build system + optional single stage label
@@ -18,9 +18,12 @@ BUILD_SYS="gradle"
 STAGE_FILTER=""
 
 case "${1:-}" in
-  gradle|maven) BUILD_SYS=$1; STAGE_FILTER=${2:-} ;;
-  "")           ;;                       # no args
-  *)            STAGE_FILTER=$1 ;;
+gradle | maven)
+  BUILD_SYS=$1
+  STAGE_FILTER=${2:-}
+  ;;
+"") ;; # no args
+*) STAGE_FILTER=$1 ;;
 esac
 
 ALL_LABELS=(baseline tuning cds leyden crac graalvm)
@@ -29,12 +32,21 @@ REQUESTED=("${STAGE_FILTER:-${ALL_LABELS[*]}}")
 # ────────────────────────────────────────────────────────────────
 # 2. Tooling sanity
 # ────────────────────────────────────────────────────────────────
-[[ -x ./benchmark.sh ]] || { echo "benchmark.sh not executable"; exit 1; }
+[[ -x ./benchmark.sh ]] || {
+  echo "benchmark.sh not executable"
+  exit 1
+}
 
 if [[ $BUILD_SYS == gradle ]]; then
-  [[ -x ./gradlew ]] || { echo "./gradlew not executable"; exit 1; }
+  [[ -x ./gradlew ]] || {
+    echo "./gradlew not executable"
+    exit 1
+  }
 else
-  command -v mvn >/dev/null || { echo "'mvn' not in PATH"; exit 1; }
+  command -v mvn >/dev/null || {
+    echo "'mvn' not in PATH"
+    exit 1
+  }
 fi
 
 # ────────────────────────────────────────────────────────────────
@@ -42,9 +54,13 @@ fi
 # ────────────────────────────────────────────────────────────────
 SDKMAN_INIT="$HOME/.sdkman/bin/sdkman-init.sh"
 sdk_available=false
-if [[ -s $SDKMAN_INIT ]]; then       # shellcheck source=/dev/null
+if [[ -s $SDKMAN_INIT ]]; then # shellcheck source=/dev/null
+  set +u
   source "$SDKMAN_INIT"
+  set -u
   sdk_available=true
+else
+  echo "SDKMAN is not available. Please install SDKMAN to manage JDKs. Run 'sdk help' for more information."
 fi
 
 # ────────────────────────────────────────────────────────────────
@@ -59,34 +75,37 @@ NAME[leyden]="Project Leyden"
 NAME[crac]="CRaC"
 NAME[graalvm]="GraalVM Native Image"
 
-PARAMETERS[baseline]=''
+PARAMETERS[baseline]='-Dspring.aot.enabled=false'
 PARAMETERS[tuning]='-Dspring.aot.enabled=true'
-PARAMETERS[cds]=''
+PARAMETERS[cds]='-Dspring.aot.enabled=false'
 PARAMETERS[leyden]='-Dspring.aot.enabled=true'
-PARAMETERS[crac]=''
-PARAMETERS[graalvm]=''
+PARAMETERS[crac]='-Dspring.aot.enabled=false'
+PARAMETERS[graalvm]='-Dspring.aot.enabled=true'
 
-JAVA[baseline]='21.0.7-tem'          ; EXPECT[baseline]='21.0.7'
-JAVA[tuning]='21.0.7-tem'           ; EXPECT[tuning]='21.0.7'
-JAVA[cds]='21.0.7-tem'              ; EXPECT[cds]='21.0.7'
-JAVA[leyden]='25.ea.27-open'        ; EXPECT[leyden]='25-ea'
-JAVA[crac]='24.0.1-zulu-crac'       ; EXPECT[crac]='CRaC'
-JAVA[graalvm]='24.0.1-graalce'      ; EXPECT[graalvm]='GraalVM CE 24.0.1'
+JAVA[baseline]='21.0.7-tem'
+EXPECT[baseline]='21.0.7'
+JAVA[tuning]='21.0.7-tem'
+EXPECT[tuning]='21.0.7'
+JAVA[cds]='21.0.7-tem'
+EXPECT[cds]='21.0.7'
+JAVA[leyden]='25.ea.27-open'
+EXPECT[leyden]='25-ea'
+JAVA[crac]='24.0.1-zulu-crac'
+EXPECT[crac]='CRaC'
+JAVA[graalvm]='24.0.1-graalce'
+EXPECT[graalvm]='GraalVM CE 24.0.1'
 
 if [[ $BUILD_SYS == gradle ]]; then
-  # Gradle flags set the filename directly
-  GRADLE_JAR_FLAG="-PbootJar.archiveFileName=${JAR_NAME}"
-
-  CMD[baseline]="./gradlew clean bootJar $GRADLE_JAR_FLAG"
-  CMD[tuning]="./gradlew clean bootJar -Dspring.aot.enabled=true $GRADLE_JAR_FLAG && \
+  CMD[baseline]="./gradlew clean bootJar"
+  CMD[tuning]="./gradlew clean bootJar && \
                java -Djarmode=tools -jar build/libs/${JAR_NAME} extract"
-  CMD[cds]="./gradlew clean bootJar $GRADLE_JAR_FLAG"
-  CMD[leyden]="./gradlew clean bootJar -Dspring.aot.enabled=true $GRADLE_JAR_FLAG"
-  CMD[crac]="./gradlew clean bootJar $GRADLE_JAR_FLAG"
-  CMD[graalvm]="./gradlew clean nativeCompile $GRADLE_JAR_FLAG"
+  CMD[cds]="./gradlew clean bootJar"
+  CMD[leyden]="./gradlew clean bootJar"
+  CMD[crac]="./gradlew clean bootJar"
+  CMD[graalvm]="./gradlew clean nativeCompile"
 
   OUT_DIR[gradle]="build/libs"
-else                                  # ── Maven commands ──
+else # ── Maven commands ──
   MAVEN_JAR_FLAG="-DfinalName=spring-petclinic"
 
   CMD[baseline]="mvn -B clean package -DskipTests $MAVEN_JAR_FLAG"
@@ -118,17 +137,20 @@ for label in "${REQUESTED[@]}"; do
   else
     if ! $sdk_available; then
       echo "$stage – need Java with '$expected', but SDKMAN absent. Skipping."
-      echo ; continue
+      echo
+      continue
     fi
     jdk="${JAVA[$label]}"
     if [[ ! -d "$SDKMAN_DIR/candidates/java/$jdk" ]]; then
       echo "$stage – install missing JDK:  sdk install java $jdk"
-      echo ; continue
+      echo
+      continue
     fi
     sdk use java "$jdk" >/dev/null
     if ! java --version 2>&1 | grep -q "$expected"; then
       echo "$stage – wrong Java even after sdk use. Skipping."
-      echo ; continue
+      echo
+      continue
     fi
     echo "=== $stage ($BUILD_SYS, Java $jdk) ==="
   fi
@@ -140,11 +162,16 @@ for label in "${REQUESTED[@]}"; do
   jar_path="${OUT_DIR[$BUILD_SYS]}/${JAR_NAME}"
   if [[ ! -f $jar_path ]]; then
     echo "Expected ${jar_path} not found – skipping benchmark."
-    echo ; continue
+    echo
+    continue
   fi
 
   # ----- benchmark --------------------------------------------------------
-  ./benchmark.sh "$jar_path" "$label" ${PARAMETERS[$label]}
+  if [[ "${PARAMETERS[$label]}" == "-Dspring.aot.enabled=true" ]]; then
+    ./benchmark.sh "$jar_path" "$label" -Dspring.aot.enabled=true
+  else
+    ./benchmark.sh "$jar_path" "$label"
+  fi
   echo
 done
 
