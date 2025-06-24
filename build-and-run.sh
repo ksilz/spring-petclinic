@@ -98,8 +98,8 @@ PARAMETERS[graalvm]='-Dspring.aot.enabled=true'
 if [[ $BUILD_SYS == gradle ]]; then
   CMD[baseline]="./gradlew clean bootJar"
   CMD[tuning]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[cds]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force && java -XX:ArchiveClassesAtExit=petclinic.jsa -Dspring.context.exit=onRefresh -jar $JAR_NAME_PART/${JAR_NAME}"
-  CMD[leyden]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force && java -XX:AOTCacheOutput=petclinic.aot -Dspring.context.exit=onRefresh -jar $JAR_NAME_PART/${JAR_NAME}"
+  CMD[cds]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
+  CMD[leyden]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[crac]="./gradlew clean bootJar"
   CMD[graalvm]="./gradlew clean nativeCompile"
 
@@ -161,6 +161,23 @@ for label in "${REQUESTED[@]}"; do
   echo
   echo "****************************************************************"
   echo
+
+    # Clean up AOT/CDS cache if needed
+  if [[ "$label" == "cds" ]]; then
+    if [[ -f petclinic.jsa ]]; then
+      echo "Deleting existing CDS cache: petclinic.jsa"
+      rm -f petclinic.jsa
+      echo
+    fi
+  elif [[ "$label" == "leyden" ]]; then
+    if [[ -f petclinic.aot ]]; then
+      echo "Deleting existing Leyden AOT cache: petclinic.aot"
+      rm -f petclinic.aot
+      echo
+    fi
+  fi
+
+
   eval "${CMD[$label]}"
 
   jar_path="${JAR_PATH[$label]}"
@@ -181,7 +198,8 @@ done
 if [[ ${#executed_stages[@]} -gt 0 ]]; then
   csv_files=""
   for stage in "${executed_stages[@]}"; do
-    if [[ -f "result_${stage}.csv" ]]; then
+    # Only count CSVs that were modified in the last 5 minutes (i.e., from this run)
+    if [[ -f "result_${stage}.csv" && $(find "result_${stage}.csv" -mmin -5) ]]; then
       csv_files="$csv_files result_${stage}.csv"
     fi
   done

@@ -69,6 +69,31 @@ if [[ -n "$EXISTING_PIDS" ]]; then
   kill -9 $EXISTING_PIDS 2>/dev/null || true
 fi
 
+# --- Special training run for CDS and Leyden ---
+if [[ "$LABEL" == "cds" ]]; then
+  if [[ ! -f petclinic.jsa ]]; then
+    echo "  Training run for CDS (creates petclinic.jsa)"
+    java -XX:ArchiveClassesAtExit=petclinic.jsa -jar "$JAR_PATH" >/tmp/app_out.log 2>&1 &
+    pid=$!
+    while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
+    hit_urls
+    kill -TERM "$pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    echo "  CDS training run complete. Proceeding with benchmark measurements."
+  fi
+elif [[ "$LABEL" == "leyden" ]]; then
+  if [[ ! -f petclinic.aot ]]; then
+    echo "  Training run for Leyden (creates petclinic.aot)"
+    java -XX:AOTCacheOutput=petclinic.aot -jar "$JAR_PATH" >/tmp/app_out.log 2>&1 &
+    pid=$!
+    while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
+    hit_urls
+    kill -TERM "$pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    echo "  Leyden training run complete. Proceeding with benchmark measurements."
+  fi
+fi
+
 for ((i = 1; i <= WARMUPS; i++)); do
   echo "  Warm-up $i"
   $APP_CMD >/tmp/app_out.log 2>&1 &

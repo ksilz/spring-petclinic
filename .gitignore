@@ -52,3 +52,5 @@ _site/
 
 spring-petclinic*
 petclinic.aot
+petclinic.jsa
+result_*.csv

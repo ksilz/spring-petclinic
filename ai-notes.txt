@@ -1,0 +1,8 @@
+AI Notes and Conversation Log
+============================
+
+This file is intended to store thoughts, reasoning, and conversation snippets between the user and the AI assistant regarding the spring-petclinic project.
+
+---
+
+[Add your notes below] 
