@@ -20,7 +20,13 @@ AOT_FLAG="${3:-}" # optional third param
 }
 
 # ---------------- Configuration -----------------------
-APP_CMD="java ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
+if [[ "$LABEL" == "graalvm" ]]; then
+  APP_CMD="./build/native/nativeCompile/spring-petclinic --spring.profiles.active=postgres"
+  TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres"
+else
+  APP_CMD="java ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
+  TRAIN_CMD="$APP_CMD"
+fi
 CSV_FILE="result_${LABEL}.csv"
 WARMUPS=1
 RUNS=4
@@ -68,6 +74,12 @@ if [[ -n "$EXISTING_PIDS" ]]; then
   echo "Killing existing spring-petclinic Java processes: $EXISTING_PIDS"
   kill -9 $EXISTING_PIDS 2>/dev/null || true
 fi
+# Kill any running native spring-petclinic processes to avoid conflicts
+NATIVE_PIDS=$(pgrep -f "build/native/nativeCompile/spring-petclinic")
+if [[ -n "$NATIVE_PIDS" ]]; then
+  echo "Killing existing native spring-petclinic processes: $NATIVE_PIDS"
+  kill -9 $NATIVE_PIDS 2>/dev/null || true
+fi
 
 # --- Special training run for CDS and Leyden ---
 if [[ "$LABEL" == "cds" ]]; then
@@ -92,6 +104,16 @@ elif [[ "$LABEL" == "leyden" ]]; then
     wait "$pid" 2>/dev/null
     echo "  Leyden training run complete. Proceeding with benchmark measurements."
   fi
+elif [[ "$LABEL" == "graalvm" ]]; then
+  echo "  Training run for GraalVM (instrumented binary)"
+  $TRAIN_CMD >/tmp/app_out.log 2>&1 &
+  pid=$!
+  while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
+  hit_urls
+  kill -TERM "$pid" 2>/dev/null
+  wait "$pid" 2>/dev/null
+  echo "  GraalVM training run complete. Returning control to build-and-run.sh."
+  exit 0
 fi
 
 for ((i = 1; i <= WARMUPS; i++)); do

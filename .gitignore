@@ -54,3 +54,4 @@ spring-petclinic*
 petclinic.aot
 petclinic.jsa
 result_*.csv
+default.iprof

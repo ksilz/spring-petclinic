@@ -78,8 +78,8 @@ JAVA[leyden]='25.ea.28-open'
 EXPECT[leyden]='25'
 JAVA[crac]='24.0.1-zulu-crac'
 EXPECT[crac]='24'
-JAVA[graalvm]='24.0.1-graalce'
-EXPECT[graalvm]='24'
+JAVA[graalvm]='24.0.1-graal'
+EXPECT[graalvm]='GraalVM CE'
 
 JAR_PATH[baseline]="build/libs/${JAR_NAME}"
 JAR_PATH[tuning]="${JAR_NAME%.jar}/${JAR_NAME}"
@@ -101,7 +101,7 @@ if [[ $BUILD_SYS == gradle ]]; then
   CMD[cds]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[leyden]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[crac]="./gradlew clean bootJar"
-  CMD[graalvm]="./gradlew clean nativeCompile"
+  CMD[graalvm]="./gradlew nativeCompile --pgo-instrument"
 
   OUT_DIR[gradle]="build/libs"
   OUT_DIR[tuning]="${JAR_NAME%.jar}"
@@ -136,9 +136,24 @@ for label in "${REQUESTED[@]}"; do
 
   # ----- Java selection ---------------------------------------------------
   current_java_version=$(java --version 2>&1 | head -n1 | grep -oE '[0-9]+' | head -n1)
+  java_version_output=$(java --version 2>&1)
   echo
 
-  if [[ "$current_java_version" == "$expected" ]]; then
+  if [[ "$label" == "graalvm" ]]; then
+    if echo "$java_version_output" | grep -q "Oracle GraalVM"; then
+      echo "=== $stage ($BUILD_SYS, current Java) ==="
+      echo
+    else
+      jdk="${JAVA[$label]}"
+      echo "The GraalVM Native Image scenario needs GraalVM Oracle 24. But you currently run:"
+      echo "$java_version_output"
+      echo
+      echo "If you have SDKMAN, you can install and use the needed Java version easily:"
+      echo "  sdk install java $jdk && sdk use java $jdk"
+      echo
+      continue
+    fi
+  elif [[ "$current_java_version" == "$expected" ]]; then
     echo "=== $stage ($BUILD_SYS, current Java) ==="
     echo
   else
@@ -162,7 +177,7 @@ for label in "${REQUESTED[@]}"; do
   echo "****************************************************************"
   echo
 
-    # Clean up AOT/CDS cache if needed
+  # Clean up AOT/CDS cache if needed
   if [[ "$label" == "cds" ]]; then
     if [[ -f petclinic.jsa ]]; then
       echo "Deleting existing CDS cache: petclinic.jsa"
@@ -177,10 +192,13 @@ for label in "${REQUESTED[@]}"; do
     fi
   fi
 
-
   eval "${CMD[$label]}"
 
-  jar_path="${JAR_PATH[$label]}"
+  if [[ "$label" == "graalvm" ]]; then
+    jar_path="build/native/nativeCompile/spring-petclinic"
+  else
+    jar_path="${JAR_PATH[$label]}"
+  fi
 
   if [[ ! -f $jar_path ]]; then
     echo "Expected ${jar_path} not found – skipping benchmark."
@@ -190,6 +208,18 @@ for label in "${REQUESTED[@]}"; do
 
   # ----- benchmark --------------------------------------------------------
   ./benchmark.sh "$jar_path" "$label" "${PARAMETERS[$label]}"
+  if [[ "$label" == "graalvm" ]]; then
+    # Move default.iprof to src/pgo-profiles/main, create dir if needed
+    if [[ -f default.iprof ]]; then
+      mkdir -p src/pgo-profiles/main
+      mv -f default.iprof src/pgo-profiles/main/
+      echo "Moved default.iprof to src/pgo-profiles/main/"
+    fi
+    # Rebuild optimized native image
+    ./gradlew nativeCompile
+    # Run benchmark again for real
+    ./benchmark.sh "$jar_path" "$label" "${PARAMETERS[$label]}"
+  fi
   executed_stages+=("$label")
   echo
 done
