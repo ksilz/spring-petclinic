@@ -1,10 +1,11 @@
 #!/bin/bash
-# Usage: ./benchmark.sh <JAR_PATH> <LABEL> [-Dspring.aot.enabled=true]
+# Usage: ./benchmark.sh <JAR_PATH> <LABEL> [-Dspring.aot.enabled=true] [training]
 
 # ---------------- Parameters & checks ----------------
 JAR_PATH="$1"
 LABEL="$2"
-AOT_FLAG="${3:-}" # optional third param
+AOT_FLAG="${3:-}"      # optional third param
+TRAINING_MODE="${4:-}" # optional fourth param for training mode
 
 [[ -z $JAR_PATH ]] && {
   echo "ERROR: missing JAR_PATH"
@@ -104,7 +105,7 @@ elif [[ "$LABEL" == "leyden" ]]; then
     wait "$pid" 2>/dev/null
     echo "  Leyden training run complete. Proceeding with benchmark measurements."
   fi
-elif [[ "$LABEL" == "graalvm" ]]; then
+elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   echo "  Training run for GraalVM (instrumented binary)"
   $TRAIN_CMD >/tmp/app_out.log 2>&1 &
   pid=$!
@@ -140,31 +141,85 @@ for ((i = 1; i <= RUNS; i++)); do
     /usr/bin/time -v -o /tmp/time_out.log stdbuf -oL $APP_CMD >/tmp/app_out.log 2>&1 &
   fi
   tpid=$!
-  for _ in {1..5}; do java_pid=$(pgrep -P "$tpid" java) && break || sleep 0.3; done
+
+  # Find the actual application process to kill
+  if [[ "$LABEL" == "graalvm" ]]; then
+    # For native executables, look for the spring-petclinic process
+    for _ in {1..10}; do
+      app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic" | grep -v "$tpid" | head -1)
+      [[ -n "$app_pid" ]] && break
+      sleep 0.5
+    done
+  else
+    # For Java applications, look for the Java process
+    for _ in {1..5}; do
+      app_pid=$(pgrep -P "$tpid" java) && break || sleep 0.3
+    done
+  fi
+
   while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
   line=$(grep -m1 "Started PetClinicApplication in" /tmp/app_out.log)
   [[ $line =~ in\ ([0-9.]+)\ seconds ]] && s_time="${BASH_REMATCH[1]}"
   hit_urls # --- load generator ---
-  kill -TERM "${java_pid:-$tpid}" 2>/dev/null
-  wait "$tpid" 2>/dev/null
-  if [[ "$(uname)" == "Darwin" ]]; then
-    m_rss=$(grep "peak memory footprint" /tmp/time_out.log | awk '{print $(NF-3)}')
-    m_rss=$((m_rss / 1024))
+
+  # Kill the actual application process, fallback to time process if needed
+  if [[ -n "$app_pid" ]]; then
+    kill -TERM "$app_pid" 2>/dev/null
+    sleep 1
+    # Force kill if still running
+    if kill -0 "$app_pid" 2>/dev/null; then
+      kill -9 "$app_pid" 2>/dev/null
+    fi
   else
+    kill -TERM "$tpid" 2>/dev/null
+  fi
+  wait "$tpid" 2>/dev/null
+
+  # Memory measurement
+  if [[ "$(uname)" == "Darwin" ]]; then
+    # On macOS, look for "peak memory footprint" for both native and JVM applications
+    m_rss=$(grep "peak memory footprint" /tmp/time_out.log | awk '{print $1}')
+    if [[ -z "$m_rss" ]]; then
+      # Fallback: try to get memory from ps if available
+      if [[ -n "$app_pid" ]]; then
+        m_rss=$(ps -o rss= -p "$app_pid" 2>/dev/null | tail -1)
+      fi
+    fi
+    # Convert to KB if not already (values are typically in bytes)
+    if [[ -n "$m_rss" && "$m_rss" -gt 1000 ]]; then
+      m_rss=$((m_rss / 1024))
+    fi
+  else
+    # On Linux, look for "Maximum resident set size" but we'll need to adjust this
+    # to use peak memory footprint if available
     m_rss=$(grep "Maximum resident set size" /tmp/time_out.log | awk '{print $NF}')
   fi
+
+  # Ensure we have a valid memory value
+  if [[ -z "$m_rss" || "$m_rss" -eq 0 ]]; then
+    m_rss="N/A"
+  fi
+
   echo "$i,$s_time,$m_rss" >>"$CSV_FILE"
   times+=("$s_time")
   mems+=("$m_rss")
-  printf "    %ss, %'d KB\n" "$s_time" "$m_rss"
+  printf "    %ss, %s KB\n" "$s_time" "$m_rss"
 done
 
 # -------- Trimmed-mean averages (drop min & max) -------
 trimmed_mean() {
-  local sorted=($(printf '%s\n' "$@" | sort -n))
+  # Filter out "N/A" values and convert to numbers
+  local valid_values=()
+  for val in "$@"; do
+    if [[ "$val" != "N/A" && "$val" != "" ]]; then
+      valid_values+=("$val")
+    fi
+  done
+
+  local sorted=($(printf '%s\n' "${valid_values[@]}" | sort -n))
   local n=${#sorted[@]}
   ((n <= 2)) && {
-    echo 0
+    echo "N/A"
     return
   }
   local sum=0

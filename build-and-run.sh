@@ -207,8 +207,9 @@ for label in "${REQUESTED[@]}"; do
   fi
 
   # ----- benchmark --------------------------------------------------------
-  ./benchmark.sh "$jar_path" "$label" "${PARAMETERS[$label]}"
   if [[ "$label" == "graalvm" ]]; then
+    # First run: training run for PGO
+    ./benchmark.sh "$jar_path" "$label" "${PARAMETERS[$label]}" training
     # Move default.iprof to src/pgo-profiles/main, create dir if needed
     if [[ -f default.iprof ]]; then
       mkdir -p src/pgo-profiles/main
@@ -217,7 +218,9 @@ for label in "${REQUESTED[@]}"; do
     fi
     # Rebuild optimized native image
     ./gradlew nativeCompile
-    # Run benchmark again for real
+    # Second run: actual benchmark
+    ./benchmark.sh "$jar_path" "$label" "${PARAMETERS[$label]}"
+  else
     ./benchmark.sh "$jar_path" "$label" "${PARAMETERS[$label]}"
   fi
   executed_stages+=("$label")
