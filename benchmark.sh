@@ -25,7 +25,7 @@ if [[ "$LABEL" == "graalvm" ]]; then
   APP_CMD="./build/native/nativeCompile/spring-petclinic --spring.profiles.active=postgres"
   TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres"
 else
-  APP_CMD="java ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
+  APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
   TRAIN_CMD="$APP_CMD"
 fi
 CSV_FILE="result_${LABEL}.csv"
@@ -37,7 +37,11 @@ echo "****************************************************************"
 echo
 echo "Running application"
 echo
-echo "-> $APP_CMD"
+if [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
+  echo "-> $TRAIN_CMD"
+else
+  echo "-> $APP_CMD"
+fi
 echo
 echo "****************************************************************"
 echo
@@ -109,9 +113,28 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   echo "  Training run for GraalVM (instrumented binary)"
   $TRAIN_CMD >/tmp/app_out.log 2>&1 &
   pid=$!
+
+  # Find the actual application process to kill (instrumented binary)
+  for _ in {1..10}; do
+    app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic-instrumented" | grep -v "$pid" | head -1)
+    [[ -n "$app_pid" ]] && break
+    sleep 0.5
+  done
+
   while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
   hit_urls
-  kill -TERM "$pid" 2>/dev/null
+
+  # Kill the actual application process, fallback to background process if needed
+  if [[ -n "$app_pid" ]]; then
+    kill -TERM "$app_pid" 2>/dev/null
+    sleep 1
+    # Force kill if still running
+    if kill -0 "$app_pid" 2>/dev/null; then
+      kill -9 "$app_pid" 2>/dev/null
+    fi
+  else
+    kill -TERM "$pid" 2>/dev/null
+  fi
   wait "$pid" 2>/dev/null
   echo "  GraalVM training run complete. Returning control to build-and-run.sh."
   exit 0
@@ -144,12 +167,22 @@ for ((i = 1; i <= RUNS; i++)); do
 
   # Find the actual application process to kill
   if [[ "$LABEL" == "graalvm" ]]; then
-    # For native executables, look for the spring-petclinic process
-    for _ in {1..10}; do
-      app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic" | grep -v "$tpid" | head -1)
-      [[ -n "$app_pid" ]] && break
-      sleep 0.5
-    done
+    # For native executables, look for the correct spring-petclinic process
+    if [[ "$TRAINING_MODE" == "training" ]]; then
+      # Training run uses instrumented binary
+      for _ in {1..10}; do
+        app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic-instrumented" | grep -v "$tpid" | head -1)
+        [[ -n "$app_pid" ]] && break
+        sleep 0.5
+      done
+    else
+      # Benchmark run uses regular binary
+      for _ in {1..10}; do
+        app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic" | grep -v "$tpid" | head -1)
+        [[ -n "$app_pid" ]] && break
+        sleep 0.5
+      done
+    fi
   else
     # For Java applications, look for the Java process
     for _ in {1..5}; do

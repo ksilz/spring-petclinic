@@ -101,7 +101,11 @@ if [[ $BUILD_SYS == gradle ]]; then
   CMD[cds]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[leyden]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[crac]="./gradlew clean bootJar"
-  CMD[graalvm]="./gradlew nativeCompile --pgo-instrument"
+  if [[ "$(uname)" == "Linux" ]]; then
+    CMD[graalvm]="./gradlew nativeCompile --pgo-instrument --build-args=--gc=G1"
+  else
+    CMD[graalvm]="./gradlew nativeCompile --pgo-instrument"
+  fi
 
   OUT_DIR[gradle]="build/libs"
   OUT_DIR[tuning]="${JAR_NAME%.jar}"
@@ -114,7 +118,11 @@ else # ── Maven commands ──
   CMD[cds]="mvn -B clean package -DskipTests $MAVEN_JAR_FLAG"
   CMD[leyden]="mvn -B clean package -DskipTests -Dspring.aot.enabled=true $MAVEN_JAR_FLAG"
   CMD[crac]="mvn -B clean package -DskipTests $MAVEN_JAR_FLAG"
-  CMD[graalvm]="mvn -B -Pnative -DskipTests native:compile $MAVEN_JAR_FLAG"
+  if [[ "$(uname)" == "Linux" ]]; then
+    CMD[graalvm]="mvn -B -Pnative -DskipTests native:compile -H:+UseG1GC $MAVEN_JAR_FLAG"
+  else
+    CMD[graalvm]="mvn -B -Pnative -DskipTests native:compile $MAVEN_JAR_FLAG"
+  fi
 
   OUT_DIR[maven]="target"
   OUT_DIR[tuning]="${JAR_NAME%.jar}"
@@ -194,22 +202,17 @@ for label in "${REQUESTED[@]}"; do
 
   eval "${CMD[$label]}"
 
-  if [[ "$label" == "graalvm" ]]; then
-    jar_path="build/native/nativeCompile/spring-petclinic"
-  else
-    jar_path="${JAR_PATH[$label]}"
-  fi
-
-  if [[ ! -f $jar_path ]]; then
-    echo "Expected ${jar_path} not found – skipping benchmark."
-    echo
-    continue
-  fi
-
   # ----- benchmark --------------------------------------------------------
   if [[ "$label" == "graalvm" ]]; then
+    # For training run, check for instrumented binary
+    train_path="build/native/nativeCompile/spring-petclinic-instrumented"
+    if [[ ! -f $train_path ]]; then
+      echo "Expected ${train_path} not found – skipping benchmark."
+      echo
+      continue
+    fi
     # First run: training run for PGO
-    ./benchmark.sh "$jar_path" "$label" "${PARAMETERS[$label]}" training
+    ./benchmark.sh "$train_path" "$label" "${PARAMETERS[$label]}" training
     # Move default.iprof to src/pgo-profiles/main, create dir if needed
     if [[ -f default.iprof ]]; then
       mkdir -p src/pgo-profiles/main
@@ -217,10 +220,27 @@ for label in "${REQUESTED[@]}"; do
       echo "Moved default.iprof to src/pgo-profiles/main/"
     fi
     # Rebuild optimized native image
-    ./gradlew nativeCompile
+    if [[ "$(uname)" == "Linux" ]]; then
+      ./gradlew nativeCompile --build-args=--gc=G1
+    else
+      ./gradlew nativeCompile
+    fi
+    # Check for the optimized binary after rebuild
+    jar_path="build/native/nativeCompile/spring-petclinic"
+    if [[ ! -f $jar_path ]]; then
+      echo "Expected ${jar_path} not found after rebuild – skipping benchmark."
+      echo
+      continue
+    fi
     # Second run: actual benchmark
     ./benchmark.sh "$jar_path" "$label" "${PARAMETERS[$label]}"
   else
+    jar_path="${JAR_PATH[$label]}"
+    if [[ ! -f $jar_path ]]; then
+      echo "Expected ${jar_path} not found – skipping benchmark."
+      echo
+      continue
+    fi
     ./benchmark.sh "$jar_path" "$label" "${PARAMETERS[$label]}"
   fi
   executed_stages+=("$label")
