@@ -100,7 +100,9 @@ fi
 if [[ "$LABEL" == "cds" ]]; then
   if [[ ! -f petclinic.jsa ]]; then
     echo "  CDS (creates petclinic.jsa)"
-    java -XX:ArchiveClassesAtExit=petclinic.jsa -jar "$JAR_PATH" >/tmp/app_out.log 2>&1 &
+    cds_cmd="java -XX:ArchiveClassesAtExit=petclinic.jsa -jar $JAR_PATH"
+    echo "    Command: $cds_cmd"
+    $cds_cmd >/tmp/app_out.log 2>&1 &
     pid=$!
     while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
     hit_urls
@@ -111,7 +113,9 @@ if [[ "$LABEL" == "cds" ]]; then
 elif [[ "$LABEL" == "leyden" ]]; then
   if [[ ! -f petclinic.aot ]]; then
     echo "  Leyden (creates petclinic.aot)"
-    java -XX:AOTCacheOutput=petclinic.aot -jar "$JAR_PATH" >/tmp/app_out.log 2>&1 &
+    leyden_cmd="java -XX:AOTCacheOutput=petclinic.aot -jar $JAR_PATH"
+    echo "    Command: $leyden_cmd"
+    $leyden_cmd >/tmp/app_out.log 2>&1 &
     pid=$!
 
     # Find the actual Java process to kill
@@ -150,6 +154,7 @@ elif [[ "$LABEL" == "leyden" ]]; then
   fi
 elif [[ "$LABEL" == "crac" ]]; then
   echo "  CRaC (creates checkpoint)"
+  echo "    Command: $TRAIN_CMD"
   $TRAIN_CMD >/tmp/app_out.log 2>&1 &
   pid=$!
 
@@ -183,6 +188,7 @@ elif [[ "$LABEL" == "crac" ]]; then
   echo "  CRaC training run complete. Proceeding with benchmark measurements."
 elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   echo "  GraalVM (instrumented binary)"
+  echo "    Command: $TRAIN_CMD"
   $TRAIN_CMD >/tmp/app_out.log 2>&1 &
   pid=$!
 
