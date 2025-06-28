@@ -31,6 +31,8 @@ ext.webjarsLocatorLiteVersion = "1.1.0"
 ext.webjarsFontawesomeVersion = "4.7.0"
 ext.webjarsBootstrapVersion = "5.3.6"
 
+def cracEnabled = project.hasProperty('crac') && project.property('crac') == 'true'
+
 dependencies {
   implementation 'org.springframework.boot:spring-boot-starter-cache'
   implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -39,6 +41,11 @@ dependencies {
   implementation 'org.springframework.boot:spring-boot-starter-validation'
   implementation 'javax.cache:cache-api'
   implementation 'jakarta.xml.bind:jakarta.xml.bind-api'
+
+  if (cracEnabled) {
+      implementation "org.crac:crac:1.5.0"
+  }
+
   runtimeOnly 'org.springframework.boot:spring-boot-starter-actuator'
   runtimeOnly "org.webjars:webjars-locator-lite:${webjarsLocatorLiteVersion}"
   runtimeOnly "org.webjars.npm:bootstrap:${webjarsBootstrapVersion}"

@@ -24,6 +24,10 @@ TRAINING_MODE="${4:-}" # optional fourth param for training mode
 if [[ "$LABEL" == "graalvm" ]]; then
   APP_CMD="./build/native/nativeCompile/spring-petclinic --spring.profiles.active=postgres -Xms512m -Xmx1g"
   TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres -Xms512m -Xmx1g"
+elif [[ "$LABEL" == "crac" ]]; then
+  # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
+  APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic.bin -jar $JAR_PATH --spring.profiles.active=postgres"
+  TRAIN_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic.bin -jar $JAR_PATH --spring.profiles.active=postgres"
 else
   APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
   TRAIN_CMD="$APP_CMD"
@@ -48,6 +52,8 @@ echo
 
 # list of URLs to hit
 URLS=(
+  "http://localhost:8080"
+  "http://localhost:8080/owners/find"
   "http://localhost:8080/owners?lastName="
   "http://localhost:8080/owners?page=2"
   "http://localhost:8080/owners?page=1"
@@ -71,7 +77,11 @@ hit_urls() {
 }
 
 # ---------------- Warm-up phase -----------------------
-echo "Warm-up ($WARMUPS runs)…"
+if [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]] || [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]] || [[ "$LABEL" == "crac" ]] || [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
+  echo "Training Run"
+else
+  echo "Warm-up ($WARMUPS runs)…"
+fi
 
 # Kill any running java processes for spring-petclinic JAR to avoid conflicts
 EXISTING_PIDS=$(pgrep -f "java.*spring-petclinic")
@@ -89,7 +99,7 @@ fi
 # --- Special training run for CDS and Leyden ---
 if [[ "$LABEL" == "cds" ]]; then
   if [[ ! -f petclinic.jsa ]]; then
-    echo "  Training run for CDS (creates petclinic.jsa)"
+    echo "  CDS (creates petclinic.jsa)"
     java -XX:ArchiveClassesAtExit=petclinic.jsa -jar "$JAR_PATH" >/tmp/app_out.log 2>&1 &
     pid=$!
     while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
@@ -100,7 +110,7 @@ if [[ "$LABEL" == "cds" ]]; then
   fi
 elif [[ "$LABEL" == "leyden" ]]; then
   if [[ ! -f petclinic.aot ]]; then
-    echo "  Training run for Leyden (creates petclinic.aot)"
+    echo "  Leyden (creates petclinic.aot)"
     java -XX:AOTCacheOutput=petclinic.aot -jar "$JAR_PATH" >/tmp/app_out.log 2>&1 &
     pid=$!
     while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
@@ -109,8 +119,41 @@ elif [[ "$LABEL" == "leyden" ]]; then
     wait "$pid" 2>/dev/null
     echo "  Leyden training run complete. Proceeding with benchmark measurements."
   fi
+elif [[ "$LABEL" == "crac" ]]; then
+  echo "  CRaC (creates checkpoint)"
+  $TRAIN_CMD >/tmp/app_out.log 2>&1 &
+  pid=$!
+
+  # Find the Java process to take checkpoint
+  for _ in {1..10}; do
+    app_pid=$(pgrep -P "$pid" java) && break || sleep 0.5
+  done
+
+  while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
+  hit_urls
+
+  # Take CRaC checkpoint before killing
+  if [[ -n "$app_pid" ]]; then
+    echo "    Taking CRaC checkpoint..."
+    jcmd "$app_pid" JDK.checkpoint >/dev/null 2>&1
+    sleep 2 # Give time for checkpoint to complete
+  fi
+
+  # Kill the application
+  if [[ -n "$app_pid" ]]; then
+    kill -TERM "$app_pid" 2>/dev/null
+    sleep 1
+    # Force kill if still running
+    if kill -0 "$app_pid" 2>/dev/null; then
+      kill -9 "$app_pid" 2>/dev/null
+    fi
+  else
+    kill -TERM "$pid" 2>/dev/null
+  fi
+  wait "$pid" 2>/dev/null
+  echo "  CRaC training run complete. Proceeding with benchmark measurements."
 elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
-  echo "  Training run for GraalVM (instrumented binary)"
+  echo "  GraalVM (instrumented binary)"
   $TRAIN_CMD >/tmp/app_out.log 2>&1 &
   pid=$!
 

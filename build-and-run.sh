@@ -92,7 +92,7 @@ PARAMETERS[baseline]='-Dspring.aot.enabled=false'
 PARAMETERS[tuning]='-Dspring.aot.enabled=true'
 PARAMETERS[cds]='-Dspring.aot.enabled=true -XX:SharedArchiveFile=petclinic.jsa'
 PARAMETERS[leyden]='-Dspring.aot.enabled=true -XX:AOTCache=petclinic.aot'
-PARAMETERS[crac]='-Dspring.aot.enabled=false'
+PARAMETERS[crac]='-Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic.bin'
 PARAMETERS[graalvm]='-Dspring.aot.enabled=true'
 
 if [[ $BUILD_SYS == gradle ]]; then
@@ -100,7 +100,7 @@ if [[ $BUILD_SYS == gradle ]]; then
   CMD[tuning]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[cds]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[leyden]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[crac]="./gradlew clean bootJar"
+  CMD[crac]="./gradlew clean bootJar -Pcrac=true"
   if [[ "$(uname)" == "Linux" ]]; then
     CMD[graalvm]="./gradlew nativeCompile --pgo-instrument --build-args=--gc=G1"
   else
@@ -117,7 +117,7 @@ else # ── Maven commands ──
   CMD[tuning]="mvn -B clean package -DskipTests -Dspring.aot.enabled=true $MAVEN_JAR_FLAG && java -Djarmode=tools -jar target/${JAR_NAME} extract --force"
   CMD[cds]="mvn -B clean package -DskipTests $MAVEN_JAR_FLAG"
   CMD[leyden]="mvn -B clean package -DskipTests -Dspring.aot.enabled=true $MAVEN_JAR_FLAG"
-  CMD[crac]="mvn -B clean package -DskipTests $MAVEN_JAR_FLAG"
+  CMD[crac]="mvn -B clean package -DskipTests -Pcrac=true $MAVEN_JAR_FLAG"
   if [[ "$(uname)" == "Linux" ]]; then
     CMD[graalvm]="mvn -B -Pnative -DskipTests native:compile -H:+UseG1GC $MAVEN_JAR_FLAG"
   else
@@ -161,6 +161,38 @@ for label in "${REQUESTED[@]}"; do
       echo
       continue
     fi
+  elif [[ "$label" == "crac" ]]; then
+    # Check for Linux
+    if [[ "$(uname)" != "Linux" ]]; then
+      echo "The CRaC scenario requires Linux. But you currently run on $(uname)."
+      echo
+      continue
+    fi
+
+    # Check for Java 24
+    if [[ "$current_java_version" != "$expected" ]]; then
+      jdk="${JAVA[$label]}"
+      echo "The CRaC scenario needs Java $expected. But you currently run Java $current_java_version here."
+      echo
+      echo "If you have SDKMAN, you can install and use the needed Java version easily:"
+      echo "  sdk install java $jdk && sdk use java $jdk"
+      echo
+      continue
+    fi
+
+    # Check for CRaC support
+    if ! java -XX:+UnlockExperimentalVMOptions -XX:+CRaC 2>&1 | grep -q "CRaC"; then
+      echo "The CRaC scenario requires a CRaC-enabled JVM. But your current JVM doesn't support CRaC."
+      echo "Current JVM:"
+      echo "$java_version_output"
+      echo
+      echo "You need a CRaC-enabled JVM like Azul Zulu CRaC or similar."
+      echo
+      continue
+    fi
+
+    echo "=== $stage ($BUILD_SYS, current Java) ==="
+    echo
   elif [[ "$current_java_version" == "$expected" ]]; then
     echo "=== $stage ($BUILD_SYS, current Java) ==="
     echo
