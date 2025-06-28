@@ -113,9 +113,38 @@ elif [[ "$LABEL" == "leyden" ]]; then
     echo "  Leyden (creates petclinic.aot)"
     java -XX:AOTCacheOutput=petclinic.aot -jar "$JAR_PATH" >/tmp/app_out.log 2>&1 &
     pid=$!
-    while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
-    hit_urls
-    kill -TERM "$pid" 2>/dev/null
+
+    # Find the actual Java process to kill
+    for _ in {1..10}; do
+      app_pid=$(pgrep -P "$pid" java) && break || sleep 0.5
+    done
+
+    # Wait for startup with timeout (60 seconds)
+    timeout_counter=0
+    while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do
+      sleep 1
+      timeout_counter=$((timeout_counter + 1))
+      if [[ $timeout_counter -ge 60 ]]; then
+        echo "    Timeout waiting for application to start (60s)"
+        break
+      fi
+    done
+
+    if [[ $timeout_counter -lt 60 ]]; then
+      hit_urls
+    fi
+
+    # Kill the actual application process, fallback to background process if needed
+    if [[ -n "$app_pid" ]]; then
+      kill -TERM "$app_pid" 2>/dev/null
+      sleep 1
+      # Force kill if still running
+      if kill -0 "$app_pid" 2>/dev/null; then
+        kill -9 "$app_pid" 2>/dev/null
+      fi
+    else
+      kill -TERM "$pid" 2>/dev/null
+    fi
     wait "$pid" 2>/dev/null
     echo "  Leyden training run complete. Proceeding with benchmark measurements."
   fi
@@ -187,8 +216,22 @@ for ((i = 1; i <= WARMUPS; i++)); do
   echo "  Warm-up $i"
   $APP_CMD >/tmp/app_out.log 2>&1 &
   pid=$!
-  while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
-  hit_urls # --- load generator ---
+
+  # Wait for startup with timeout (60 seconds)
+  timeout_counter=0
+  while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do
+    sleep 1
+    timeout_counter=$((timeout_counter + 1))
+    if [[ $timeout_counter -ge 60 ]]; then
+      echo "    Timeout waiting for application to start (60s)"
+      break
+    fi
+  done
+
+  if [[ $timeout_counter -lt 60 ]]; then
+    hit_urls # --- load generator ---
+  fi
+
   kill -TERM "$pid" 2>/dev/null
   wait "$pid" 2>/dev/null
 done
@@ -233,10 +276,24 @@ for ((i = 1; i <= RUNS; i++)); do
     done
   fi
 
-  while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
-  line=$(grep -m1 "Started PetClinicApplication in" /tmp/app_out.log)
-  [[ $line =~ in\ ([0-9.]+)\ seconds ]] && s_time="${BASH_REMATCH[1]}"
-  hit_urls # --- load generator ---
+  # Wait for startup with timeout (60 seconds)
+  timeout_counter=0
+  while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do
+    sleep 1
+    timeout_counter=$((timeout_counter + 1))
+    if [[ $timeout_counter -ge 60 ]]; then
+      echo "    Timeout waiting for application to start (60s)"
+      break
+    fi
+  done
+
+  if [[ $timeout_counter -lt 60 ]]; then
+    line=$(grep -m1 "Started PetClinicApplication in" /tmp/app_out.log)
+    [[ $line =~ in\ ([0-9.]+)\ seconds ]] && s_time="${BASH_REMATCH[1]}"
+    hit_urls # --- load generator ---
+  else
+    s_time="N/A"
+  fi
 
   # Kill the actual application process, fallback to time process if needed
   if [[ -n "$app_pid" ]]; then
