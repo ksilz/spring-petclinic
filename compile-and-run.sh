@@ -220,6 +220,12 @@ for label in "${REQUESTED[@]}"; do
   echo "****************************************************************"
   echo
 
+  build_start=$(date +%s)
+  eval "${CMD[$label]}"
+  build_end=$(date +%s)
+  build_duration=$(awk "BEGIN {print ($build_end-$build_start)}")
+  printf "Build step took %.1f seconds\n" "$build_duration"
+
   # Clean up AOT/CDS cache if needed
   if [[ "$label" == "cds" ]]; then
     if [[ -f petclinic.jsa ]]; then
@@ -234,8 +240,6 @@ for label in "${REQUESTED[@]}"; do
       echo
     fi
   fi
-
-  eval "${CMD[$label]}"
 
   # ----- benchmark --------------------------------------------------------
   if [[ "$label" == "graalvm" ]]; then

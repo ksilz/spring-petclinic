@@ -110,30 +110,112 @@ if [[ "$LABEL" == "cds" ]]; then
     echo "  CDS (creates petclinic.jsa)"
     cds_cmd="java -XX:ArchiveClassesAtExit=petclinic.jsa -jar $JAR_PATH"
     echo "    Command: $cds_cmd"
+    train_start=$(date +%s)
     $cds_cmd >/tmp/app_out.log 2>&1 &
     pid=$!
     while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
     hit_urls
     kill -TERM "$pid" 2>/dev/null
     wait "$pid" 2>/dev/null
+    train_end=$(date +%s)
+    train_duration=$(awk "BEGIN {print ($train_end-$train_start)}")
+    printf "Training run took %.1f seconds\n" "$train_duration"
     echo "  CDS training run complete. Proceeding with benchmark measurements."
   fi
 elif [[ "$LABEL" == "leyden" ]]; then
   if [[ ! -f petclinic.aot ]]; then
     echo "  Leyden (creates petclinic.aot in two steps)"
+    train_start=$(date +%s)
+    # Step 1: Record mode - collect AOT configuration
+    echo "    Step 1: Recording AOT configuration..."
+    record_cmd="java -XX:AOTMode=record -XX:AOTConfiguration=petclinic.aotconf -jar $JAR_PATH"
+    echo "    Command: $record_cmd"
 
-    # On Linux, check if we should skip AOT cache generation due to known issues
-    if [[ "$(uname)" == "Linux" && "${SKIP_LEYDEN_AOT:-}" == "true" ]]; then
-      echo "    Skipping AOT cache generation on Linux (SKIP_LEYDEN_AOT=true)"
-      echo "    Using fallback mode without AOT cache"
-      # Create a dummy AOT file to prevent re-running
-      touch petclinic.aot
-      echo "  Leyden training run skipped. Proceeding with benchmark measurements."
+    # On Linux, add resource limits to prevent system hang
+    if [[ "$(uname)" == "Linux" ]]; then
+      echo "    Running with resource limits on Linux..."
+      timeout 300 bash -c "
+        ulimit -v 4194304  # 4GB virtual memory limit
+        ulimit -m 2097152  # 2GB resident memory limit
+        ulimit -t 180      # 3 minutes CPU time limit
+        $record_cmd >/tmp/app_out.log 2>&1 &
+        echo \$! > /tmp/leyden_pid
+        wait \$!
+      " &
+      pid=$!
+      sleep 2
+      if [[ -f /tmp/leyden_pid ]]; then
+        app_pid=$(cat /tmp/leyden_pid)
+        rm -f /tmp/leyden_pid
+      fi
     else
-      # Step 1: Record mode - collect AOT configuration
-      echo "    Step 1: Recording AOT configuration..."
-      record_cmd="java -XX:AOTMode=record -XX:AOTConfiguration=petclinic.aotconf -jar $JAR_PATH"
-      echo "    Command: $record_cmd"
+      $record_cmd >/tmp/app_out.log 2>&1 &
+      pid=$!
+
+      # Find the actual Java process to kill
+      for _ in {1..10}; do
+        app_pid=$(pgrep -P "$pid" java) && break || sleep 0.5
+      done
+    fi
+
+    # Wait for startup with shorter timeout (30 seconds for training run)
+    timeout_counter=0
+    while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do
+      sleep 1
+      timeout_counter=$((timeout_counter + 1))
+
+      # Force flush the log file
+      sync /tmp/app_out.log 2>/dev/null || true
+
+      if [[ $timeout_counter -ge 30 ]]; then
+        echo "    Timeout waiting for application to start (30s)"
+        echo "    Last few lines of log:"
+        tail -5 /tmp/app_out.log | sed 's/^/      /'
+        break
+      fi
+      # Check if process is still running
+      if ! kill -0 "$pid" 2>/dev/null; then
+        echo "    Process terminated unexpectedly"
+        echo "    Last few lines of log:"
+        tail -10 /tmp/app_out.log | sed 's/^/      /'
+        break
+      fi
+    done
+
+    # Check if we actually found the startup message
+    if grep -q "Started PetClinicApplication in" /tmp/app_out.log; then
+      echo "    Application started successfully"
+    else
+      echo "    Warning: Could not detect application startup, but continuing..."
+    fi
+
+    if [[ $timeout_counter -lt 30 ]]; then
+      hit_urls
+    else
+      # Even if startup detection failed, try to hit URLs in case the app is running
+      echo "    Attempting to hit URLs despite startup detection failure..."
+      hit_urls
+    fi
+
+    # Kill the actual application process, fallback to background process if needed
+    if [[ -n "$app_pid" ]]; then
+      kill -TERM "$app_pid" 2>/dev/null
+      sleep 1
+      # Force kill if still running
+      if kill -0 "$app_pid" 2>/dev/null; then
+        kill -9 "$app_pid" 2>/dev/null
+      fi
+    else
+      kill -TERM "$pid" 2>/dev/null
+    fi
+    wait "$pid" 2>/dev/null
+
+    # Step 2: Create mode - generate AOT cache from configuration
+    if [[ -f petclinic.aotconf ]]; then
+      echo "    Step 2: Creating AOT cache from configuration..."
+      echo "    Configuration file size: $(ls -lh petclinic.aotconf | awk '{print $5}')"
+      create_cmd="java -XX:AOTMode=create -XX:AOTConfiguration=petclinic.aotconf -XX:AOTCache=petclinic.aot -jar $JAR_PATH"
+      echo "    Command: $create_cmd"
 
       # On Linux, add resource limits to prevent system hang
       if [[ "$(uname)" == "Linux" ]]; then
@@ -142,7 +224,7 @@ elif [[ "$LABEL" == "leyden" ]]; then
           ulimit -v 4194304  # 4GB virtual memory limit
           ulimit -m 2097152  # 2GB resident memory limit
           ulimit -t 180      # 3 minutes CPU time limit
-          $record_cmd >/tmp/app_out.log 2>&1 &
+          $create_cmd >/tmp/app_out.log 2>&1 &
           echo \$! > /tmp/leyden_pid
           wait \$!
         " &
@@ -153,7 +235,7 @@ elif [[ "$LABEL" == "leyden" ]]; then
           rm -f /tmp/leyden_pid
         fi
       else
-        $record_cmd >/tmp/app_out.log 2>&1 &
+        $create_cmd >/tmp/app_out.log 2>&1 &
         pid=$!
 
         # Find the actual Java process to kill
@@ -162,133 +244,50 @@ elif [[ "$LABEL" == "leyden" ]]; then
         done
       fi
 
-      # Wait for startup with shorter timeout (30 seconds for training run)
+      # Wait for completion with timeout
       timeout_counter=0
-      while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do
+      while kill -0 "$pid" 2>/dev/null; do
         sleep 1
         timeout_counter=$((timeout_counter + 1))
-
-        # Force flush the log file
-        sync /tmp/app_out.log 2>/dev/null || true
-
-        if [[ $timeout_counter -ge 30 ]]; then
-          echo "    Timeout waiting for application to start (30s)"
-          echo "    Last few lines of log:"
-          tail -5 /tmp/app_out.log | sed 's/^/      /'
-          break
-        fi
-        # Check if process is still running
-        if ! kill -0 "$pid" 2>/dev/null; then
-          echo "    Process terminated unexpectedly"
-          echo "    Last few lines of log:"
-          tail -10 /tmp/app_out.log | sed 's/^/      /'
+        if [[ $timeout_counter -ge 60 ]]; then
+          echo "    Timeout waiting for AOT cache creation (60s)"
           break
         fi
       done
 
-      # Check if we actually found the startup message
-      if grep -q "Started PetClinicApplication in" /tmp/app_out.log; then
-        echo "    Application started successfully"
-      else
-        echo "    Warning: Could not detect application startup, but continuing..."
-      fi
-
-      if [[ $timeout_counter -lt 30 ]]; then
-        hit_urls
-      else
-        # Even if startup detection failed, try to hit URLs in case the app is running
-        echo "    Attempting to hit URLs despite startup detection failure..."
-        hit_urls
-      fi
-
-      # Kill the actual application process, fallback to background process if needed
-      if [[ -n "$app_pid" ]]; then
-        kill -TERM "$app_pid" 2>/dev/null
-        sleep 1
-        # Force kill if still running
-        if kill -0 "$app_pid" 2>/dev/null; then
-          kill -9 "$app_pid" 2>/dev/null
+      # Kill the process if still running
+      if kill -0 "$pid" 2>/dev/null; then
+        if [[ -n "$app_pid" ]]; then
+          kill -TERM "$app_pid" 2>/dev/null
+          sleep 1
+          if kill -0 "$app_pid" 2>/dev/null; then
+            kill -9 "$app_pid" 2>/dev/null
+          fi
+        else
+          kill -TERM "$pid" 2>/dev/null
         fi
-      else
-        kill -TERM "$pid" 2>/dev/null
       fi
       wait "$pid" 2>/dev/null
 
-      # Step 2: Create mode - generate AOT cache from configuration
-      if [[ -f petclinic.aotconf ]]; then
-        echo "    Step 2: Creating AOT cache from configuration..."
-        echo "    Configuration file size: $(ls -lh petclinic.aotconf | awk '{print $5}')"
-        create_cmd="java -XX:AOTMode=create -XX:AOTConfiguration=petclinic.aotconf -XX:AOTCache=petclinic.aot -jar $JAR_PATH"
-        echo "    Command: $create_cmd"
-
-        # On Linux, add resource limits to prevent system hang
-        if [[ "$(uname)" == "Linux" ]]; then
-          echo "    Running with resource limits on Linux..."
-          timeout 300 bash -c "
-            ulimit -v 4194304  # 4GB virtual memory limit
-            ulimit -m 2097152  # 2GB resident memory limit
-            ulimit -t 180      # 3 minutes CPU time limit
-            $create_cmd >/tmp/app_out.log 2>&1 &
-            echo \$! > /tmp/leyden_pid
-            wait \$!
-          " &
-          pid=$!
-          sleep 2
-          if [[ -f /tmp/leyden_pid ]]; then
-            app_pid=$(cat /tmp/leyden_pid)
-            rm -f /tmp/leyden_pid
-          fi
-        else
-          $create_cmd >/tmp/app_out.log 2>&1 &
-          pid=$!
-
-          # Find the actual Java process to kill
-          for _ in {1..10}; do
-            app_pid=$(pgrep -P "$pid" java) && break || sleep 0.5
-          done
-        fi
-
-        # Wait for completion with timeout
-        timeout_counter=0
-        while kill -0 "$pid" 2>/dev/null; do
-          sleep 1
-          timeout_counter=$((timeout_counter + 1))
-          if [[ $timeout_counter -ge 60 ]]; then
-            echo "    Timeout waiting for AOT cache creation (60s)"
-            break
-          fi
-        done
-
-        # Kill the process if still running
-        if kill -0 "$pid" 2>/dev/null; then
-          if [[ -n "$app_pid" ]]; then
-            kill -TERM "$app_pid" 2>/dev/null
-            sleep 1
-            if kill -0 "$app_pid" 2>/dev/null; then
-              kill -9 "$app_pid" 2>/dev/null
-            fi
-          else
-            kill -TERM "$pid" 2>/dev/null
-          fi
-        fi
-        wait "$pid" 2>/dev/null
-
-        # Clean up configuration file
-        rm -f petclinic.aotconf
-      else
-        echo "    Warning: AOT configuration file not found, skipping cache creation"
-        echo "    Checking for configuration file:"
-        ls -la petclinic.aotconf* 2>/dev/null || echo "      No configuration files found"
-        echo "    Last few lines of log from Step 1:"
-        tail -10 /tmp/app_out.log | sed 's/^/      /'
-      fi
-
-      echo "  Leyden training run complete. Proceeding with benchmark measurements."
+      # Clean up configuration file
+      rm -f petclinic.aotconf
+    else
+      echo "    Warning: AOT configuration file not found, skipping cache creation"
+      echo "    Checking for configuration file:"
+      ls -la petclinic.aotconf* 2>/dev/null || echo "      No configuration files found"
+      echo "    Last few lines of log from Step 1:"
+      tail -10 /tmp/app_out.log | sed 's/^/      /'
     fi
+
+    echo "  Leyden training run complete. Proceeding with benchmark measurements."
+    train_end=$(date +%s)
+    train_duration=$(awk "BEGIN {print ($train_end-$train_start)}")
+    printf "Training run took %.1f seconds\n" "$train_duration"
   fi
 elif [[ "$LABEL" == "crac" ]]; then
   echo "  CRaC (creates checkpoint)"
   echo "    Command: $TRAIN_CMD"
+  train_start=$(date +%s)
   $TRAIN_CMD >/tmp/app_out.log 2>&1 &
   pid=$!
 
@@ -319,10 +318,14 @@ elif [[ "$LABEL" == "crac" ]]; then
     kill -TERM "$pid" 2>/dev/null
   fi
   wait "$pid" 2>/dev/null
+  train_end=$(date +%s)
+  train_duration=$(awk "BEGIN {print ($train_end-$train_start)}")
+  printf "Training run took %.1f seconds\n" "$train_duration"
   echo "  CRaC training run complete. Proceeding with benchmark measurements."
 elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   echo "  GraalVM (instrumented binary)"
   echo "    Command: $TRAIN_CMD"
+  train_start=$(date +%s)
   $TRAIN_CMD >/tmp/app_out.log 2>&1 &
   pid=$!
 
@@ -348,6 +351,9 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
     kill -TERM "$pid" 2>/dev/null
   fi
   wait "$pid" 2>/dev/null
+  train_end=$(date +%s)
+  train_duration=$(awk "BEGIN {print ($train_end-$train_start)}")
+  printf "Training run took %.1f seconds\n" "$train_duration"
   echo "  GraalVM training run complete. Returning control to build-and-run.sh."
   exit 0
 fi
