@@ -102,9 +102,9 @@ if [[ $BUILD_SYS == gradle ]]; then
   CMD[leyden]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[crac]="./gradlew clean bootJar -Pcrac=true"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="./gradlew nativeCompile --pgo-instrument --build-args=--gc=G1"
+    CMD[graalvm]="./gradlew clean nativeCompile --pgo-instrument --build-args=--gc=G1"
   else
-    CMD[graalvm]="./gradlew nativeCompile --pgo-instrument"
+    CMD[graalvm]="./gradlew clean nativeCompile --pgo-instrument"
   fi
 
   OUT_DIR[gradle]="build/libs"
@@ -119,9 +119,9 @@ else # ── Maven commands ──
   CMD[leyden]="mvn -B clean package -DskipTests -Dspring.aot.enabled=true $MAVEN_JAR_FLAG"
   CMD[crac]="mvn -B clean package -DskipTests -Pcrac=true $MAVEN_JAR_FLAG"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="mvn -B -Pnative -DskipTests native:compile -H:+UseG1GC $MAVEN_JAR_FLAG"
+    CMD[graalvm]="mvn -B clean -Pnative -DskipTests native:compile -H:+UseG1GC $MAVEN_JAR_FLAG"
   else
-    CMD[graalvm]="mvn -B -Pnative -DskipTests native:compile $MAVEN_JAR_FLAG"
+    CMD[graalvm]="mvn -B clean -Pnative -DskipTests native:compile $MAVEN_JAR_FLAG"
   fi
 
   OUT_DIR[maven]="target"
@@ -253,9 +253,9 @@ for label in "${REQUESTED[@]}"; do
     fi
     # Rebuild optimized native image
     if [[ "$(uname)" == "Linux" ]]; then
-      ./gradlew nativeCompile --build-args=--gc=G1
+      ./gradlew clean nativeCompile --build-args=--gc=G1
     else
-      ./gradlew nativeCompile
+      ./gradlew clean nativeCompile
     fi
     # Check for the optimized binary after rebuild
     jar_path="build/native/nativeCompile/spring-petclinic"
