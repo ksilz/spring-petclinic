@@ -22,8 +22,8 @@ TRAINING_MODE="${4:-}" # optional fourth param for training mode
 
 # ---------------- Configuration -----------------------
 if [[ "$LABEL" == "graalvm" ]]; then
-  APP_CMD="./build/native/nativeCompile/spring-petclinic --spring.profiles.active=postgres"
-  TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres"
+  APP_CMD="./build/native/nativeCompile/spring-petclinic --spring.profiles.active=postgres -Xms512m -Xmx1g"
+  TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres -Xms512m -Xmx1g"
 else
   APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
   TRAIN_CMD="$APP_CMD"
