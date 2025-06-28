@@ -167,13 +167,37 @@ elif [[ "$LABEL" == "leyden" ]]; then
       while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do
         sleep 1
         timeout_counter=$((timeout_counter + 1))
+
+        # Force flush the log file
+        sync /tmp/app_out.log 2>/dev/null || true
+
         if [[ $timeout_counter -ge 30 ]]; then
           echo "    Timeout waiting for application to start (30s)"
+          echo "    Last few lines of log:"
+          tail -5 /tmp/app_out.log | sed 's/^/      /'
+          break
+        fi
+        # Check if process is still running
+        if ! kill -0 "$pid" 2>/dev/null; then
+          echo "    Process terminated unexpectedly"
+          echo "    Last few lines of log:"
+          tail -10 /tmp/app_out.log | sed 's/^/      /'
           break
         fi
       done
 
+      # Check if we actually found the startup message
+      if grep -q "Started PetClinicApplication in" /tmp/app_out.log; then
+        echo "    Application started successfully"
+      else
+        echo "    Warning: Could not detect application startup, but continuing..."
+      fi
+
       if [[ $timeout_counter -lt 30 ]]; then
+        hit_urls
+      else
+        # Even if startup detection failed, try to hit URLs in case the app is running
+        echo "    Attempting to hit URLs despite startup detection failure..."
         hit_urls
       fi
 
@@ -193,6 +217,7 @@ elif [[ "$LABEL" == "leyden" ]]; then
       # Step 2: Create mode - generate AOT cache from configuration
       if [[ -f petclinic.aotconf ]]; then
         echo "    Step 2: Creating AOT cache from configuration..."
+        echo "    Configuration file size: $(ls -lh petclinic.aotconf | awk '{print $5}')"
         create_cmd="java -XX:AOTMode=create -XX:AOTConfiguration=petclinic.aotconf -XX:AOTCache=petclinic.aot -jar $JAR_PATH"
         echo "    Command: $create_cmd"
 
@@ -252,6 +277,10 @@ elif [[ "$LABEL" == "leyden" ]]; then
         rm -f petclinic.aotconf
       else
         echo "    Warning: AOT configuration file not found, skipping cache creation"
+        echo "    Checking for configuration file:"
+        ls -la petclinic.aotconf* 2>/dev/null || echo "      No configuration files found"
+        echo "    Last few lines of log from Step 1:"
+        tail -10 /tmp/app_out.log | sed 's/^/      /'
       fi
 
       echo "  Leyden training run complete. Proceeding with benchmark measurements."
