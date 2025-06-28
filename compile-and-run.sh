@@ -145,6 +145,9 @@ for label in "${REQUESTED[@]}"; do
   # ----- Java selection ---------------------------------------------------
   current_java_version=$(java --version 2>&1 | head -n1 | grep -oE '[0-9]+' | head -n1)
   java_version_output=$(java --version 2>&1)
+
+  echo "Current Java:"
+  echo "$java_version_output" | head -3
   echo
 
   if [[ "$label" == "graalvm" ]]; then
