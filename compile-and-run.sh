@@ -129,9 +129,9 @@ if [[ $BUILD_SYS == gradle ]]; then
   CMD[leyden]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[crac]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Pcrac=true"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=\"${GRAALVM_NATIVE_ARGS}\""
+    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument"
   else
-    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=\"${GRAALVM_NATIVE_ARGS}\""
+    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument"
   fi
 
   OUT_DIR[gradle]="build/libs"
@@ -146,9 +146,9 @@ else # ── Maven commands ──
   CMD[leyden]="mvn -B clean package -DskipTests -Dspring.aot.enabled=true $MAVEN_JAR_FLAG"
   CMD[crac]="mvn -B clean package -DskipTests -Pcrac=true $MAVEN_JAR_FLAG"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="mvn -B clean -Pnative -DskipTests native:compile -H:${GRAALVM_NATIVE_ARGS} $MAVEN_JAR_FLAG"
+    CMD[graalvm]="mvn -B clean -Pnative -DskipTests native:compile $MAVEN_JAR_FLAG"
   else
-    CMD[graalvm]="mvn -B clean -Pnative -DskipTests native:compile -H:${GRAALVM_NATIVE_ARGS} $MAVEN_JAR_FLAG"
+    CMD[graalvm]="mvn -B clean -Pnative -DskipTests native:compile $MAVEN_JAR_FLAG"
   fi
 
   OUT_DIR[maven]="target"
@@ -289,7 +289,7 @@ for label in "${REQUESTED[@]}"; do
     # Rebuild optimized native image
     echo "Rebuilding optimized native image..."
     rebuild_start=$(date +%s)
-    ./gradlew -Dorg.gradle.jvmargs="${GRAALVM_GRADLE_ARGS}" --build-cache --parallel clean nativeCompile --build-args="${GRAALVM_NATIVE_ARGS}"
+    ./gradlew -Dorg.gradle.jvmargs="${GRAALVM_GRADLE_ARGS}" --build-cache --parallel clean nativeCompile
     rebuild_end=$(date +%s)
     rebuild_duration=$(awk "BEGIN {print ($rebuild_end-$rebuild_start)}")
     printf "GraalVM rebuild took %.1f seconds\n" "$rebuild_duration"
