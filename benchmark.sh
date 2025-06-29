@@ -326,31 +326,111 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   echo "  GraalVM (instrumented binary)"
   echo "    Command: $TRAIN_CMD"
   train_start=$(date +%s)
-  $TRAIN_CMD >/tmp/app_out.log 2>&1 &
-  pid=$!
 
-  # Find the actual application process to kill (instrumented binary)
-  for _ in {1..10}; do
-    app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic-instrumented" | grep -v "$pid" | head -1)
-    [[ -n "$app_pid" ]] && break
-    sleep 0.5
+  # On Linux, add resource limits and debug output
+  if [[ "$(uname)" == "Linux" ]]; then
+    echo "    Running with resource limits on Linux..."
+    echo "    Starting GraalVM training run at $(date)"
+
+    # Use timeout and ulimit to prevent system hang
+    timeout 600 bash -c "
+      ulimit -v 8388608  # 8GB virtual memory limit
+      ulimit -m 4194304  # 4GB resident memory limit
+      ulimit -t 300      # 5 minutes CPU time limit
+      echo 'Starting GraalVM instrumented binary...'
+      $TRAIN_CMD >/tmp/app_out.log 2>&1 &
+      echo \$! > /tmp/graalvm_pid
+      echo 'GraalVM process started with PID: '\$!
+      wait \$!
+    " &
+    pid=$!
+    sleep 2
+    if [[ -f /tmp/graalvm_pid ]]; then
+      app_pid=$(cat /tmp/graalvm_pid)
+      rm -f /tmp/graalvm_pid
+      echo "    GraalVM process PID: $app_pid"
+    fi
+  else
+    $TRAIN_CMD >/tmp/app_out.log 2>&1 &
+    pid=$!
+    echo "    GraalVM process PID: $pid"
+
+    # Find the actual application process to kill (instrumented binary)
+    for _ in {1..10}; do
+      app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic-instrumented" | grep -v "$pid" | head -1)
+      [[ -n "$app_pid" ]] && break
+      sleep 0.5
+    done
+    if [[ -n "$app_pid" ]]; then
+      echo "    Found GraalVM app process PID: $app_pid"
+    fi
+  fi
+
+  # Wait for startup with timeout and debug output
+  echo "    Waiting for application to start..."
+  timeout_counter=0
+  while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do
+    sleep 1
+    timeout_counter=$((timeout_counter + 1))
+
+    # Force flush the log file
+    sync /tmp/app_out.log 2>/dev/null || true
+
+    # Print progress every 10 seconds
+    if [[ $((timeout_counter % 10)) -eq 0 ]]; then
+      echo "    Still waiting... ($timeout_counter seconds elapsed)"
+      if [[ -n "$app_pid" ]]; then
+        if kill -0 "$app_pid" 2>/dev/null; then
+          echo "    Process $app_pid is still running"
+        else
+          echo "    Process $app_pid has terminated"
+        fi
+      fi
+    fi
+
+    if [[ $timeout_counter -ge 120 ]]; then
+      echo "    Timeout waiting for application to start (120s)"
+      echo "    Last few lines of log:"
+      tail -10 /tmp/app_out.log | sed 's/^/      /'
+      break
+    fi
+
+    # Check if process is still running
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "    Background process terminated unexpectedly"
+      echo "    Last few lines of log:"
+      tail -15 /tmp/app_out.log | sed 's/^/      /'
+      break
+    fi
   done
 
-  while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
-  hit_urls
+  # Check if we actually found the startup message
+  if grep -q "Started PetClinicApplication in" /tmp/app_out.log; then
+    echo "    Application started successfully"
+    hit_urls
+  else
+    echo "    Warning: Could not detect application startup, but continuing..."
+    echo "    Attempting to hit URLs anyway..."
+    hit_urls
+  fi
 
   # Kill the actual application process, fallback to background process if needed
+  echo "    Terminating GraalVM process..."
   if [[ -n "$app_pid" ]]; then
+    echo "    Killing app process $app_pid"
     kill -TERM "$app_pid" 2>/dev/null
-    sleep 1
+    sleep 2
     # Force kill if still running
     if kill -0 "$app_pid" 2>/dev/null; then
+      echo "    Force killing app process $app_pid"
       kill -9 "$app_pid" 2>/dev/null
     fi
   else
+    echo "    Killing background process $pid"
     kill -TERM "$pid" 2>/dev/null
   fi
   wait "$pid" 2>/dev/null
+  echo "    GraalVM training run completed at $(date)"
   train_end=$(date +%s)
   train_duration=$(awk "BEGIN {print ($train_end-$train_start)}")
   printf "Training run took %.1f seconds\n" "$train_duration"
