@@ -119,7 +119,7 @@ PARAMETERS[baseline]='-Dspring.aot.enabled=false'
 PARAMETERS[tuning]='-Dspring.aot.enabled=true'
 PARAMETERS[cds]='-Dspring.aot.enabled=true -XX:SharedArchiveFile=petclinic.jsa'
 PARAMETERS[leyden]='-Dspring.aot.enabled=true -XX:AOTCache=petclinic.aot'
-PARAMETERS[crac]='-Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic.bin'
+PARAMETERS[crac]='-Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac'
 PARAMETERS[graalvm]='-Dspring.aot.enabled=true'
 
 if [[ $BUILD_SYS == gradle ]]; then

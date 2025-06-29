@@ -26,8 +26,8 @@ if [[ "$LABEL" == "graalvm" ]]; then
   TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres"
 elif [[ "$LABEL" == "crac" ]]; then
   # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
-  APP_CMD="java -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic.bin -jar $JAR_PATH --spring.profiles.active=postgres"
-  TRAIN_CMD="java -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic.bin -jar $JAR_PATH --spring.profiles.active=postgres"
+  APP_CMD="java -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres"
+  TRAIN_CMD="java -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres"
 else
   APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
   TRAIN_CMD="java -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
@@ -330,14 +330,44 @@ elif [[ "$LABEL" == "crac" ]]; then
     cat /tmp/jcmd.log | sed 's/^/      /'
   fi
 
-  # Wait for checkpoint to complete
-  sleep 5
+  # Wait for checkpoint to complete - give it more time
+  echo "    Waiting for checkpoint to complete..."
+  checkpoint_wait=0
+  while [[ $checkpoint_wait -lt 30 ]]; do
+    if [[ -d petclinic-crac ]] && [[ "$(ls -A petclinic-crac 2>/dev/null)" ]]; then
+      echo "    Checkpoint directory has content after ${checkpoint_wait}s"
+      break
+    fi
+    sleep 1
+    checkpoint_wait=$((checkpoint_wait + 1))
+    if [[ $((checkpoint_wait % 5)) -eq 0 ]]; then
+      echo "    Still waiting for checkpoint... (${checkpoint_wait}s elapsed)"
+      # Check if the application process is still running
+      if ! kill -0 "$app_pid" 2>/dev/null; then
+        echo "    Warning: Application process $app_pid has terminated during checkpoint"
+        break
+      fi
+    fi
+  done
 
-  # Verify checkpoint file was created
-  if [[ -f petclinic.bin ]]; then
-    echo "    Checkpoint file created successfully: $(ls -lh petclinic.bin)"
+  # Verify checkpoint directory was created and has content
+  if [[ -d petclinic-crac ]]; then
+    if [[ "$(ls -A petclinic-crac 2>/dev/null)" ]]; then
+      echo "    Checkpoint directory created successfully: $(ls -lh petclinic-crac)"
+      echo "    Checkpoint directory contents:"
+      ls -la petclinic-crac | sed 's/^/      /'
+    else
+      echo "    Error: Checkpoint directory petclinic-crac exists but is empty"
+      echo "    Application may have terminated during checkpoint creation"
+      echo "    Last few lines of application log:"
+      tail -15 /tmp/app_out.log | sed 's/^/      /'
+      kill -TERM "$app_pid" 2>/dev/null
+      wait "$pid" 2>/dev/null
+      echo "    CRaC training failed - skipping benchmark"
+      exit 1
+    fi
   else
-    echo "    Error: Checkpoint file petclinic.bin was not created"
+    echo "    Error: Checkpoint directory petclinic-crac was not created"
     echo "    Last few lines of application log:"
     tail -10 /tmp/app_out.log | sed 's/^/      /'
     kill -TERM "$app_pid" 2>/dev/null
