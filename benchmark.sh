@@ -452,6 +452,20 @@ elif [[ "$LABEL" == "crac" ]]; then
     exit 1
   fi
 
+  # Kill any running java processes for spring-petclinic JAR to avoid conflicts
+  EXISTING_PIDS=$(pgrep -f "java.*spring-petclinic")
+  if [[ -n "$EXISTING_PIDS" ]]; then
+    echo "    Killing existing spring-petclinic Java processes: $EXISTING_PIDS"
+    kill -9 $EXISTING_PIDS 2>/dev/null || true
+  fi
+
+  # For CRaC, also kill any sudo processes running spring-petclinic
+  SUDO_PIDS=$(pgrep -f "sudo.*java.*spring-petclinic")
+  if [[ -n "$SUDO_PIDS" ]]; then
+    echo "    Killing existing sudo spring-petclinic processes: $SUDO_PIDS"
+    kill -9 $SUDO_PIDS 2>/dev/null || true
+  fi
+
   # Clean up existing checkpoint directory if it exists
   if [[ -d petclinic-crac ]]; then
     echo "    Removing existing checkpoint directory: petclinic-crac"
@@ -706,6 +720,17 @@ elif [[ "$LABEL" == "crac" ]]; then
   echo "  CRaC training run complete. Proceeding with benchmark measurements."
 elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   echo "  GraalVM (instrumented binary)"
+
+  # Clean up existing profiling data before training
+  if [[ -d "src/pgo-profiles/main" ]]; then
+    echo "    Cleaning up existing profiling data in src/pgo-profiles/main/"
+    rm -rf src/pgo-profiles/main/*
+    echo "    Profiling directory cleaned"
+  else
+    echo "    Creating profiling directory src/pgo-profiles/main/"
+    mkdir -p src/pgo-profiles/main
+  fi
+
   echo "    Command: $TRAIN_CMD"
   train_start=$(date +%s)
 
