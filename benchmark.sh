@@ -316,6 +316,13 @@ elif [[ "$LABEL" == "leyden" ]]; then
   fi
 elif [[ "$LABEL" == "crac" ]]; then
   echo "  CRaC (creates checkpoint)"
+
+  # Clean up existing checkpoint directory if it exists
+  if [[ -d petclinic-crac ]]; then
+    echo "    Removing existing checkpoint directory: petclinic-crac"
+    rm -rf petclinic-crac
+  fi
+
   echo "    Command: $TRAIN_CMD"
   train_start=$(date +%s)
   $TRAIN_CMD >"$LOG_FILE" 2>&1 &
