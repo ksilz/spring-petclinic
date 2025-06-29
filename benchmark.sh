@@ -141,8 +141,11 @@ elif [[ "$LABEL" == "crac" ]]; then
     exit 1
   fi
 
-  APP_CMD="$JAVA_CMD -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -XX:CRaCEngine=warp -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
-  TRAIN_CMD="$JAVA_CMD -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -XX:CRaCEngine=warp -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+  # Convert JAR path to absolute path to avoid issues during CRaC restore
+  ABSOLUTE_JAR_PATH=$(realpath "$JAR_PATH")
+
+  APP_CMD="$JAVA_CMD -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -XX:CRaCEngine=warp -jar $ABSOLUTE_JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+  TRAIN_CMD="$JAVA_CMD -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -XX:CRaCEngine=warp -jar $ABSOLUTE_JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
 else
   APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
   TRAIN_CMD="java -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
@@ -608,7 +611,7 @@ elif [[ "$LABEL" == "crac" ]]; then
       # Show checkpoint directory contents for debugging
       if [[ -d petclinic-crac ]]; then
         echo "    Current checkpoint directory contents:"
-        ls -la petclinic-crac | sed 's/^/      /'
+        ls -lh petclinic-crac | sed 's/^/      /'
       fi
     fi
   done
@@ -621,13 +624,22 @@ elif [[ "$LABEL" == "crac" ]]; then
       if [[ $non_log_files -gt 0 ]]; then
         echo "    Checkpoint directory created successfully: $(ls -lh petclinic-crac)"
         echo "    Checkpoint directory contents:"
-        ls -la petclinic-crac | sed 's/^/      /'
+        ls -lh petclinic-crac | sed 's/^/      /'
         echo "    Non-log files found: $non_log_files"
+
+        # Additional verification: check for "warp: Checkpoint successful!" message in log
+        if grep -q "warp: Checkpoint successful!" "$LOG_FILE"; then
+          echo "    ✅ Checkpoint success confirmed in application log"
+        else
+          echo "    ⚠️  Warning: 'warp: Checkpoint successful!' message not found in application log"
+          echo "    Last few lines of application log:"
+          tail -10 "$LOG_FILE" | sed 's/^/      /'
+        fi
       else
         echo "    Error: Checkpoint directory petclinic-crac exists but only contains log files"
         echo "    Application may have terminated during checkpoint creation"
         echo "    Checkpoint directory contents:"
-        ls -la petclinic-crac | sed 's/^/      /'
+        ls -lh petclinic-crac | sed 's/^/      /'
         echo "    jcmd output:"
         cat /tmp/jcmd.log | sed 's/^/      /'
         echo "    CRIU log files (if any):"
