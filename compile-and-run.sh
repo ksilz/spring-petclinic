@@ -212,7 +212,15 @@ for label in "${REQUESTED[@]}"; do
     fi
 
     # Check for CRaC support
-    if ! java -XX:+UnlockExperimentalVMOptions -XX:+CRaC 2>&1 | grep -q "CRaC"; then
+    # First check if the JVM version string indicates CRaC support
+    if echo "$java_version_output" | grep -q "CRaC"; then
+      echo "=== $stage ($BUILD_SYS, current Java) ==="
+      echo
+    # Then check for CRaC-related JVM flags
+    elif java -XX:+UnlockExperimentalVMOptions -XX:+PrintFlagsFinal 2>&1 | grep -q "CRaC\|checkpoint"; then
+      echo "=== $stage ($BUILD_SYS, current Java) ==="
+      echo
+    else
       echo "The CRaC scenario requires a CRaC-enabled JVM. But your current JVM doesn't support CRaC."
       echo "Current JVM:"
       echo "$java_version_output"
