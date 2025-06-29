@@ -129,8 +129,9 @@ if [[ "$LABEL" == "graalvm" ]]; then
 elif [[ "$LABEL" == "crac" ]]; then
   # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
   # Use sudo to provide necessary privileges for CRIU operations
-  APP_CMD="sudo java -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
-  TRAIN_CMD="sudo java -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+  # Use sudo -E to preserve environment variables (including PATH)
+  APP_CMD="sudo -E java -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+  TRAIN_CMD="sudo -E java -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
 else
   APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
   TRAIN_CMD="java -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
