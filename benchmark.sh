@@ -852,6 +852,29 @@ for ((i = 1; i <= WARMUPS; i++)); do
   $APP_CMD >"$LOG_FILE" 2>&1 &
   pid=$!
 
+  # Find the actual application process to kill (same logic as benchmark loop)
+  if [[ "$LABEL" == "graalvm" ]]; then
+    # For native executables, look for the correct spring-petclinic process
+    for _ in {1..10}; do
+      app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic" | grep -v "$pid" | head -1)
+      [[ -n "$app_pid" ]] && break
+      sleep 0.5
+    done
+  elif [[ "$LABEL" == "crac" ]]; then
+    # For CRaC, the Java process is not a child of the background process
+    # Look for the Java process that's running the CRaC restore command
+    for _ in {1..10}; do
+      app_pid=$(pgrep -f "java.*CRaCRestoreFrom=petclinic-crac" | grep -v "$pid" | head -1)
+      [[ -n "$app_pid" ]] && break
+      sleep 0.5
+    done
+  else
+    # For Java applications, look for the Java process
+    for _ in {1..5}; do
+      app_pid=$(pgrep -P "$pid" java) && break || sleep 0.3
+    done
+  fi
+
   # Get the appropriate startup message for this label
   startup_message=$(get_startup_message "$LABEL")
 
@@ -870,7 +893,20 @@ for ((i = 1; i <= WARMUPS; i++)); do
     hit_urls # --- load generator ---
   fi
 
-  kill -TERM "$pid" 2>/dev/null
+  # Kill the actual application process, fallback to background process if needed
+  if [[ -n "$app_pid" ]]; then
+    echo "    Killing app process $app_pid"
+    kill -TERM "$app_pid" 2>/dev/null
+    sleep 1
+    # Force kill if still running
+    if kill -0 "$app_pid" 2>/dev/null; then
+      echo "    Force killing app process $app_pid"
+      kill -9 "$app_pid" 2>/dev/null
+    fi
+  else
+    echo "    Killing background process $pid"
+    kill -TERM "$pid" 2>/dev/null
+  fi
   wait "$pid" 2>/dev/null
 done
 
@@ -908,6 +944,14 @@ for ((i = 1; i <= RUNS; i++)); do
         sleep 0.5
       done
     fi
+  elif [[ "$LABEL" == "crac" ]]; then
+    # For CRaC, the Java process is not a child of the time process
+    # Look for the Java process that's running the CRaC restore command
+    for _ in {1..10}; do
+      app_pid=$(pgrep -f "java.*CRaCRestoreFrom=petclinic-crac" | grep -v "$tpid" | head -1)
+      [[ -n "$app_pid" ]] && break
+      sleep 0.5
+    done
   else
     # For Java applications, look for the Java process
     for _ in {1..5}; do
