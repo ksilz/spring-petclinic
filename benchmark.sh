@@ -293,43 +293,18 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   echo "    Command: $TRAIN_CMD"
   train_start=$(date +%s)
 
-  # On Linux, add resource limits and debug output
-  if [[ "$(uname)" == "Linux" ]]; then
-    echo "    Running with resource limits on Linux..."
-    echo "    Starting GraalVM training run at $(date)"
+  $TRAIN_CMD >/tmp/app_out.log 2>&1 &
+  pid=$!
+  echo "    GraalVM process PID: $pid"
 
-    # Use timeout and ulimit to prevent system hang
-    timeout 600 bash -c "
-      ulimit -v 8388608  # 8GB virtual memory limit
-      ulimit -m 4194304  # 4GB resident memory limit
-      ulimit -t 300      # 5 minutes CPU time limit
-      echo 'Starting GraalVM instrumented binary...'
-      $TRAIN_CMD >/tmp/app_out.log 2>&1 &
-      echo \$! > /tmp/graalvm_pid
-      echo 'GraalVM process started with PID: '\$!
-      wait \$!
-    " &
-    pid=$!
-    sleep 2
-    if [[ -f /tmp/graalvm_pid ]]; then
-      app_pid=$(cat /tmp/graalvm_pid)
-      rm -f /tmp/graalvm_pid
-      echo "    GraalVM process PID: $app_pid"
-    fi
-  else
-    $TRAIN_CMD >/tmp/app_out.log 2>&1 &
-    pid=$!
-    echo "    GraalVM process PID: $pid"
-
-    # Find the actual application process to kill (instrumented binary)
-    for _ in {1..10}; do
-      app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic-instrumented" | grep -v "$pid" | head -1)
-      [[ -n "$app_pid" ]] && break
-      sleep 0.5
-    done
-    if [[ -n "$app_pid" ]]; then
-      echo "    Found GraalVM app process PID: $app_pid"
-    fi
+  # Find the actual application process to kill (instrumented binary)
+  for _ in {1..10}; do
+    app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic-instrumented" | grep -v "$pid" | head -1)
+    [[ -n "$app_pid" ]] && break
+    sleep 0.5
+  done
+  if [[ -n "$app_pid" ]]; then
+    echo "    Found GraalVM app process PID: $app_pid"
   fi
 
   # Wait for startup with timeout and debug output

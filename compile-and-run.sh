@@ -96,15 +96,15 @@ PARAMETERS[crac]='-Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic.bin'
 PARAMETERS[graalvm]='-Dspring.aot.enabled=true'
 
 if [[ $BUILD_SYS == gradle ]]; then
-  CMD[baseline]="./gradlew -Xmx1g --build-cache --parallel clean bootJar"
-  CMD[tuning]="./gradlew -Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[cds]="./gradlew -Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[leyden]="./gradlew -Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[crac]="./gradlew -Xmx1g --build-cache --parallel clean bootJar -Pcrac=true"
+  CMD[baseline]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar"
+  CMD[tuning]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
+  CMD[cds]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
+  CMD[leyden]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
+  CMD[crac]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Pcrac=true"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="./gradlew -Xmx1g --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=--gc=G1"
+    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=--gc=G1"
   else
-    CMD[graalvm]="./gradlew -Xmx1g --build-cache --parallel clean nativeCompile --pgo-instrument"
+    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean nativeCompile --pgo-instrument"
   fi
 
   OUT_DIR[gradle]="build/libs"
@@ -261,23 +261,7 @@ for label in "${REQUESTED[@]}"; do
     # Rebuild optimized native image
     echo "Rebuilding optimized native image..."
     rebuild_start=$(date +%s)
-    if [[ "$(uname)" == "Linux" ]]; then
-      echo "Running with resource limits on Linux..."
-      timeout 1800 bash -c "
-        ulimit -v 8388608  # 8GB virtual memory limit
-        ulimit -m 4194304  # 4GB resident memory limit
-        ulimit -t 900      # 15 minutes CPU time limit
-        echo 'Starting GraalVM rebuild at '\$(date)
-        ./gradlew -Xmx1g --build-cache --parallel clean nativeCompile --build-args=--gc=G1
-        echo 'GraalVM rebuild completed at '\$(date)
-      "
-      rebuild_exit_code=$?
-      if [[ $rebuild_exit_code -ne 0 ]]; then
-        echo "Warning: GraalVM rebuild may have been interrupted or failed"
-      fi
-    else
-      ./gradlew -Xmx1g --build-cache --parallel clean nativeCompile --build-args=--gc=G1
-    fi
+    ./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean nativeCompile --build-args=--gc=G1
     rebuild_end=$(date +%s)
     rebuild_duration=$(awk "BEGIN {print ($rebuild_end-$rebuild_start)}")
     printf "GraalVM rebuild took %.1f seconds\n" "$rebuild_duration"
