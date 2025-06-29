@@ -59,9 +59,29 @@ fi
 # ────────────────────────────────────────────────────────────────
 # 4. Memory calculation for GraalVM
 # ────────────────────────────────────────────────────────────────
-# Use Java's percentage-based memory allocation for GraalVM builds
-# -XX:MaxRAMPercentage=85.0 uses 85% of available memory for heap
-GRAALVM_MEMORY_ARGS="-XX:MaxRAMPercentage=85.0 -XX:InitialRAMPercentage=85.0"
+# Calculate 85% of available memory for GraalVM native-image
+get_graalvm_max_heap() {
+  local total_mem_mb
+  if [[ "$(uname)" == "Darwin" ]]; then
+    total_mem_mb=$(($(sysctl -n hw.memsize) / 1024 / 1024))
+  elif [[ "$(uname)" == "Linux" ]]; then
+    total_mem_mb=$(awk '/MemTotal/ {print int($2/1)}' /proc/meminfo)
+    total_mem_mb=$((total_mem_mb / 1))
+  else
+    total_mem_mb=8192
+  fi
+  local heap_mb=$((total_mem_mb * 85 / 100))
+  # Minimum 2048MB, maximum 131072MB (128GB)
+  if [[ $heap_mb -lt 2048 ]]; then
+    heap_mb=2048
+  elif [[ $heap_mb -gt 131072 ]]; then
+    heap_mb=131072
+  fi
+  echo "${heap_mb}m"
+}
+GRAALVM_MAX_HEAP=$(get_graalvm_max_heap)
+GRAALVM_GRADLE_ARGS="-XX:MaxRAMPercentage=85.0 -XX:InitialRAMPercentage=85.0"
+GRAALVM_NATIVE_ARGS="-H:MaxHeapSize=${GRAALVM_MAX_HEAP} -H:+UseG1GC"
 
 # ────────────────────────────────────────────────────────────────
 # 5. Variant metadata
@@ -109,9 +129,9 @@ if [[ $BUILD_SYS == gradle ]]; then
   CMD[leyden]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[crac]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Pcrac=true"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=-Xmx${GRAALVM_MEMORY_ARGS} --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=--gc=G1"
+    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=\"${GRAALVM_NATIVE_ARGS}\""
   else
-    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=-Xmx${GRAALVM_MEMORY_ARGS} --build-cache --parallel clean nativeCompile --pgo-instrument"
+    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=\"${GRAALVM_NATIVE_ARGS}\""
   fi
 
   OUT_DIR[gradle]="build/libs"
@@ -126,9 +146,9 @@ else # ── Maven commands ──
   CMD[leyden]="mvn -B clean package -DskipTests -Dspring.aot.enabled=true $MAVEN_JAR_FLAG"
   CMD[crac]="mvn -B clean package -DskipTests -Pcrac=true $MAVEN_JAR_FLAG"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="mvn -B clean -Pnative -DskipTests native:compile -H:+UseG1GC $MAVEN_JAR_FLAG"
+    CMD[graalvm]="mvn -B clean -Pnative -DskipTests native:compile -H:${GRAALVM_NATIVE_ARGS} $MAVEN_JAR_FLAG"
   else
-    CMD[graalvm]="mvn -B clean -Pnative -DskipTests native:compile $MAVEN_JAR_FLAG"
+    CMD[graalvm]="mvn -B clean -Pnative -DskipTests native:compile -H:${GRAALVM_NATIVE_ARGS} $MAVEN_JAR_FLAG"
   fi
 
   OUT_DIR[maven]="target"
@@ -160,7 +180,7 @@ for label in "${REQUESTED[@]}"; do
   if [[ "$label" == "graalvm" ]]; then
     if echo "$java_version_output" | grep -q "Oracle GraalVM"; then
       echo "=== $stage ($BUILD_SYS, current Java) ==="
-      echo "GraalVM memory allocation: $GRAALVM_MEMORY_ARGS"
+      echo "GraalVM memory allocation: $GRAALVM_GRADLE_ARGS"
       echo
     else
       jdk="${JAVA[$label]}"
@@ -269,7 +289,7 @@ for label in "${REQUESTED[@]}"; do
     # Rebuild optimized native image
     echo "Rebuilding optimized native image..."
     rebuild_start=$(date +%s)
-    ./gradlew -Dorg.gradle.jvmargs=-Xmx${GRAALVM_MEMORY_ARGS} --build-cache --parallel clean nativeCompile --build-args=--gc=G1
+    ./gradlew -Dorg.gradle.jvmargs="${GRAALVM_GRADLE_ARGS}" --build-cache --parallel clean nativeCompile --build-args="${GRAALVM_NATIVE_ARGS}"
     rebuild_end=$(date +%s)
     rebuild_duration=$(awk "BEGIN {print ($rebuild_end-$rebuild_start)}")
     printf "GraalVM rebuild took %.1f seconds\n" "$rebuild_duration"
