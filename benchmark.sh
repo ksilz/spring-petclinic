@@ -98,10 +98,16 @@ if [[ -n "$EXISTING_PIDS" ]]; then
   kill -9 $EXISTING_PIDS 2>/dev/null || true
 fi
 # Kill any running native spring-petclinic processes to avoid conflicts
+# But be careful not to kill the current training process
 NATIVE_PIDS=$(pgrep -f "build/native/nativeCompile/spring-petclinic")
 if [[ -n "$NATIVE_PIDS" ]]; then
   echo "Killing existing native spring-petclinic processes: $NATIVE_PIDS"
-  kill -9 $NATIVE_PIDS 2>/dev/null || true
+  # Only kill if we're not in training mode for GraalVM
+  if [[ "$LABEL" != "graalvm" || "$TRAINING_MODE" != "training" ]]; then
+    kill -9 $NATIVE_PIDS 2>/dev/null || true
+  else
+    echo "  Skipping native process cleanup during GraalVM training"
+  fi
 fi
 
 # --- Special training run for CDS and Leyden ---
