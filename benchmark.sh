@@ -7,6 +7,9 @@ LABEL="$2"
 AOT_FLAG="${3:-}"      # optional third param
 TRAINING_MODE="${4:-}" # optional fourth param for training mode
 
+# Add timestamp marker for process tracking
+SCRIPT_START_TIME=$(date +%s)
+
 [[ -z $JAR_PATH ]] && {
   echo "ERROR: missing JAR_PATH"
   exit 1
@@ -240,25 +243,26 @@ fi
 # But be careful not to kill the current training process
 NATIVE_PIDS=$(pgrep -f "build/native/nativeCompile/spring-petclinic")
 if [[ -n "$NATIVE_PIDS" ]]; then
-  echo "Killing existing native spring-petclinic processes: $NATIVE_PIDS"
-  # Only kill if we're not in training mode for GraalVM
-  if [[ "$LABEL" != "graalvm" || "$TRAINING_MODE" != "training" ]]; then
-    # For benchmark runs, be very conservative - only kill if we're sure they're old
-    # Check if any of these processes are children of the current script
+  echo "Found existing native spring-petclinic processes: $NATIVE_PIDS"
+
+  # For training runs, be very conservative and don't kill any processes
+  if [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
+    echo "  Skipping native process cleanup during GraalVM training"
+  elif [[ "$LABEL" == "graalvm" ]]; then
+    # For GraalVM benchmark runs, only kill if we're very sure they're old
     current_script_pid=$$
     should_kill=true
 
-    # Add a small delay to ensure any recently started processes are detected
-    sleep 1
-
     for pid in $NATIVE_PIDS; do
+      # Check if this process is a child of the current script
       if ps -p "$pid" -o ppid= 2>/dev/null | grep -q "^$current_script_pid$"; then
         echo "  Found native process $pid that is a child of current script - skipping cleanup"
         should_kill=false
         break
       fi
-      # Also check if the process was started very recently (within last 10 seconds)
-      if ps -p "$pid" -o etime= 2>/dev/null | grep -q "^[0-9]*:[0-5][0-9]$"; then
+
+      # Check if process was started very recently (within last 30 seconds)
+      if ps -p "$pid" -o etime= 2>/dev/null | grep -q "^[0-9]*:[0-2][0-9]$"; then
         echo "  Found native process $pid that was started recently - skipping cleanup"
         should_kill=false
         break
@@ -268,9 +272,13 @@ if [[ -n "$NATIVE_PIDS" ]]; then
     if [[ "$should_kill" == "true" ]]; then
       echo "  All native processes appear to be from previous runs, killing them"
       kill -9 $NATIVE_PIDS 2>/dev/null || true
+    else
+      echo "  Skipping cleanup due to recent processes"
     fi
   else
-    echo "  Skipping native process cleanup during GraalVM training"
+    # For non-GraalVM runs, be more aggressive with cleanup
+    echo "  Killing existing native spring-petclinic processes: $NATIVE_PIDS"
+    kill -9 $NATIVE_PIDS 2>/dev/null || true
   fi
 fi
 
@@ -652,13 +660,42 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   echo "    GraalVM process PID: $pid"
 
   # Find the actual application process to kill (instrumented binary)
-  for _ in {1..10}; do
-    app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic-instrumented" | grep -v "$pid" | head -1)
+  # Use a more reliable method to find the process we just started
+  echo "    Looking for GraalVM application process..."
+  app_pid=""
+
+  # Method 1: Look for child processes of our background process
+  for _ in {1..5}; do
+    app_pid=$(pgrep -P "$pid" 2>/dev/null | head -1)
     [[ -n "$app_pid" ]] && break
     sleep 0.5
   done
+
+  # Method 2: If no child process found, look for the instrumented binary
+  # but be more specific about timing
+  if [[ -z "$app_pid" ]]; then
+    for _ in {1..10}; do
+      # Get all instrumented processes and find the most recent one
+      all_pids=$(pgrep -f "build/native/nativeCompile/spring-petclinic-instrumented" 2>/dev/null)
+      if [[ -n "$all_pids" ]]; then
+        # Find the most recently started process
+        for candidate_pid in $all_pids; do
+          # Check if this process was started very recently (within last 10 seconds)
+          if ps -p "$candidate_pid" -o etime= 2>/dev/null | grep -q "^[0-9]*:[0-9]$"; then
+            app_pid="$candidate_pid"
+            break
+          fi
+        done
+        [[ -n "$app_pid" ]] && break
+      fi
+      sleep 0.5
+    done
+  fi
+
   if [[ -n "$app_pid" ]]; then
     echo "    Found GraalVM app process PID: $app_pid"
+  else
+    echo "    Warning: Could not find specific GraalVM app process, will use background process $pid"
   fi
 
   # Wait for startup with timeout and debug output
@@ -715,13 +752,27 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   # Kill the actual application process, fallback to background process if needed
   echo "    Terminating GraalVM process..."
   if [[ -n "$app_pid" ]]; then
-    echo "    Killing app process $app_pid"
-    kill -TERM "$app_pid" 2>/dev/null
-    sleep 2
-    # Force kill if still running
+    # Verify the process is still running and is the one we expect
     if kill -0 "$app_pid" 2>/dev/null; then
-      echo "    Force killing app process $app_pid"
-      kill -9 "$app_pid" 2>/dev/null
+      # Double-check this is actually the instrumented binary
+      if ps -p "$app_pid" -o cmd= 2>/dev/null | grep -q "spring-petclinic-instrumented"; then
+        echo "    Killing app process $app_pid (verified instrumented binary)"
+        kill -TERM "$app_pid" 2>/dev/null
+        sleep 2
+        # Force kill if still running
+        if kill -0 "$app_pid" 2>/dev/null; then
+          echo "    Force killing app process $app_pid"
+          kill -9 "$app_pid" 2>/dev/null
+        fi
+      else
+        echo "    Warning: Process $app_pid is not the expected instrumented binary, using background process"
+        echo "    Killing background process $pid"
+        kill -TERM "$pid" 2>/dev/null
+      fi
+    else
+      echo "    App process $app_pid has already terminated, using background process"
+      echo "    Killing background process $pid"
+      kill -TERM "$pid" 2>/dev/null
     fi
   else
     echo "    Killing background process $pid"
