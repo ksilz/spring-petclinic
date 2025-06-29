@@ -127,23 +127,9 @@ if [[ "$LABEL" == "graalvm" ]]; then
 elif [[ "$LABEL" == "crac" ]]; then
   # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
   # Use CRaCEngine=warp to avoid requiring elevated privileges
-  # Use JAVA_HOME to ensure we find the correct Java installation
-  if [[ -z "$JAVA_HOME" ]]; then
-    echo "❌ JAVA_HOME is not set. Please set JAVA_HOME to your Java installation directory."
-    echo "   Example: export JAVA_HOME=/usr/lib/jvm/java-17-openjdk"
-    exit 1
-  fi
-
-  JAVA_CMD="$JAVA_HOME/bin/java"
-  if [[ ! -x "$JAVA_CMD" ]]; then
-    echo "❌ Java executable not found at $JAVA_CMD"
-    echo "   Please check your JAVA_HOME setting: $JAVA_HOME"
-    exit 1
-  fi
-
-  # Use relative JAR path and specify main class for CRaC
-  APP_CMD="$JAVA_CMD -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -XX:CRaCEngine=warp -cp $JAR_PATH org.springframework.samples.petclinic.PetClinicApplication --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
-  TRAIN_CMD="$JAVA_CMD -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -XX:CRaCEngine=warp -cp $JAR_PATH org.springframework.samples.petclinic.PetClinicApplication --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+  # Use relative JAR path for CRaC
+  APP_CMD="java -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -XX:CRaCEngine=warp -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+  TRAIN_CMD="java -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -XX:CRaCEngine=warp -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
 else
   APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
   TRAIN_CMD="java -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
@@ -165,7 +151,7 @@ echo "****************************************************************"
 echo
 echo "Running application"
 echo
-if [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
+if [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]] || [[ "$LABEL" == "crac" ]] || [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]] || [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]]; then
   echo "-> $TRAIN_CMD"
 else
   echo "-> $APP_CMD"
