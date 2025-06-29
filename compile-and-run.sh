@@ -103,7 +103,7 @@ JAVA[cds]='21.0.7-tem'
 EXPECT[cds]='21'
 JAVA[leyden]='25.ea.28-open'
 EXPECT[leyden]='25'
-JAVA[crac]='24.0.1-zulu-crac'
+JAVA[crac]='24.0.1.crac-zulu'
 EXPECT[crac]='24'
 JAVA[graalvm]='24.0.1-graal'
 EXPECT[graalvm]='GraalVM CE'
@@ -123,15 +123,15 @@ PARAMETERS[crac]='-Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic.bin'
 PARAMETERS[graalvm]='-Dspring.aot.enabled=true'
 
 if [[ $BUILD_SYS == gradle ]]; then
-  CMD[baseline]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Dspring.profiles.active=postgres"
-  CMD[tuning]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Dspring.profiles.active=postgres && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[cds]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Dspring.profiles.active=postgres && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[leyden]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Dspring.profiles.active=postgres && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[crac]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Pcrac=true -Dspring.profiles.active=postgres"
+  CMD[baseline]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar"
+  CMD[tuning]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
+  CMD[cds]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
+  CMD[leyden]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
+  CMD[crac]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Pcrac=true"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=\"--gc=G1\" --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\" -Dspring.profiles.active=postgres"
+    CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=\"--gc=G1\" --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\""
   else
-    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\" -Dspring.profiles.active=postgres"
+    CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\""
   fi
 
   OUT_DIR[gradle]="build/libs"
@@ -289,7 +289,7 @@ for label in "${REQUESTED[@]}"; do
     # Rebuild optimized native image
     echo "Rebuilding optimized native image..."
     rebuild_start=$(date +%s)
-    ./gradlew -Dorg.gradle.jvmargs="${GRAALVM_GRADLE_ARGS}" --build-cache --parallel clean nativeCompile --jvm-args-native="-XX:MaxRAMPercentage=90.0" -Dspring.profiles.active=postgres
+    SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs="${GRAALVM_GRADLE_ARGS}" --build-cache --parallel clean nativeCompile --jvm-args-native="-XX:MaxRAMPercentage=90.0"
     rebuild_end=$(date +%s)
     rebuild_duration=$(awk "BEGIN {print ($rebuild_end-$rebuild_start)}")
     printf "GraalVM rebuild took %.1f seconds\n" "$rebuild_duration"
