@@ -262,14 +262,68 @@ elif [[ "$LABEL" == "crac" ]]; then
     app_pid=$(pgrep -P "$pid" java) && break || sleep 0.5
   done
 
-  while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
-  hit_urls
+  if [[ -z "$app_pid" ]]; then
+    echo "    Error: Could not find Java process for checkpoint creation"
+    echo "    Last few lines of log:"
+    tail -10 /tmp/app_out.log | sed 's/^/      /'
+    kill -TERM "$pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    echo "    CRaC training failed - skipping benchmark"
+    exit 1
+  fi
+
+  echo "    Found Java process PID: $app_pid"
+
+  # Wait for application to start
+  timeout_counter=0
+  while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do
+    sleep 1
+    timeout_counter=$((timeout_counter + 1))
+    if [[ $timeout_counter -ge 60 ]]; then
+      echo "    Timeout waiting for application to start (60s)"
+      echo "    Last few lines of log:"
+      tail -10 /tmp/app_out.log | sed 's/^/      /'
+      break
+    fi
+  done
+
+  if [[ $timeout_counter -lt 60 ]]; then
+    echo "    Application started successfully"
+    hit_urls
+  else
+    echo "    Warning: Could not detect application startup, but continuing..."
+    hit_urls
+  fi
 
   # Take CRaC checkpoint before killing
   if [[ -n "$app_pid" ]]; then
     echo "    Taking CRaC checkpoint..."
-    jcmd "$app_pid" JDK.checkpoint >/dev/null 2>&1
-    sleep 2 # Give time for checkpoint to complete
+    jcmd "$app_pid" JDK.checkpoint >/tmp/jcmd.log 2>&1
+    jcmd_exit_code=$?
+
+    if [[ $jcmd_exit_code -eq 0 ]]; then
+      echo "    Checkpoint command executed successfully"
+    else
+      echo "    Warning: jcmd checkpoint command failed with exit code $jcmd_exit_code"
+      echo "    jcmd output:"
+      cat /tmp/jcmd.log | sed 's/^/      /'
+    fi
+
+    # Wait for checkpoint to complete
+    sleep 5
+
+    # Verify checkpoint file was created
+    if [[ -f petclinic.bin ]]; then
+      echo "    Checkpoint file created successfully: $(ls -lh petclinic.bin)"
+    else
+      echo "    Error: Checkpoint file petclinic.bin was not created"
+      echo "    Last few lines of application log:"
+      tail -10 /tmp/app_out.log | sed 's/^/      /'
+      kill -TERM "$app_pid" 2>/dev/null
+      wait "$pid" 2>/dev/null
+      echo "    CRaC training failed - skipping benchmark"
+      exit 1
+    fi
   fi
 
   # Kill the application

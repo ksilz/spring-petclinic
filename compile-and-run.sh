@@ -229,9 +229,6 @@ for label in "${REQUESTED[@]}"; do
       echo
       continue
     fi
-
-    echo "=== $stage ($BUILD_SYS, current Java) ==="
-    echo
   elif [[ "$current_java_version" == "$expected" ]]; then
     echo "=== $stage ($BUILD_SYS, current Java) ==="
     echo
