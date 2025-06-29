@@ -129,7 +129,7 @@ if [[ $BUILD_SYS == gradle ]]; then
   CMD[leyden]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[crac]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Pcrac=true"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=\"--gc=G1 -J-XX:MaxRAMPercentage=90.0\""
+    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=\"--gc=G1 --XX:MaxRAMPercentage=90.0\""
   else
     CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=-J-XX:MaxRAMPercentage=90.0"
   fi
