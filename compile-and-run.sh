@@ -57,7 +57,14 @@ fi
 #   sdk install java <version> && sdk use java <version>
 
 # ────────────────────────────────────────────────────────────────
-# 4. Variant metadata
+# 4. Memory calculation for GraalVM
+# ────────────────────────────────────────────────────────────────
+# Use Java's percentage-based memory allocation for GraalVM builds
+# -XX:MaxRAMPercentage=85.0 uses 85% of available memory for heap
+GRAALVM_MEMORY_ARGS="-XX:MaxRAMPercentage=85.0 -XX:InitialRAMPercentage=85.0"
+
+# ────────────────────────────────────────────────────────────────
+# 5. Variant metadata
 # ────────────────────────────────────────────────────────────────
 declare -A NAME PARAMETERS JAVA EXPECT CMD OUT_DIR JAR_PATH
 
@@ -102,9 +109,9 @@ if [[ $BUILD_SYS == gradle ]]; then
   CMD[leyden]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[crac]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Pcrac=true"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=--gc=G1"
+    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=-Xmx${GRAALVM_MEMORY_ARGS} --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=--gc=G1"
   else
-    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean nativeCompile --pgo-instrument"
+    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=-Xmx${GRAALVM_MEMORY_ARGS} --build-cache --parallel clean nativeCompile --pgo-instrument"
   fi
 
   OUT_DIR[gradle]="build/libs"
@@ -129,7 +136,7 @@ else # ── Maven commands ──
 fi
 
 # ────────────────────────────────────────────────────────────────
-# 5. Main loop
+# 6. Main loop
 # ────────────────────────────────────────────────────────────────
 executed_stages=()
 
@@ -153,6 +160,7 @@ for label in "${REQUESTED[@]}"; do
   if [[ "$label" == "graalvm" ]]; then
     if echo "$java_version_output" | grep -q "Oracle GraalVM"; then
       echo "=== $stage ($BUILD_SYS, current Java) ==="
+      echo "GraalVM memory allocation: $GRAALVM_MEMORY_ARGS"
       echo
     else
       jdk="${JAVA[$label]}"
@@ -261,7 +269,7 @@ for label in "${REQUESTED[@]}"; do
     # Rebuild optimized native image
     echo "Rebuilding optimized native image..."
     rebuild_start=$(date +%s)
-    ./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean nativeCompile --build-args=--gc=G1
+    ./gradlew -Dorg.gradle.jvmargs=-Xmx${GRAALVM_MEMORY_ARGS} --build-cache --parallel clean nativeCompile --build-args=--gc=G1
     rebuild_end=$(date +%s)
     rebuild_duration=$(awk "BEGIN {print ($rebuild_end-$rebuild_start)}")
     printf "GraalVM rebuild took %.1f seconds\n" "$rebuild_duration"
