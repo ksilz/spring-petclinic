@@ -199,11 +199,21 @@ hit_urls() {
     echo "    Warning: Application readiness timeout reached, proceeding anyway..."
   fi
 
-  # Hit all URLs
+  # Now call the actual URLs
+  printf '    Calling URLs: ' # four-space indent
   for url in "${URLS[@]}"; do
-    echo "    Hitting $url"
-    curl -s "$url" >/dev/null 2>&1 || echo "    Warning: Failed to hit $url"
+    sleep 3
+    # For training runs, be more tolerant of errors
+    if [[ "$TRAINING_MODE" == "training" ]]; then
+      # Just make the request and show the status, don't fail on errors
+      status=$(curl -s -o /dev/null -w '%{http_code}' "$url" 2>/dev/null || echo "000")
+      printf '%s ' "$status"
+    else
+      # For benchmark runs, be more strict
+      curl -s -o /dev/null -w '%{http_code} ' "$url"
+    fi
   done
+  echo # newline
 }
 
 # Function to get the appropriate startup message based on label
@@ -526,26 +536,9 @@ elif [[ "$LABEL" == "crac" ]]; then
     exit 1
   fi
 
-  # Additional debugging: show process details
-  echo "    Process details before checkpoint:"
-  echo "      PID: $app_pid"
-  echo "      Owner: $(ps -p "$app_pid" -o user= 2>/dev/null)"
-  echo "      Command: $(ps -p "$app_pid" -o cmd= 2>/dev/null | head -1)"
-  echo "      Process tree:"
-  pstree -p "$app_pid" 2>/dev/null | sed 's/^/        /' || echo "        (pstree not available)"
-
   # Wait for application to fully start and hit URLs
   echo "    Application started successfully"
   hit_urls
-
-  # Check if application is responding to requests
-  echo "    Verifying application is responding to requests..."
-  response_status=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080" 2>/dev/null || echo "000")
-  if [[ "$response_status" == "200" ]]; then
-    echo "    Application is responding correctly (status: $response_status)"
-  else
-    echo "    Warning: Application may not be fully ready (status: $response_status)"
-  fi
 
   # Take CRaC checkpoint before killing
   echo "    Taking CRaC checkpoint..."
