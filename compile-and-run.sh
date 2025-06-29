@@ -81,7 +81,7 @@ get_graalvm_max_heap() {
 }
 GRAALVM_MAX_HEAP=$(get_graalvm_max_heap)
 GRAALVM_GRADLE_ARGS="-XX:MaxRAMPercentage=85.0 -XX:InitialRAMPercentage=85.0"
-GRAALVM_NATIVE_ARGS="-H:MaxHeapSize=${GRAALVM_MAX_HEAP} -H:+UseG1GC"
+GRAALVM_NATIVE_ARGS="-Xmx${GRAALVM_MAX_HEAP} -H:+UseG1GC"
 
 # ────────────────────────────────────────────────────────────────
 # 5. Variant metadata
