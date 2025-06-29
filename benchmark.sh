@@ -131,32 +131,14 @@ elif [[ "$LABEL" == "leyden" ]]; then
     record_cmd="java -XX:AOTMode=record -XX:AOTConfiguration=petclinic.aotconf -jar $JAR_PATH"
     echo "    Command: $record_cmd"
 
-    # On Linux, add resource limits to prevent system hang
-    if [[ "$(uname)" == "Linux" ]]; then
-      echo "    Running with resource limits on Linux..."
-      timeout 300 bash -c "
-        ulimit -v 4194304  # 4GB virtual memory limit
-        ulimit -m 2097152  # 2GB resident memory limit
-        ulimit -t 180      # 3 minutes CPU time limit
-        $record_cmd >/tmp/app_out.log 2>&1 &
-        echo \$! > /tmp/leyden_pid
-        wait \$!
-      " &
-      pid=$!
-      sleep 2
-      if [[ -f /tmp/leyden_pid ]]; then
-        app_pid=$(cat /tmp/leyden_pid)
-        rm -f /tmp/leyden_pid
-      fi
-    else
-      $record_cmd >/tmp/app_out.log 2>&1 &
-      pid=$!
+    # Run without resource limits to avoid memory allocation failures
+    $record_cmd >/tmp/app_out.log 2>&1 &
+    pid=$!
 
-      # Find the actual Java process to kill
-      for _ in {1..10}; do
-        app_pid=$(pgrep -P "$pid" java) && break || sleep 0.5
-      done
-    fi
+    # Find the actual Java process to kill
+    for _ in {1..10}; do
+      app_pid=$(pgrep -P "$pid" java) && break || sleep 0.5
+    done
 
     # Wait for startup with shorter timeout (30 seconds for training run)
     timeout_counter=0
@@ -217,32 +199,14 @@ elif [[ "$LABEL" == "leyden" ]]; then
       create_cmd="java -XX:AOTMode=create -XX:AOTConfiguration=petclinic.aotconf -XX:AOTCache=petclinic.aot -jar $JAR_PATH"
       echo "    Command: $create_cmd"
 
-      # On Linux, add resource limits to prevent system hang
-      if [[ "$(uname)" == "Linux" ]]; then
-        echo "    Running with resource limits on Linux..."
-        timeout 300 bash -c "
-          ulimit -v 4194304  # 4GB virtual memory limit
-          ulimit -m 2097152  # 2GB resident memory limit
-          ulimit -t 180      # 3 minutes CPU time limit
-          $create_cmd >/tmp/app_out.log 2>&1 &
-          echo \$! > /tmp/leyden_pid
-          wait \$!
-        " &
-        pid=$!
-        sleep 2
-        if [[ -f /tmp/leyden_pid ]]; then
-          app_pid=$(cat /tmp/leyden_pid)
-          rm -f /tmp/leyden_pid
-        fi
-      else
-        $create_cmd >/tmp/app_out.log 2>&1 &
-        pid=$!
+      # Run without resource limits to avoid memory allocation failures
+      $create_cmd >/tmp/app_out.log 2>&1 &
+      pid=$!
 
-        # Find the actual Java process to kill
-        for _ in {1..10}; do
-          app_pid=$(pgrep -P "$pid" java) && break || sleep 0.5
-        done
-      fi
+      # Find the actual Java process to kill
+      for _ in {1..10}; do
+        app_pid=$(pgrep -P "$pid" java) && break || sleep 0.5
+      done
 
       # Wait for completion with timeout
       timeout_counter=0
@@ -271,6 +235,8 @@ elif [[ "$LABEL" == "leyden" ]]; then
 
       # Clean up configuration file
       rm -f petclinic.aotconf
+
+      echo "    AOT cache created successfully"
     else
       echo "    Warning: AOT configuration file not found, skipping cache creation"
       echo "    Checking for configuration file:"
