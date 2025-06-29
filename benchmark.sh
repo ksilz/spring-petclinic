@@ -161,7 +161,32 @@ if [[ -n "$NATIVE_PIDS" ]]; then
   echo "Killing existing native spring-petclinic processes: $NATIVE_PIDS"
   # Only kill if we're not in training mode for GraalVM
   if [[ "$LABEL" != "graalvm" || "$TRAINING_MODE" != "training" ]]; then
-    kill -9 $NATIVE_PIDS 2>/dev/null || true
+    # For benchmark runs, be very conservative - only kill if we're sure they're old
+    # Check if any of these processes are children of the current script
+    current_script_pid=$$
+    should_kill=true
+
+    # Add a small delay to ensure any recently started processes are detected
+    sleep 1
+
+    for pid in $NATIVE_PIDS; do
+      if ps -p "$pid" -o ppid= 2>/dev/null | grep -q "^$current_script_pid$"; then
+        echo "  Found native process $pid that is a child of current script - skipping cleanup"
+        should_kill=false
+        break
+      fi
+      # Also check if the process was started very recently (within last 10 seconds)
+      if ps -p "$pid" -o etime= 2>/dev/null | grep -q "^[0-9]*:[0-5][0-9]$"; then
+        echo "  Found native process $pid that was started recently - skipping cleanup"
+        should_kill=false
+        break
+      fi
+    done
+
+    if [[ "$should_kill" == "true" ]]; then
+      echo "  All native processes appear to be from previous runs, killing them"
+      kill -9 $NATIVE_PIDS 2>/dev/null || true
+    fi
   else
     echo "  Skipping native process cleanup during GraalVM training"
   fi
