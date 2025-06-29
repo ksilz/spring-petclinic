@@ -400,8 +400,14 @@ elif [[ "$LABEL" == "crac" ]]; then
   checkpoint_wait=0
   while [[ $checkpoint_wait -lt 30 ]]; do
     if [[ -d petclinic-crac ]] && [[ "$(ls -A petclinic-crac 2>/dev/null)" ]]; then
-      echo "    Checkpoint directory has content after ${checkpoint_wait}s"
-      break
+      # Check if there are files other than log files
+      non_log_files=$(find petclinic-crac -type f ! -name "*.log" 2>/dev/null | wc -l)
+      if [[ $non_log_files -gt 0 ]]; then
+        echo "    Checkpoint directory has non-log files after ${checkpoint_wait}s"
+        break
+      else
+        echo "    Checkpoint directory exists but only contains log files, waiting for actual checkpoint data..."
+      fi
     fi
     sleep 1
     checkpoint_wait=$((checkpoint_wait + 1))
@@ -418,9 +424,23 @@ elif [[ "$LABEL" == "crac" ]]; then
   # Verify checkpoint directory was created and has content
   if [[ -d petclinic-crac ]]; then
     if [[ "$(ls -A petclinic-crac 2>/dev/null)" ]]; then
-      echo "    Checkpoint directory created successfully: $(ls -lh petclinic-crac)"
-      echo "    Checkpoint directory contents:"
-      ls -la petclinic-crac | sed 's/^/      /'
+      # Check if there are non-log files
+      non_log_files=$(find petclinic-crac -type f ! -name "*.log" 2>/dev/null | wc -l)
+      if [[ $non_log_files -gt 0 ]]; then
+        echo "    Checkpoint directory created successfully: $(ls -lh petclinic-crac)"
+        echo "    Checkpoint directory contents:"
+        ls -la petclinic-crac | sed 's/^/      /'
+        echo "    Non-log files found: $non_log_files"
+      else
+        echo "    Error: Checkpoint directory petclinic-crac exists but only contains log files"
+        echo "    Application may have terminated during checkpoint creation"
+        echo "    Last few lines of application log:"
+        tail -15 "$LOG_FILE" | sed 's/^/      /'
+        kill -TERM "$app_pid" 2>/dev/null
+        wait "$pid" 2>/dev/null
+        echo "    CRaC training failed - skipping benchmark"
+        exit 1
+      fi
     else
       echo "    Error: Checkpoint directory petclinic-crac exists but is empty"
       echo "    Application may have terminated during checkpoint creation"
