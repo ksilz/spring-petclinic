@@ -96,15 +96,15 @@ PARAMETERS[crac]='-Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic.bin'
 PARAMETERS[graalvm]='-Dspring.aot.enabled=true'
 
 if [[ $BUILD_SYS == gradle ]]; then
-  CMD[baseline]="./gradlew clean bootJar"
-  CMD[tuning]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[cds]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[leyden]="./gradlew clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[crac]="./gradlew clean bootJar -Pcrac=true"
+  CMD[baseline]="./gradlew -Xmx1g --build-cache --parallel clean bootJar"
+  CMD[tuning]="./gradlew -Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
+  CMD[cds]="./gradlew -Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
+  CMD[leyden]="./gradlew -Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
+  CMD[crac]="./gradlew -Xmx1g --build-cache --parallel clean bootJar -Pcrac=true"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="./gradlew clean nativeCompile --pgo-instrument --build-args=--gc=G1"
+    CMD[graalvm]="./gradlew -Xmx1g --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=--gc=G1"
   else
-    CMD[graalvm]="./gradlew clean nativeCompile --pgo-instrument"
+    CMD[graalvm]="./gradlew -Xmx1g --build-cache --parallel clean nativeCompile --pgo-instrument"
   fi
 
   OUT_DIR[gradle]="build/libs"
@@ -268,7 +268,7 @@ for label in "${REQUESTED[@]}"; do
         ulimit -m 4194304  # 4GB resident memory limit
         ulimit -t 900      # 15 minutes CPU time limit
         echo 'Starting GraalVM rebuild at '\$(date)
-        ./gradlew clean nativeCompile --build-args=--gc=G1
+        ./gradlew -Xmx1g --build-cache --parallel clean nativeCompile --build-args=--gc=G1
         echo 'GraalVM rebuild completed at '\$(date)
       "
       rebuild_exit_code=$?
@@ -276,7 +276,7 @@ for label in "${REQUESTED[@]}"; do
         echo "Warning: GraalVM rebuild may have been interrupted or failed"
       fi
     else
-      ./gradlew clean nativeCompile --build-args=--gc=G1
+      ./gradlew -Xmx1g --build-cache --parallel clean nativeCompile --build-args=--gc=G1
     fi
     rebuild_end=$(date +%s)
     rebuild_duration=$(awk "BEGIN {print ($rebuild_end-$rebuild_start)}")
