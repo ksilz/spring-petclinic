@@ -95,9 +95,7 @@ check_crac_requirements() {
   if [[ $EUID -eq 0 ]]; then
     echo "✅ Running with root privileges"
   else
-    echo "⚠️  Not running with root privileges"
-    echo "   CRaC will use sudo for Java commands to provide necessary privileges."
-    echo "   This should resolve permission issues with CRIU operations."
+    echo "✅ Not running with root privileges (using CRaCEngine=warp for non-privileged operation)"
   fi
 
   # Check if user has necessary capabilities
@@ -128,7 +126,7 @@ if [[ "$LABEL" == "graalvm" ]]; then
   TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres"
 elif [[ "$LABEL" == "crac" ]]; then
   # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
-  # Use sudo to provide necessary privileges for CRIU operations
+  # Use CRaCEngine=warp to avoid requiring elevated privileges
   # Use JAVA_HOME to ensure we find the correct Java installation
   if [[ -z "$JAVA_HOME" ]]; then
     echo "❌ JAVA_HOME is not set. Please set JAVA_HOME to your Java installation directory."
@@ -143,8 +141,8 @@ elif [[ "$LABEL" == "crac" ]]; then
     exit 1
   fi
 
-  APP_CMD="sudo $JAVA_CMD -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
-  TRAIN_CMD="sudo $JAVA_CMD -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+  APP_CMD="$JAVA_CMD -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -XX:CRaCEngine=warp -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+  TRAIN_CMD="$JAVA_CMD -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -XX:CRaCEngine=warp -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
 else
   APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
   TRAIN_CMD="java -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
@@ -562,8 +560,8 @@ elif [[ "$LABEL" == "crac" ]]; then
 
   # Take CRaC checkpoint before killing
   echo "    Taking CRaC checkpoint..."
-  echo "    Using jcmd to initiate checkpoint on process $app_pid (running as root)"
-  sudo jcmd "$app_pid" JDK.checkpoint >/tmp/jcmd.log 2>&1
+  echo "    Using jcmd to initiate checkpoint on process $app_pid"
+  jcmd "$app_pid" JDK.checkpoint >/tmp/jcmd.log 2>&1
   jcmd_exit_code=$?
 
   if [[ $jcmd_exit_code -eq 0 ]]; then
