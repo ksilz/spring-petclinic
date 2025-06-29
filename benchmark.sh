@@ -103,8 +103,6 @@ URLS=(
 
 # ---------- function reused by warm-ups & benchmarks ----------
 hit_urls() {
-  printf '    Calling URLs: ' # four-space indent
-
   # First, wait for the application to be ready by checking the root URL
   echo "    Waiting for application to be ready..."
   readiness_timeout=60
@@ -127,6 +125,7 @@ hit_urls() {
   fi
 
   # Now call the actual URLs
+  printf '    Calling URLs: ' # four-space indent
   for url in "${URLS[@]}"; do
     sleep 3
     # For training runs, be more tolerant of errors
@@ -382,6 +381,10 @@ elif [[ "$LABEL" == "crac" ]]; then
   echo "    Application started successfully"
   hit_urls
 
+  # Give the application some time to stabilize before taking checkpoint
+  echo "    Waiting for application to stabilize before checkpoint..."
+  sleep 5
+
   # Take CRaC checkpoint before killing
   echo "    Taking CRaC checkpoint..."
   jcmd "$app_pid" JDK.checkpoint >/tmp/jcmd.log 2>&1
@@ -398,7 +401,14 @@ elif [[ "$LABEL" == "crac" ]]; then
   # Wait for checkpoint to complete - give it more time
   echo "    Waiting for checkpoint to complete..."
   checkpoint_wait=0
-  while [[ $checkpoint_wait -lt 30 ]]; do
+  max_checkpoint_wait=60 # Increased from 30 to 60 seconds
+  while [[ $checkpoint_wait -lt $max_checkpoint_wait ]]; do
+    # Check if the application process is still running
+    if ! kill -0 "$app_pid" 2>/dev/null; then
+      echo "    Warning: Application process $app_pid has terminated during checkpoint"
+      break
+    fi
+
     if [[ -d petclinic-crac ]] && [[ "$(ls -A petclinic-crac 2>/dev/null)" ]]; then
       # Check if there are files other than log files
       non_log_files=$(find petclinic-crac -type f ! -name "*.log" 2>/dev/null | wc -l)
@@ -413,10 +423,10 @@ elif [[ "$LABEL" == "crac" ]]; then
     checkpoint_wait=$((checkpoint_wait + 1))
     if [[ $((checkpoint_wait % 5)) -eq 0 ]]; then
       echo "    Still waiting for checkpoint... (${checkpoint_wait}s elapsed)"
-      # Check if the application process is still running
-      if ! kill -0 "$app_pid" 2>/dev/null; then
-        echo "    Warning: Application process $app_pid has terminated during checkpoint"
-        break
+      # Show checkpoint directory contents for debugging
+      if [[ -d petclinic-crac ]]; then
+        echo "    Current checkpoint directory contents:"
+        ls -la petclinic-crac | sed 's/^/      /'
       fi
     fi
   done
@@ -434,6 +444,10 @@ elif [[ "$LABEL" == "crac" ]]; then
       else
         echo "    Error: Checkpoint directory petclinic-crac exists but only contains log files"
         echo "    Application may have terminated during checkpoint creation"
+        echo "    Checkpoint directory contents:"
+        ls -la petclinic-crac | sed 's/^/      /'
+        echo "    jcmd output:"
+        cat /tmp/jcmd.log | sed 's/^/      /'
         echo "    Last few lines of application log:"
         tail -15 "$LOG_FILE" | sed 's/^/      /'
         kill -TERM "$app_pid" 2>/dev/null
@@ -444,6 +458,8 @@ elif [[ "$LABEL" == "crac" ]]; then
     else
       echo "    Error: Checkpoint directory petclinic-crac exists but is empty"
       echo "    Application may have terminated during checkpoint creation"
+      echo "    jcmd output:"
+      cat /tmp/jcmd.log | sed 's/^/      /'
       echo "    Last few lines of application log:"
       tail -15 "$LOG_FILE" | sed 's/^/      /'
       kill -TERM "$app_pid" 2>/dev/null
@@ -453,6 +469,8 @@ elif [[ "$LABEL" == "crac" ]]; then
     fi
   else
     echo "    Error: Checkpoint directory petclinic-crac was not created"
+    echo "    jcmd output:"
+    cat /tmp/jcmd.log | sed 's/^/      /'
     echo "    Last few lines of application log:"
     tail -10 "$LOG_FILE" | sed 's/^/      /'
     kill -TERM "$app_pid" 2>/dev/null
@@ -462,11 +480,18 @@ elif [[ "$LABEL" == "crac" ]]; then
   fi
 
   # Kill the application
-  kill -TERM "$app_pid" 2>/dev/null
-  sleep 1
-  # Force kill if still running
+  echo "    Terminating application process..."
   if kill -0 "$app_pid" 2>/dev/null; then
-    kill -9 "$app_pid" 2>/dev/null
+    echo "    Sending TERM signal to application process $app_pid"
+    kill -TERM "$app_pid" 2>/dev/null
+    sleep 2
+    # Force kill if still running
+    if kill -0 "$app_pid" 2>/dev/null; then
+      echo "    Force killing application process $app_pid"
+      kill -9 "$app_pid" 2>/dev/null
+    fi
+  else
+    echo "    Application process $app_pid has already terminated"
   fi
   wait "$pid" 2>/dev/null
   train_end=$(date +%s)
