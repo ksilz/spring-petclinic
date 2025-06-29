@@ -23,14 +23,14 @@ TRAINING_MODE="${4:-}" # optional fourth param for training mode
 # ---------------- Configuration -----------------------
 if [[ "$LABEL" == "graalvm" ]]; then
   APP_CMD="./build/native/nativeCompile/spring-petclinic --spring.profiles.active=postgres -Xms512m -Xmx1g"
-  TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres -Xms512m -Xmx1g"
+  TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres"
 elif [[ "$LABEL" == "crac" ]]; then
   # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
   APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic.bin -jar $JAR_PATH --spring.profiles.active=postgres"
-  TRAIN_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic.bin -jar $JAR_PATH --spring.profiles.active=postgres"
+  TRAIN_CMD="java -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic.bin -jar $JAR_PATH --spring.profiles.active=postgres"
 else
   APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
-  TRAIN_CMD="$APP_CMD"
+  TRAIN_CMD="java -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
 fi
 CSV_FILE="result_${LABEL}.csv"
 WARMUPS=1
