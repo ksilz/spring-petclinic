@@ -293,8 +293,11 @@ for label in "${REQUESTED[@]}"; do
     fi
     # Rebuild optimized native image
     echo "Rebuilding optimized native image..."
+    rebuild_cmd="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --build-args=\"--gc=G1\" --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\""
+    echo "-> $rebuild_cmd"
+    echo
     rebuild_start=$(date +%s)
-    SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs="${GRAALVM_GRADLE_ARGS}" --build-cache --parallel clean nativeCompile --jvm-args-native="-XX:MaxRAMPercentage=90.0"
+    eval "$rebuild_cmd"
     rebuild_end=$(date +%s)
     rebuild_duration=$(awk "BEGIN {print ($rebuild_end-$rebuild_start)}")
     printf "GraalVM rebuild took %.1f seconds\n" "$rebuild_duration"
