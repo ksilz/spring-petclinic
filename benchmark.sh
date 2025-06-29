@@ -296,6 +296,551 @@ cleanup_processes() {
 # Clean up any existing processes before starting warm-up runs
 cleanup_processes
 
+# --- Special training run for CDS, Leyden, and CRaC ---
+if [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]]; then
+  echo "  CDS (creates petclinic.jsa)"
+  cds_cmd="java -XX:ArchiveClassesAtExit=petclinic.jsa -jar $JAR_PATH"
+  echo "    Command: $cds_cmd"
+  train_start=$(date +%s)
+  $cds_cmd >"$LOG_FILE" 2>&1 &
+  pid=$!
+  while ! grep -qm1 "Started PetClinicApplication in" "$LOG_FILE"; do sleep 1; done
+  hit_urls
+  kill -TERM "$pid" 2>/dev/null
+  wait "$pid" 2>/dev/null
+  train_end=$(date +%s)
+  train_duration=$(awk "BEGIN {print ($train_end-$train_start)}")
+  printf "Training run took %.1f seconds\n" "$train_duration"
+  echo "  CDS training run complete. Proceeding with benchmark measurements."
+elif [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]]; then
+  echo "  Leyden (creates petclinic.aot in two steps)"
+  train_start=$(date +%s)
+  # Step 1: Record mode - collect AOT configuration
+  echo "    Step 1: Recording AOT configuration..."
+  record_cmd="java -XX:AOTMode=record -XX:AOTConfiguration=petclinic.aotconf -jar $JAR_PATH"
+  echo "    Command: $record_cmd"
+
+  # Run without resource limits to avoid memory allocation failures
+  $record_cmd >"$LOG_FILE" 2>&1 &
+  pid=$!
+
+  # Find the actual Java process to kill
+  for _ in {1..10}; do
+    app_pid=$(pgrep -P "$pid" java) && break || sleep 0.5
+  done
+
+  # Wait for startup with shorter timeout (30 seconds for training run)
+  timeout_counter=0
+  while ! grep -qm1 "Started PetClinicApplication in" "$LOG_FILE"; do
+    sleep 1
+    timeout_counter=$((timeout_counter + 1))
+
+    # Force flush the log file
+    sync "$LOG_FILE" 2>/dev/null || true
+
+    if [[ $timeout_counter -ge 30 ]]; then
+      echo "    Timeout waiting for application to start (30s)"
+      echo "    Last few lines of log:"
+      tail -5 "$LOG_FILE" | sed 's/^/      /'
+      break
+    fi
+    # Check if process is still running
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "    Process terminated unexpectedly"
+      echo "    Last few lines of log:"
+      tail -10 "$LOG_FILE" | sed 's/^/      /'
+      break
+    fi
+  done
+
+  # Check if we actually found the startup message
+  if grep -q "Started PetClinicApplication in" "$LOG_FILE"; then
+    echo "    Application started successfully"
+  else
+    echo "    Warning: Could not detect application startup, but continuing..."
+  fi
+
+  if [[ $timeout_counter -lt 30 ]]; then
+    hit_urls
+  else
+    # Even if startup detection failed, try to hit URLs in case the app is running
+    echo "    Attempting to hit URLs despite startup detection failure..."
+    hit_urls
+  fi
+
+  # Kill the actual application process, fallback to background process if needed
+  if [[ -n "$app_pid" ]]; then
+    kill -TERM "$app_pid" 2>/dev/null
+    sleep 1
+    # Force kill if still running
+    if kill -0 "$app_pid" 2>/dev/null; then
+      kill -9 "$app_pid" 2>/dev/null
+    fi
+  else
+    kill -TERM "$pid" 2>/dev/null
+  fi
+  wait "$pid" 2>/dev/null
+
+  # Step 2: Create mode - generate AOT cache from configuration
+  if [[ -f petclinic.aotconf ]]; then
+    echo "    Step 2: Creating AOT cache from configuration..."
+    echo "    Configuration file size: $(ls -lh petclinic.aotconf | awk '{print $5}')"
+    create_cmd="java -XX:AOTMode=create -XX:AOTConfiguration=petclinic.aotconf -XX:AOTCache=petclinic.aot -jar $JAR_PATH"
+    echo "    Command: $create_cmd"
+
+    # Run without resource limits to avoid memory allocation failures
+    $create_cmd >"$LOG_FILE" 2>&1 &
+    pid=$!
+
+    # Find the actual Java process to kill
+    for _ in {1..10}; do
+      app_pid=$(pgrep -P "$pid" java) && break || sleep 0.5
+    done
+
+    # Wait for completion with timeout
+    timeout_counter=0
+    while kill -0 "$pid" 2>/dev/null; do
+      sleep 1
+      timeout_counter=$((timeout_counter + 1))
+      if [[ $timeout_counter -ge 60 ]]; then
+        echo "    Timeout waiting for AOT cache creation (60s)"
+        break
+      fi
+    done
+
+    # Kill the process if still running
+    if kill -0 "$pid" 2>/dev/null; then
+      if [[ -n "$app_pid" ]]; then
+        kill -TERM "$app_pid" 2>/dev/null
+        sleep 1
+        if kill -0 "$app_pid" 2>/dev/null; then
+          kill -9 "$app_pid" 2>/dev/null
+        fi
+      else
+        kill -TERM "$pid" 2>/dev/null
+      fi
+    fi
+    wait "$pid" 2>/dev/null
+
+    # Clean up configuration file
+    rm -f petclinic.aotconf
+
+    echo "    AOT cache created successfully"
+  else
+    echo "    Warning: AOT configuration file not found, skipping cache creation"
+    echo "    Checking for configuration file:"
+    ls -la petclinic.aotconf* 2>/dev/null || echo "      No configuration files found"
+    echo "    Last few lines of log from Step 1:"
+    tail -10 "$LOG_FILE" | sed 's/^/      /'
+  fi
+
+  echo "  Leyden training run complete. Proceeding with benchmark measurements."
+  train_end=$(date +%s)
+  train_duration=$(awk "BEGIN {print ($train_end-$train_start)}")
+  printf "Training run took %.1f seconds\n" "$train_duration"
+elif [[ "$LABEL" == "crac" ]]; then
+  echo "  CRaC (creates checkpoint)"
+
+  # Check CRaC system requirements first
+  if ! check_crac_requirements; then
+    echo "❌ CRaC system requirements not met. Skipping CRaC benchmark."
+    exit 1
+  fi
+
+  # Clean up any existing processes before starting (with proper indentation)
+  cleanup_processes "    "
+
+  # Clean up existing checkpoint directory if it exists
+  if [[ -d petclinic-crac ]]; then
+    echo "    Removing existing checkpoint directory: petclinic-crac"
+    rm -rf petclinic-crac
+  fi
+
+  echo "    Command: $TRAIN_CMD"
+  train_start=$(date +%s)
+  $TRAIN_CMD >"$LOG_FILE" 2>&1 &
+  pid=$!
+
+  # For CRaC with sudo, we need to find the actual Java process
+  # The sudo process will be the parent, and the Java process will be its child
+  echo "    Waiting for application to start..."
+  timeout_counter=0
+  app_pid=""
+  while [[ $timeout_counter -lt 60 ]]; do
+    # First try to find the Java process that's a child of the sudo process
+    if [[ -n "$pid" ]]; then
+      # Find Java process that's a child of the sudo process
+      app_pid=$(pgrep -P "$pid" java 2>/dev/null | head -1)
+      if [[ -n "$app_pid" ]]; then
+        echo "    Found Java process PID from sudo process: $app_pid"
+        break
+      fi
+    fi
+
+    # Try to extract PID from Spring Boot startup log
+    if grep -q "Starting PetClinicApplication.*with PID" "$LOG_FILE"; then
+      log_pid=$(grep "Starting PetClinicApplication.*with PID" "$LOG_FILE" | tail -1 | grep -o "with PID [0-9]*" | awk '{print $3}')
+      if [[ -n "$log_pid" ]]; then
+        app_pid="$log_pid"
+        echo "    Found application PID from log: $app_pid"
+        break
+      fi
+    fi
+
+    # Also check if application has started
+    if grep -q "Started PetClinicApplication in" "$LOG_FILE"; then
+      echo "    Application started successfully"
+      # If we haven't found the PID yet, try one more time to find it
+      if [[ -z "$app_pid" && -n "$pid" ]]; then
+        app_pid=$(pgrep -P "$pid" java 2>/dev/null | head -1)
+        if [[ -n "$app_pid" ]]; then
+          echo "    Found Java process PID after startup: $app_pid"
+        fi
+      fi
+      break
+    fi
+
+    sleep 1
+    timeout_counter=$((timeout_counter + 1))
+  done
+
+  if [[ -z "$app_pid" ]]; then
+    echo "    Error: Could not find Java process PID from Spring Boot log"
+    echo "    Background process PID: $pid"
+    echo "    Available Java processes:"
+    pgrep -f java | while read p; do
+      echo "      PID $p: $(ps -p $p -o cmd= 2>/dev/null | head -1)"
+    done
+    echo "    Last few lines of log:"
+    tail -10 "$LOG_FILE" | sed 's/^/      /'
+    kill -TERM "$pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    echo "    CRaC training failed - skipping benchmark"
+    exit 1
+  fi
+
+  # Verify the process is still running
+  if ! kill -0 "$app_pid" 2>/dev/null; then
+    echo "    Error: Application process $app_pid is no longer running"
+    echo "    Process details:"
+    echo "      PID: $app_pid"
+    echo "      Background process PID: $pid"
+    echo "      Background process status: $(kill -0 "$pid" 2>/dev/null && echo "running" || echo "terminated")"
+    echo "    Available Java processes:"
+    pgrep -f java | while read p; do
+      echo "      PID $p: $(ps -p $p -o user=,cmd= 2>/dev/null | head -1)"
+    done
+    echo "    Last few lines of log:"
+    tail -15 "$LOG_FILE" | sed 's/^/      /'
+    kill -TERM "$pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    echo "    CRaC training failed - skipping benchmark"
+    exit 1
+  fi
+
+  # Additional debugging: show process details
+  echo "    Process details before checkpoint:"
+  echo "      PID: $app_pid"
+  echo "      Owner: $(ps -p "$app_pid" -o user= 2>/dev/null)"
+  echo "      Command: $(ps -p "$app_pid" -o cmd= 2>/dev/null | head -1)"
+  echo "      Process tree:"
+  pstree -p "$app_pid" 2>/dev/null | sed 's/^/        /' || echo "        (pstree not available)"
+
+  # Wait for application to fully start and hit URLs
+  echo "    Application started successfully"
+  hit_urls
+
+  # Check if application is responding to requests
+  echo "    Verifying application is responding to requests..."
+  response_status=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080" 2>/dev/null || echo "000")
+  if [[ "$response_status" == "200" ]]; then
+    echo "    Application is responding correctly (status: $response_status)"
+  else
+    echo "    Warning: Application may not be fully ready (status: $response_status)"
+  fi
+
+  # Take CRaC checkpoint before killing
+  echo "    Taking CRaC checkpoint..."
+  echo "    Using jcmd to initiate checkpoint on process $app_pid"
+  jcmd "$app_pid" JDK.checkpoint >/tmp/jcmd.log 2>&1
+  jcmd_exit_code=$?
+
+  if [[ $jcmd_exit_code -eq 0 ]]; then
+    echo "    Checkpoint command executed successfully"
+  else
+    echo "    Warning: jcmd checkpoint command failed with exit code $jcmd_exit_code"
+    echo "    jcmd output:"
+    cat /tmp/jcmd.log | sed 's/^/      /'
+    echo "    Process status check:"
+    if kill -0 "$app_pid" 2>/dev/null; then
+      echo "      Process $app_pid is still running"
+      echo "      Process owner: $(ps -p "$app_pid" -o user= 2>/dev/null)"
+      echo "      Process command: $(ps -p "$app_pid" -o cmd= 2>/dev/null | head -1)"
+    else
+      echo "      Process $app_pid has terminated"
+    fi
+  fi
+
+  # Wait for checkpoint to complete - give it more time
+  echo "    Waiting for checkpoint to complete..."
+  checkpoint_wait=0
+  max_checkpoint_wait=60 # Increased from 30 to 60 seconds
+  while [[ $checkpoint_wait -lt $max_checkpoint_wait ]]; do
+    # Check if the application process is still running
+    if ! kill -0 "$app_pid" 2>/dev/null; then
+      echo "    Warning: Application process $app_pid has terminated during checkpoint"
+      break
+    fi
+
+    if [[ -d petclinic-crac ]] && [[ "$(ls -A petclinic-crac 2>/dev/null)" ]]; then
+      # Check if there are files other than log files
+      non_log_files=$(find petclinic-crac -type f ! -name "*.log" 2>/dev/null | wc -l)
+      if [[ $non_log_files -gt 0 ]]; then
+        echo "    Checkpoint directory has non-log files after ${checkpoint_wait}s"
+        break
+      else
+        echo "    Checkpoint directory exists but only contains log files, waiting for actual checkpoint data..."
+      fi
+    fi
+    sleep 1
+    checkpoint_wait=$((checkpoint_wait + 1))
+    if [[ $((checkpoint_wait % 5)) -eq 0 ]]; then
+      echo "    Still waiting for checkpoint... (${checkpoint_wait}s elapsed)"
+      # Show checkpoint directory contents for debugging
+      if [[ -d petclinic-crac ]]; then
+        echo "    Current checkpoint directory contents:"
+        ls -lh petclinic-crac | sed 's/^/      /'
+      fi
+    fi
+  done
+
+  # Verify checkpoint directory was created and has content
+  if [[ -d petclinic-crac ]]; then
+    if [[ "$(ls -A petclinic-crac 2>/dev/null)" ]]; then
+      # Check if there are non-log files
+      non_log_files=$(find petclinic-crac -type f ! -name "*.log" 2>/dev/null | wc -l)
+      if [[ $non_log_files -gt 0 ]]; then
+        echo "    Checkpoint directory created successfully: $(ls -lh petclinic-crac)"
+        echo "    Checkpoint directory contents:"
+        ls -lh petclinic-crac | sed 's/^/      /'
+        echo "    Non-log files found: $non_log_files"
+
+        # Additional verification: check for "warp: Checkpoint successful!" message in log
+        if grep -q "warp: Checkpoint successful!" "$LOG_FILE"; then
+          echo "    ✅ Checkpoint success confirmed in application log"
+        else
+          echo "    ⚠️  Warning: 'warp: Checkpoint successful!' message not found in application log"
+          echo "    Last few lines of application log:"
+          tail -10 "$LOG_FILE" | sed 's/^/      /'
+        fi
+      else
+        echo "    Error: Checkpoint directory petclinic-crac exists but only contains log files"
+        echo "    Application may have terminated during checkpoint creation"
+        echo "    Checkpoint directory contents:"
+        ls -lh petclinic-crac | sed 's/^/      /'
+        echo "    jcmd output:"
+        cat /tmp/jcmd.log | sed 's/^/      /'
+        echo "    CRIU log files (if any):"
+        find petclinic-crac -name "*.log" -exec echo "      {}:" \; -exec head -20 {} \; 2>/dev/null || echo "      No CRIU log files found"
+        echo "    Last few lines of application log:"
+        tail -15 "$LOG_FILE" | sed 's/^/      /'
+        kill -TERM "$pid" 2>/dev/null
+        wait "$pid" 2>/dev/null
+        echo "    CRaC training failed - skipping benchmark"
+        exit 1
+      fi
+    else
+      echo "    Error: Checkpoint directory petclinic-crac is empty"
+      echo "    Application may have terminated during checkpoint creation"
+      echo "    jcmd output:"
+      cat /tmp/jcmd.log | sed 's/^/      /'
+      echo "    Last few lines of application log:"
+      tail -15 "$LOG_FILE" | sed 's/^/      /'
+      kill -TERM "$pid" 2>/dev/null
+      wait "$pid" 2>/dev/null
+      echo "    CRaC training failed - skipping benchmark"
+      exit 1
+    fi
+  else
+    echo "    Error: Checkpoint directory petclinic-crac was not created"
+    echo "    Application may have terminated during checkpoint creation"
+    echo "    jcmd output:"
+    cat /tmp/jcmd.log | sed 's/^/      /'
+    echo "    Last few lines of application log:"
+    tail -15 "$LOG_FILE" | sed 's/^/      /'
+    kill -TERM "$pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    echo "    CRaC training failed - skipping benchmark"
+    exit 1
+  fi
+
+  # Kill the application
+  echo "    Terminating application process..."
+  if kill -0 "$app_pid" 2>/dev/null; then
+    echo "    Sending TERM signal to application process $app_pid"
+    kill -TERM "$app_pid" 2>/dev/null
+    sleep 2
+    # Force kill if still running
+    if kill -0 "$app_pid" 2>/dev/null; then
+      echo "    Force killing application process $app_pid"
+      kill -9 "$app_pid" 2>/dev/null
+    fi
+  else
+    echo "    Application process $app_pid has already terminated"
+  fi
+  wait "$pid" 2>/dev/null
+  train_end=$(date +%s)
+  train_duration=$(awk "BEGIN {print ($train_end-$train_start)}")
+  printf "Training run took %.1f seconds\n" "$train_duration"
+  echo "  CRaC training run complete. Proceeding with benchmark measurements."
+elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
+  echo "  GraalVM (instrumented binary)"
+
+  # Clean up existing profiling data before training
+  if [[ -d "src/pgo-profiles/main" ]]; then
+    echo "    Cleaning up existing profiling data in src/pgo-profiles/main/"
+    rm -rf src/pgo-profiles/main/*
+    echo "    Profiling directory cleaned"
+  else
+    echo "    Creating profiling directory src/pgo-profiles/main/"
+    mkdir -p src/pgo-profiles/main
+  fi
+
+  echo "    Command: $TRAIN_CMD"
+  train_start=$(date +%s)
+
+  $TRAIN_CMD >"$LOG_FILE" 2>&1 &
+  pid=$!
+  echo "    GraalVM process PID: $pid"
+
+  # Find the actual application process to kill (instrumented binary)
+  # Use a more reliable method to find the process we just started
+  echo "    Looking for GraalVM application process..."
+  app_pid=""
+
+  # Method 1: Look for child processes of our background process
+  for _ in {1..5}; do
+    app_pid=$(pgrep -P "$pid" 2>/dev/null | head -1)
+    [[ -n "$app_pid" ]] && break
+    sleep 0.5
+  done
+
+  # Method 2: If no child process found, look for the instrumented binary
+  # but be more specific about timing
+  if [[ -z "$app_pid" ]]; then
+    for _ in {1..10}; do
+      # Get all instrumented processes and find the most recent one
+      all_pids=$(pgrep -f "build/native/nativeCompile/spring-petclinic-instrumented" 2>/dev/null)
+      if [[ -n "$all_pids" ]]; then
+        # Find the most recently started process
+        for candidate_pid in $all_pids; do
+          # Check if this process was started very recently (within last 10 seconds)
+          if ps -p "$candidate_pid" -o etime= 2>/dev/null | grep -q "^[0-9]*:[0-9]$"; then
+            app_pid="$candidate_pid"
+            break
+          fi
+        done
+        [[ -n "$app_pid" ]] && break
+      fi
+      sleep 0.5
+    done
+  fi
+
+  if [[ -n "$app_pid" ]]; then
+    echo "    Found GraalVM app process PID: $app_pid"
+  else
+    echo "    Warning: Could not find specific GraalVM app process, will use background process $pid"
+  fi
+
+  # Wait for startup with timeout and debug output
+  echo "    Waiting for application to start..."
+  timeout_counter=0
+  while ! grep -qm1 "Started PetClinicApplication in" "$LOG_FILE"; do
+    sleep 1
+    timeout_counter=$((timeout_counter + 1))
+
+    # Force flush the log file
+    sync "$LOG_FILE" 2>/dev/null || true
+
+    # Print progress every 10 seconds
+    if [[ $((timeout_counter % 10)) -eq 0 ]]; then
+      echo "    Still waiting... ($timeout_counter seconds elapsed)"
+      if [[ -n "$app_pid" ]]; then
+        if kill -0 "$app_pid" 2>/dev/null; then
+          echo "    Process $app_pid is still running"
+        else
+          echo "    Process $app_pid has terminated"
+        fi
+      fi
+    fi
+
+    if [[ $timeout_counter -ge 120 ]]; then
+      echo "    Timeout waiting for application to start (120s)"
+      echo "    Last few lines of log:"
+      tail -10 "$LOG_FILE" | sed 's/^/      /'
+      break
+    fi
+
+    # Check if process is still running
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "    Background process terminated unexpectedly"
+      echo "    Last few lines of log:"
+      tail -15 "$LOG_FILE" | sed 's/^/      /'
+      break
+    fi
+  done
+
+  # Check if we actually found the startup message
+  if grep -q "Started PetClinicApplication in" "$LOG_FILE"; then
+    echo "    Application started successfully"
+    # For training runs, we don't need to be as strict about URL errors
+    # Just hit the URLs to generate profiling data, even if some fail
+    echo "    Hitting URLs for profiling data generation..."
+    hit_urls
+  else
+    echo "    Warning: Could not detect application startup, but continuing..."
+    echo "    Attempting to hit URLs anyway for profiling data..."
+    hit_urls
+  fi
+
+  # Kill the actual application process, fallback to background process if needed
+  echo "    Terminating GraalVM process..."
+  if [[ -n "$app_pid" ]]; then
+    # Verify the process is still running and is the one we expect
+    if kill -0 "$app_pid" 2>/dev/null; then
+      # Double-check this is actually the instrumented binary
+      if ps -p "$app_pid" -o cmd= 2>/dev/null | grep -q "spring-petclinic-instrumented"; then
+        echo "    Killing app process $app_pid (verified instrumented binary)"
+        kill -TERM "$app_pid" 2>/dev/null
+        sleep 2
+        # Force kill if still running
+        if kill -0 "$app_pid" 2>/dev/null; then
+          echo "    Force killing app process $app_pid"
+          kill -9 "$app_pid" 2>/dev/null
+        fi
+      else
+        echo "    Warning: Process $app_pid is not the expected instrumented binary, using background process"
+        echo "    Killing background process $pid"
+        kill -TERM "$pid" 2>/dev/null
+      fi
+    else
+      echo "    App process $app_pid has already terminated, using background process"
+      echo "    Killing background process $pid"
+      kill -TERM "$pid" 2>/dev/null
+    fi
+  else
+    echo "    Killing background process $pid"
+    kill -TERM "$pid" 2>/dev/null
+  fi
+  wait "$pid" 2>/dev/null
+  echo "    GraalVM training run completed at $(date)"
+  train_end=$(date +%s)
+  train_duration=$(awk "BEGIN {print ($train_end-$train_start)}")
+  printf "Training run took %.1f seconds\n" "$train_duration"
+  echo "  GraalVM training run complete. Returning control to compile-and-run.sh for rebuild."
+  exit 0
+fi
+
 for ((i = 1; i <= WARMUPS; i++)); do
   echo "  Warm-up $i"
   set_log_file "warmup"
