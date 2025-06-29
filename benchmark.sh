@@ -40,6 +40,77 @@ set_log_file() {
   esac
 }
 
+# CRaC system requirements check
+check_crac_requirements() {
+  echo "Checking CRaC system requirements..."
+
+  # Check if running on Linux
+  if [[ "$(uname)" != "Linux" ]]; then
+    echo "❌ CRaC is not supported on $(uname). CRaC requires Linux kernel support."
+    echo "   You are currently running on: $(uname -a)"
+    echo "   Please run CRaC benchmarks on a Linux system."
+    return 1
+  fi
+
+  # Check if CRIU is available
+  if ! command -v criu >/dev/null 2>&1; then
+    echo "❌ CRIU (Checkpoint/Restore In Userspace) is not installed."
+    echo "   CRaC requires CRIU to be installed on the system."
+    echo ""
+    echo "   Installation methods for Ubuntu:"
+    echo "   1. Try universe repository:"
+    echo "      sudo add-apt-repository universe"
+    echo "      sudo apt update"
+    echo "      sudo apt install criu"
+    echo ""
+    echo "   2. Try backports repository:"
+    echo "      sudo add-apt-repository \"deb http://archive.ubuntu.com/ubuntu \$(lsb_release -cs)-backports main\""
+    echo "      sudo apt update"
+    echo "      sudo apt install criu"
+    echo ""
+    echo "   3. Try PPA:"
+    echo "      sudo add-apt-repository ppa:criu/ppa"
+    echo "      sudo apt update"
+    echo "      sudo apt install criu"
+    echo ""
+    echo "   4. Build from source:"
+    echo "      sudo apt install build-essential libprotobuf-dev libprotobuf-c-dev protobuf-c-compiler"
+    echo "      git clone https://github.com/checkpoint-restore/criu.git"
+    echo "      cd criu && make && sudo make install"
+    echo ""
+    echo "   For other distributions:"
+    echo "   - RHEL/CentOS: sudo yum install criu"
+    echo "   - Fedora: sudo dnf install criu"
+    return 1
+  fi
+
+  # Check CRIU version
+  criu_version=$(criu --version 2>/dev/null | head -1)
+  echo "✅ CRIU found: $criu_version"
+
+  # Check if running with elevated privileges
+  if [[ $EUID -eq 0 ]]; then
+    echo "✅ Running with root privileges"
+  else
+    echo "⚠️  Not running with root privileges"
+    echo "   CRaC will use sudo for Java commands to provide necessary privileges."
+    echo "   This should resolve permission issues with CRIU operations."
+  fi
+
+  # Check if user has necessary capabilities
+  if command -v capsh >/dev/null 2>&1; then
+    if capsh --print | grep -q "cap_sys_admin"; then
+      echo "✅ User has CAP_SYS_ADMIN capability"
+    else
+      echo "⚠️  User may not have CAP_SYS_ADMIN capability"
+      echo "   This capability is often required for CRaC to work properly."
+    fi
+  fi
+
+  echo "CRaC system requirements check complete."
+  return 0
+}
+
 # Set initial log file based on current mode
 if [[ "$TRAINING_MODE" == "training" ]]; then
   set_log_file "training"
@@ -54,8 +125,9 @@ if [[ "$LABEL" == "graalvm" ]]; then
   TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres"
 elif [[ "$LABEL" == "crac" ]]; then
   # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
-  APP_CMD="java -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
-  TRAIN_CMD="java -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+  # Use sudo to provide necessary privileges for CRIU operations
+  APP_CMD="sudo java -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+  TRAIN_CMD="sudo java -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
 else
   APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
   TRAIN_CMD="java -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
@@ -154,6 +226,16 @@ if [[ -n "$EXISTING_PIDS" ]]; then
   echo "Killing existing spring-petclinic Java processes: $EXISTING_PIDS"
   kill -9 $EXISTING_PIDS 2>/dev/null || true
 fi
+
+# For CRaC, also kill any sudo processes running spring-petclinic
+if [[ "$LABEL" == "crac" ]]; then
+  SUDO_PIDS=$(pgrep -f "sudo.*java.*spring-petclinic")
+  if [[ -n "$SUDO_PIDS" ]]; then
+    echo "Killing existing sudo spring-petclinic processes: $SUDO_PIDS"
+    kill -9 $SUDO_PIDS 2>/dev/null || true
+  fi
+fi
+
 # Kill any running native spring-petclinic processes to avoid conflicts
 # But be careful not to kill the current training process
 NATIVE_PIDS=$(pgrep -f "build/native/nativeCompile/spring-petclinic")
@@ -341,6 +423,12 @@ elif [[ "$LABEL" == "leyden" ]]; then
 elif [[ "$LABEL" == "crac" ]]; then
   echo "  CRaC (creates checkpoint)"
 
+  # Check CRaC system requirements first
+  if ! check_crac_requirements; then
+    echo "❌ CRaC system requirements not met. Skipping CRaC benchmark."
+    exit 1
+  fi
+
   # Clean up existing checkpoint directory if it exists
   if [[ -d petclinic-crac ]]; then
     echo "    Removing existing checkpoint directory: petclinic-crac"
@@ -352,15 +440,27 @@ elif [[ "$LABEL" == "crac" ]]; then
   $TRAIN_CMD >"$LOG_FILE" 2>&1 &
   pid=$!
 
-  # Wait for application to start and extract PID from Spring Boot log
+  # For CRaC with sudo, we need to find the actual Java process
+  # The sudo process will be the parent, and the Java process will be its child
   echo "    Waiting for application to start..."
   timeout_counter=0
   app_pid=""
   while [[ $timeout_counter -lt 60 ]]; do
+    # First try to find the Java process that's a child of the sudo process
+    if [[ -n "$pid" ]]; then
+      # Find Java process that's a child of the sudo process
+      app_pid=$(pgrep -P "$pid" java 2>/dev/null | head -1)
+      if [[ -n "$app_pid" ]]; then
+        echo "    Found Java process PID from sudo process: $app_pid"
+        break
+      fi
+    fi
+
     # Try to extract PID from Spring Boot startup log
     if grep -q "Starting PetClinicApplication.*with PID" "$LOG_FILE"; then
-      app_pid=$(grep "Starting PetClinicApplication.*with PID" "$LOG_FILE" | tail -1 | grep -o "with PID [0-9]*" | awk '{print $3}')
-      if [[ -n "$app_pid" ]]; then
+      log_pid=$(grep "Starting PetClinicApplication.*with PID" "$LOG_FILE" | tail -1 | grep -o "with PID [0-9]*" | awk '{print $3}')
+      if [[ -n "$log_pid" ]]; then
+        app_pid="$log_pid"
         echo "    Found application PID from log: $app_pid"
         break
       fi
@@ -369,6 +469,13 @@ elif [[ "$LABEL" == "crac" ]]; then
     # Also check if application has started
     if grep -q "Started PetClinicApplication in" "$LOG_FILE"; then
       echo "    Application started successfully"
+      # If we haven't found the PID yet, try one more time to find it
+      if [[ -z "$app_pid" && -n "$pid" ]]; then
+        app_pid=$(pgrep -P "$pid" java 2>/dev/null | head -1)
+        if [[ -n "$app_pid" ]]; then
+          echo "    Found Java process PID after startup: $app_pid"
+        fi
+      fi
       break
     fi
 
@@ -473,8 +580,15 @@ elif [[ "$LABEL" == "crac" ]]; then
         ls -la petclinic-crac | sed 's/^/      /'
         echo "    jcmd output:"
         cat /tmp/jcmd.log | sed 's/^/      /'
+        echo "    CRIU log files (if any):"
+        find petclinic-crac -name "*.log" -exec echo "      {}:" \; -exec head -20 {} \; 2>/dev/null || echo "      No CRIU log files found"
         echo "    Last few lines of application log:"
         tail -15 "$LOG_FILE" | sed 's/^/      /'
+        echo "    CRaC checkpoint failed. This may be due to:"
+        echo "    1. CRIU installation issues (install with: sudo apt-get install criu)"
+        echo "    2. Kernel configuration issues"
+        echo "    3. Application state incompatible with checkpointing"
+        echo "    4. CRIU version compatibility issues"
         kill -TERM "$app_pid" 2>/dev/null
         wait "$pid" 2>/dev/null
         echo "    CRaC training failed - skipping benchmark"
@@ -498,6 +612,11 @@ elif [[ "$LABEL" == "crac" ]]; then
     cat /tmp/jcmd.log | sed 's/^/      /'
     echo "    Last few lines of application log:"
     tail -10 "$LOG_FILE" | sed 's/^/      /'
+    echo "    CRaC checkpoint failed. This may be due to:"
+    echo "    1. CRIU installation issues (install with: sudo apt-get install criu)"
+    echo "    2. Kernel configuration issues"
+    echo "    3. Application state incompatible with checkpointing"
+    echo "    4. CRIU version compatibility issues"
     kill -TERM "$app_pid" 2>/dev/null
     wait "$pid" 2>/dev/null
     echo "    CRaC training failed - skipping benchmark"
