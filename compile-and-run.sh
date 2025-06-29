@@ -80,7 +80,7 @@ get_graalvm_max_heap() {
   echo "${heap_mb}m"
 }
 GRAALVM_MAX_HEAP=$(get_graalvm_max_heap)
-GRAALVM_GRADLE_ARGS="-XX:MaxRAMPercentage=85.0 -XX:InitialRAMPercentage=85.0"
+GRAALVM_GRADLE_ARGS="-Xmx1g"
 GRAALVM_NATIVE_ARGS="-Xmx${GRAALVM_MAX_HEAP} -H:+UseG1GC"
 
 # ────────────────────────────────────────────────────────────────
