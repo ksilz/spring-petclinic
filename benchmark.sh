@@ -26,8 +26,8 @@ if [[ "$LABEL" == "graalvm" ]]; then
   TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres"
 elif [[ "$LABEL" == "crac" ]]; then
   # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
-  APP_CMD="java -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres"
-  TRAIN_CMD="java -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres"
+  APP_CMD="java -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+  TRAIN_CMD="java -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
 else
   APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
   TRAIN_CMD="java -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
