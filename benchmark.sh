@@ -21,6 +21,34 @@ TRAINING_MODE="${4:-}" # optional fourth param for training mode
 }
 
 # ---------------- Configuration -----------------------
+# Log file configuration - different files for different phases
+set_log_file() {
+  local phase="$1"
+  case "$phase" in
+  "training")
+    LOG_FILE="/tmp/app_training.log"
+    ;;
+  "warmup")
+    LOG_FILE="/tmp/app_warmup.log"
+    ;;
+  "benchmark")
+    LOG_FILE="/tmp/app_benchmark.log"
+    ;;
+  *)
+    LOG_FILE="/tmp/app_benchmark.log"
+    ;;
+  esac
+}
+
+# Set initial log file based on current mode
+if [[ "$TRAINING_MODE" == "training" ]]; then
+  set_log_file "training"
+elif [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]] || [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]] || [[ "$LABEL" == "crac" ]]; then
+  set_log_file "training"
+else
+  set_log_file "benchmark"
+fi
+
 if [[ "$LABEL" == "graalvm" ]]; then
   APP_CMD="./build/native/nativeCompile/spring-petclinic --spring.profiles.active=postgres -Xms512m -Xmx1g"
   TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres"
@@ -60,7 +88,6 @@ echo
 
 # list of URLs to hit
 URLS=(
-  "http://localhost:8080"
   "http://localhost:8080/owners/find"
   "http://localhost:8080/owners?lastName="
   "http://localhost:8080/owners?page=2"
@@ -77,9 +104,40 @@ URLS=(
 # ---------- function reused by warm-ups & benchmarks ----------
 hit_urls() {
   printf '    Calling URLs: ' # four-space indent
+
+  # First, wait for the application to be ready by checking the root URL
+  echo "    Waiting for application to be ready..."
+  readiness_timeout=60
+  readiness_counter=0
+  while [[ $readiness_counter -lt $readiness_timeout ]]; do
+    status=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080" 2>/dev/null || echo "000")
+    if [[ "$status" == "200" ]]; then
+      echo "    Application is ready (status: $status)"
+      break
+    fi
+    sleep 1
+    readiness_counter=$((readiness_counter + 1))
+    if [[ $((readiness_counter % 5)) -eq 0 ]]; then
+      echo "    Still waiting for application readiness... ($readiness_counter seconds elapsed, status: $status)"
+    fi
+  done
+
+  if [[ $readiness_counter -ge $readiness_timeout ]]; then
+    echo "    Warning: Application readiness timeout reached, proceeding anyway..."
+  fi
+
+  # Now call the actual URLs
   for url in "${URLS[@]}"; do
     sleep 3
-    curl -s -o /dev/null -w '%{http_code} ' "$url"
+    # For training runs, be more tolerant of errors
+    if [[ "$TRAINING_MODE" == "training" ]]; then
+      # Just make the request and show the status, don't fail on errors
+      status=$(curl -s -o /dev/null -w '%{http_code}' "$url" 2>/dev/null || echo "000")
+      printf '%s ' "$status"
+    else
+      # For benchmark runs, be more strict
+      curl -s -o /dev/null -w '%{http_code} ' "$url"
+    fi
   done
   echo # newline
 }
@@ -117,9 +175,9 @@ if [[ "$LABEL" == "cds" ]]; then
     cds_cmd="java -XX:ArchiveClassesAtExit=petclinic.jsa -jar $JAR_PATH"
     echo "    Command: $cds_cmd"
     train_start=$(date +%s)
-    $cds_cmd >/tmp/app_out.log 2>&1 &
+    $cds_cmd >"$LOG_FILE" 2>&1 &
     pid=$!
-    while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do sleep 1; done
+    while ! grep -qm1 "Started PetClinicApplication in" "$LOG_FILE"; do sleep 1; done
     hit_urls
     kill -TERM "$pid" 2>/dev/null
     wait "$pid" 2>/dev/null
@@ -138,7 +196,7 @@ elif [[ "$LABEL" == "leyden" ]]; then
     echo "    Command: $record_cmd"
 
     # Run without resource limits to avoid memory allocation failures
-    $record_cmd >/tmp/app_out.log 2>&1 &
+    $record_cmd >"$LOG_FILE" 2>&1 &
     pid=$!
 
     # Find the actual Java process to kill
@@ -148,30 +206,30 @@ elif [[ "$LABEL" == "leyden" ]]; then
 
     # Wait for startup with shorter timeout (30 seconds for training run)
     timeout_counter=0
-    while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do
+    while ! grep -qm1 "Started PetClinicApplication in" "$LOG_FILE"; do
       sleep 1
       timeout_counter=$((timeout_counter + 1))
 
       # Force flush the log file
-      sync /tmp/app_out.log 2>/dev/null || true
+      sync "$LOG_FILE" 2>/dev/null || true
 
       if [[ $timeout_counter -ge 30 ]]; then
         echo "    Timeout waiting for application to start (30s)"
         echo "    Last few lines of log:"
-        tail -5 /tmp/app_out.log | sed 's/^/      /'
+        tail -5 "$LOG_FILE" | sed 's/^/      /'
         break
       fi
       # Check if process is still running
       if ! kill -0 "$pid" 2>/dev/null; then
         echo "    Process terminated unexpectedly"
         echo "    Last few lines of log:"
-        tail -10 /tmp/app_out.log | sed 's/^/      /'
+        tail -10 "$LOG_FILE" | sed 's/^/      /'
         break
       fi
     done
 
     # Check if we actually found the startup message
-    if grep -q "Started PetClinicApplication in" /tmp/app_out.log; then
+    if grep -q "Started PetClinicApplication in" "$LOG_FILE"; then
       echo "    Application started successfully"
     else
       echo "    Warning: Could not detect application startup, but continuing..."
@@ -206,7 +264,7 @@ elif [[ "$LABEL" == "leyden" ]]; then
       echo "    Command: $create_cmd"
 
       # Run without resource limits to avoid memory allocation failures
-      $create_cmd >/tmp/app_out.log 2>&1 &
+      $create_cmd >"$LOG_FILE" 2>&1 &
       pid=$!
 
       # Find the actual Java process to kill
@@ -248,7 +306,7 @@ elif [[ "$LABEL" == "leyden" ]]; then
       echo "    Checking for configuration file:"
       ls -la petclinic.aotconf* 2>/dev/null || echo "      No configuration files found"
       echo "    Last few lines of log from Step 1:"
-      tail -10 /tmp/app_out.log | sed 's/^/      /'
+      tail -10 "$LOG_FILE" | sed 's/^/      /'
     fi
 
     echo "  Leyden training run complete. Proceeding with benchmark measurements."
@@ -260,7 +318,7 @@ elif [[ "$LABEL" == "crac" ]]; then
   echo "  CRaC (creates checkpoint)"
   echo "    Command: $TRAIN_CMD"
   train_start=$(date +%s)
-  $TRAIN_CMD >/tmp/app_out.log 2>&1 &
+  $TRAIN_CMD >"$LOG_FILE" 2>&1 &
   pid=$!
 
   # Wait for application to start and extract PID from Spring Boot log
@@ -269,8 +327,8 @@ elif [[ "$LABEL" == "crac" ]]; then
   app_pid=""
   while [[ $timeout_counter -lt 60 ]]; do
     # Try to extract PID from Spring Boot startup log
-    if grep -q "Starting PetClinicApplication.*with PID" /tmp/app_out.log; then
-      app_pid=$(grep "Starting PetClinicApplication.*with PID" /tmp/app_out.log | tail -1 | grep -o "with PID [0-9]*" | awk '{print $3}')
+    if grep -q "Starting PetClinicApplication.*with PID" "$LOG_FILE"; then
+      app_pid=$(grep "Starting PetClinicApplication.*with PID" "$LOG_FILE" | tail -1 | grep -o "with PID [0-9]*" | awk '{print $3}')
       if [[ -n "$app_pid" ]]; then
         echo "    Found application PID from log: $app_pid"
         break
@@ -278,7 +336,7 @@ elif [[ "$LABEL" == "crac" ]]; then
     fi
 
     # Also check if application has started
-    if grep -q "Started PetClinicApplication in" /tmp/app_out.log; then
+    if grep -q "Started PetClinicApplication in" "$LOG_FILE"; then
       echo "    Application started successfully"
       break
     fi
@@ -295,7 +353,7 @@ elif [[ "$LABEL" == "crac" ]]; then
       echo "      PID $p: $(ps -p $p -o cmd= 2>/dev/null | head -1)"
     done
     echo "    Last few lines of log:"
-    tail -10 /tmp/app_out.log | sed 's/^/      /'
+    tail -10 "$LOG_FILE" | sed 's/^/      /'
     kill -TERM "$pid" 2>/dev/null
     wait "$pid" 2>/dev/null
     echo "    CRaC training failed - skipping benchmark"
@@ -306,7 +364,7 @@ elif [[ "$LABEL" == "crac" ]]; then
   if ! kill -0 "$app_pid" 2>/dev/null; then
     echo "    Error: Application process $app_pid is no longer running"
     echo "    Last few lines of log:"
-    tail -10 /tmp/app_out.log | sed 's/^/      /'
+    tail -10 "$LOG_FILE" | sed 's/^/      /'
     kill -TERM "$pid" 2>/dev/null
     wait "$pid" 2>/dev/null
     echo "    CRaC training failed - skipping benchmark"
@@ -360,7 +418,7 @@ elif [[ "$LABEL" == "crac" ]]; then
       echo "    Error: Checkpoint directory petclinic-crac exists but is empty"
       echo "    Application may have terminated during checkpoint creation"
       echo "    Last few lines of application log:"
-      tail -15 /tmp/app_out.log | sed 's/^/      /'
+      tail -15 "$LOG_FILE" | sed 's/^/      /'
       kill -TERM "$app_pid" 2>/dev/null
       wait "$pid" 2>/dev/null
       echo "    CRaC training failed - skipping benchmark"
@@ -369,7 +427,7 @@ elif [[ "$LABEL" == "crac" ]]; then
   else
     echo "    Error: Checkpoint directory petclinic-crac was not created"
     echo "    Last few lines of application log:"
-    tail -10 /tmp/app_out.log | sed 's/^/      /'
+    tail -10 "$LOG_FILE" | sed 's/^/      /'
     kill -TERM "$app_pid" 2>/dev/null
     wait "$pid" 2>/dev/null
     echo "    CRaC training failed - skipping benchmark"
@@ -393,7 +451,7 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   echo "    Command: $TRAIN_CMD"
   train_start=$(date +%s)
 
-  $TRAIN_CMD >/tmp/app_out.log 2>&1 &
+  $TRAIN_CMD >"$LOG_FILE" 2>&1 &
   pid=$!
   echo "    GraalVM process PID: $pid"
 
@@ -410,12 +468,12 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   # Wait for startup with timeout and debug output
   echo "    Waiting for application to start..."
   timeout_counter=0
-  while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do
+  while ! grep -qm1 "Started PetClinicApplication in" "$LOG_FILE"; do
     sleep 1
     timeout_counter=$((timeout_counter + 1))
 
     # Force flush the log file
-    sync /tmp/app_out.log 2>/dev/null || true
+    sync "$LOG_FILE" 2>/dev/null || true
 
     # Print progress every 10 seconds
     if [[ $((timeout_counter % 10)) -eq 0 ]]; then
@@ -432,7 +490,7 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
     if [[ $timeout_counter -ge 120 ]]; then
       echo "    Timeout waiting for application to start (120s)"
       echo "    Last few lines of log:"
-      tail -10 /tmp/app_out.log | sed 's/^/      /'
+      tail -10 "$LOG_FILE" | sed 's/^/      /'
       break
     fi
 
@@ -440,18 +498,21 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
     if ! kill -0 "$pid" 2>/dev/null; then
       echo "    Background process terminated unexpectedly"
       echo "    Last few lines of log:"
-      tail -15 /tmp/app_out.log | sed 's/^/      /'
+      tail -15 "$LOG_FILE" | sed 's/^/      /'
       break
     fi
   done
 
   # Check if we actually found the startup message
-  if grep -q "Started PetClinicApplication in" /tmp/app_out.log; then
+  if grep -q "Started PetClinicApplication in" "$LOG_FILE"; then
     echo "    Application started successfully"
+    # For training runs, we don't need to be as strict about URL errors
+    # Just hit the URLs to generate profiling data, even if some fail
+    echo "    Hitting URLs for profiling data generation..."
     hit_urls
   else
     echo "    Warning: Could not detect application startup, but continuing..."
-    echo "    Attempting to hit URLs anyway..."
+    echo "    Attempting to hit URLs anyway for profiling data..."
     hit_urls
   fi
 
@@ -475,18 +536,19 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   train_end=$(date +%s)
   train_duration=$(awk "BEGIN {print ($train_end-$train_start)}")
   printf "Training run took %.1f seconds\n" "$train_duration"
-  echo "  GraalVM training run complete. Returning control to build-and-run.sh."
+  echo "  GraalVM training run complete. Returning control to compile-and-run.sh for rebuild."
   exit 0
 fi
 
 for ((i = 1; i <= WARMUPS; i++)); do
   echo "  Warm-up $i"
-  $APP_CMD >/tmp/app_out.log 2>&1 &
+  set_log_file "warmup"
+  $APP_CMD >"$LOG_FILE" 2>&1 &
   pid=$!
 
   # Wait for startup with timeout (60 seconds)
   timeout_counter=0
-  while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do
+  while ! grep -qm1 "Started PetClinicApplication in" "$LOG_FILE"; do
     sleep 1
     timeout_counter=$((timeout_counter + 1))
     if [[ $timeout_counter -ge 60 ]]; then
@@ -510,11 +572,12 @@ echo "Run,Startup Time (s),Max Memory (KB)" >"$CSV_FILE"
 declare -a times mems
 for ((i = 1; i <= RUNS; i++)); do
   echo "  Run $i"
-  : >/tmp/app_out.log
+  set_log_file "benchmark"
+  : >"$LOG_FILE"
   if [[ "$(uname)" == "Darwin" ]]; then
-    /usr/bin/time -l stdbuf -oL $APP_CMD >/tmp/app_out.log 2>/tmp/time_out.log &
+    /usr/bin/time -l stdbuf -oL $APP_CMD >"$LOG_FILE" 2>/tmp/time_out.log &
   else
-    /usr/bin/time -v -o /tmp/time_out.log stdbuf -oL $APP_CMD >/tmp/app_out.log 2>&1 &
+    /usr/bin/time -v -o /tmp/time_out.log stdbuf -oL $APP_CMD >"$LOG_FILE" 2>&1 &
   fi
   tpid=$!
 
@@ -545,7 +608,7 @@ for ((i = 1; i <= RUNS; i++)); do
 
   # Wait for startup with timeout (60 seconds)
   timeout_counter=0
-  while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do
+  while ! grep -qm1 "Started PetClinicApplication in" "$LOG_FILE"; do
     sleep 1
     timeout_counter=$((timeout_counter + 1))
     if [[ $timeout_counter -ge 60 ]]; then
@@ -555,7 +618,7 @@ for ((i = 1; i <= RUNS; i++)); do
   done
 
   if [[ $timeout_counter -lt 60 ]]; then
-    line=$(grep -m1 "Started PetClinicApplication in" /tmp/app_out.log)
+    line=$(grep -m1 "Started PetClinicApplication in" "$LOG_FILE")
     [[ $line =~ in\ ([0-9.]+)\ seconds ]] && s_time="${BASH_REMATCH[1]}"
     hit_urls # --- load generator ---
   else
