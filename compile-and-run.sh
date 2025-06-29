@@ -129,9 +129,9 @@ if [[ $BUILD_SYS == gradle ]]; then
   CMD[leyden]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[crac]="./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Pcrac=true"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=\"--gc=G1 -J--XX:MaxRAMPercentage=90.0\""
+    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=\"--gc=G1\" --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\""
   else
-    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=-J-XX:MaxRAMPercentage=90.0"
+    CMD[graalvm]="./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\""
   fi
 
   OUT_DIR[gradle]="build/libs"
@@ -289,7 +289,7 @@ for label in "${REQUESTED[@]}"; do
     # Rebuild optimized native image
     echo "Rebuilding optimized native image..."
     rebuild_start=$(date +%s)
-    ./gradlew -Dorg.gradle.jvmargs="${GRAALVM_GRADLE_ARGS}" --build-cache --parallel clean nativeCompile
+    ./gradlew -Dorg.gradle.jvmargs="${GRAALVM_GRADLE_ARGS}" --build-cache --parallel clean nativeCompile --jvm-args-native="-XX:MaxRAMPercentage=90.0"
     rebuild_end=$(date +%s)
     rebuild_duration=$(awk "BEGIN {print ($rebuild_end-$rebuild_start)}")
     printf "GraalVM rebuild took %.1f seconds\n" "$rebuild_duration"
