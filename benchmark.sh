@@ -199,21 +199,46 @@ hit_urls() {
     echo "    Warning: Application readiness timeout reached, proceeding anyway..."
   fi
 
-  # Now call the actual URLs
-  printf '    Calling URLs: ' # four-space indent
+  # Hit all URLs
   for url in "${URLS[@]}"; do
-    sleep 3
-    # For training runs, be more tolerant of errors
-    if [[ "$TRAINING_MODE" == "training" ]]; then
-      # Just make the request and show the status, don't fail on errors
-      status=$(curl -s -o /dev/null -w '%{http_code}' "$url" 2>/dev/null || echo "000")
-      printf '%s ' "$status"
-    else
-      # For benchmark runs, be more strict
-      curl -s -o /dev/null -w '%{http_code} ' "$url"
-    fi
+    echo "    Hitting $url"
+    curl -s "$url" >/dev/null 2>&1 || echo "    Warning: Failed to hit $url"
   done
-  echo # newline
+}
+
+# Function to get the appropriate startup message based on label
+get_startup_message() {
+  local label="$1"
+  case "$label" in
+  "crac")
+    echo "Spring-managed lifecycle restart completed"
+    ;;
+  *)
+    echo "Started PetClinicApplication in"
+    ;;
+  esac
+}
+
+# Function to extract startup time from log based on label
+extract_startup_time() {
+  local label="$1"
+  local log_file="$2"
+  case "$label" in
+  "crac")
+    # For CRaC, we don't have a startup time in the same format
+    # The restart completion doesn't include timing information
+    echo "N/A"
+    ;;
+  *)
+    # For other labels, extract time from "Started PetClinicApplication in X.XXX seconds"
+    local line=$(grep -m1 "Started PetClinicApplication in" "$log_file")
+    if [[ $line =~ in\ ([0-9.]+)\ seconds ]]; then
+      echo "${BASH_REMATCH[1]}"
+    else
+      echo "N/A"
+    fi
+    ;;
+  esac
 }
 
 # ---------- Centralized process cleanup function ----------
@@ -810,9 +835,12 @@ for ((i = 1; i <= WARMUPS; i++)); do
   $APP_CMD >"$LOG_FILE" 2>&1 &
   pid=$!
 
+  # Get the appropriate startup message for this label
+  startup_message=$(get_startup_message "$LABEL")
+
   # Wait for startup with timeout (60 seconds)
   timeout_counter=0
-  while ! grep -qm1 "Started PetClinicApplication in" "$LOG_FILE"; do
+  while ! grep -qm1 "$startup_message" "$LOG_FILE"; do
     sleep 1
     timeout_counter=$((timeout_counter + 1))
     if [[ $timeout_counter -ge 60 ]]; then
@@ -870,9 +898,12 @@ for ((i = 1; i <= RUNS; i++)); do
     done
   fi
 
+  # Get the appropriate startup message for this label
+  startup_message=$(get_startup_message "$LABEL")
+
   # Wait for startup with timeout (60 seconds)
   timeout_counter=0
-  while ! grep -qm1 "Started PetClinicApplication in" "$LOG_FILE"; do
+  while ! grep -qm1 "$startup_message" "$LOG_FILE"; do
     sleep 1
     timeout_counter=$((timeout_counter + 1))
     if [[ $timeout_counter -ge 60 ]]; then
@@ -882,8 +913,7 @@ for ((i = 1; i <= RUNS; i++)); do
   done
 
   if [[ $timeout_counter -lt 60 ]]; then
-    line=$(grep -m1 "Started PetClinicApplication in" "$LOG_FILE")
-    [[ $line =~ in\ ([0-9.]+)\ seconds ]] && s_time="${BASH_REMATCH[1]}"
+    s_time=$(extract_startup_time "$LABEL" "$LOG_FILE")
     hit_urls # --- load generator ---
   else
     s_time="N/A"
