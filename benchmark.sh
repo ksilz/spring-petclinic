@@ -10,6 +10,19 @@ TRAINING_MODE="${4:-}" # optional fourth param for training mode
 # Add timestamp marker for process tracking
 SCRIPT_START_TIME=$(date +%s)
 
+# Debug information
+echo "DEBUG: Script started with parameters:"
+echo "  JAR_PATH: $JAR_PATH"
+echo "  LABEL: $LABEL"
+echo "  AOT_FLAG: $AOT_FLAG"
+echo "  TRAINING_MODE: $TRAINING_MODE"
+echo "  SCRIPT_START_TIME: $SCRIPT_START_TIME"
+echo "  PID: $$"
+echo "  PPID: $PPID"
+echo "  Command: $0 $*"
+echo "DEBUG: End of debug info"
+echo
+
 [[ -z $JAR_PATH ]] && {
   echo "ERROR: missing JAR_PATH"
   exit 1
@@ -138,6 +151,14 @@ fi
 CSV_FILE="result_${LABEL}.csv"
 WARMUPS=1
 RUNS=4
+
+# Debug information for configuration
+echo "DEBUG: Configuration set:"
+echo "  WARMUPS: $WARMUPS"
+echo "  RUNS: $RUNS"
+echo "  CSV_FILE: $CSV_FILE"
+echo "DEBUG: End of configuration debug"
+echo
 
 # Warning about Leyden on Linux
 if [[ "$LABEL" == "leyden" && "$(uname)" == "Linux" ]]; then
@@ -277,12 +298,15 @@ cleanup_processes() {
   if [[ -n "$NATIVE_PIDS" ]]; then
     echo "${indent}Found existing native spring-petclinic processes: $NATIVE_PIDS"
 
-    # For training runs, be very conservative and don't kill any processes
-    if [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
-      echo "${indent}  Skipping native process cleanup during GraalVM training"
-    elif [[ "$LABEL" == "graalvm" ]]; then
-      # For GraalVM benchmark runs, skip cleanup entirely since training already cleaned up
-      echo "${indent}  Skipping native process cleanup during GraalVM benchmark (training already cleaned up)"
+    # For GraalVM, be very conservative about cleanup
+    if [[ "$LABEL" == "graalvm" ]]; then
+      # Check if this is a training run (indicated by TRAINING_MODE parameter)
+      if [[ "$TRAINING_MODE" == "training" ]]; then
+        echo "${indent}  Skipping native process cleanup during GraalVM training"
+      else
+        # For GraalVM benchmark runs, skip cleanup entirely since training already cleaned up
+        echo "${indent}  Skipping native process cleanup during GraalVM benchmark (training already cleaned up)"
+      fi
     else
       # For non-GraalVM runs, be more aggressive with cleanup
       echo "${indent}  Killing existing native spring-petclinic processes: $NATIVE_PIDS"
@@ -914,16 +938,20 @@ for ((i = 1; i <= RUNS; i++)); do
 
   # Kill the actual application process, fallback to time process if needed
   if [[ -n "$app_pid" ]]; then
+    echo "    Killing app process $app_pid"
     kill -TERM "$app_pid" 2>/dev/null
     sleep 1
     # Force kill if still running
     if kill -0 "$app_pid" 2>/dev/null; then
+      echo "    Force killing app process $app_pid"
       kill -9 "$app_pid" 2>/dev/null
     fi
   else
+    echo "    Killing time process $tpid"
     kill -TERM "$tpid" 2>/dev/null
   fi
   wait "$tpid" 2>/dev/null
+  echo "    Run $i completed successfully"
 
   # Memory measurement
   if [[ "$(uname)" == "Darwin" ]]; then
@@ -954,6 +982,9 @@ for ((i = 1; i <= RUNS; i++)); do
   times+=("$s_time")
   mems+=("$m_rss")
   printf "    %ss, %s KB\n" "$s_time" "$m_rss"
+
+  # Add debugging information
+  echo "    Debug: Run $i finished, continuing to next run..."
 done
 
 # -------- Trimmed-mean averages (drop min & max) -------
