@@ -127,7 +127,7 @@ if [[ $BUILD_SYS == gradle ]]; then
   CMD[tuning]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[cds]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[leyden]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[crac]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Pcrac=true"
+  CMD[crac]="SPRING_PROFILES_ACTIVE=postgres ./gradlew --no-daemon -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Pcrac=true"
   if [[ "$(uname)" == "Linux" ]]; then
     CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=\"--gc=G1\" --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\""
   else
