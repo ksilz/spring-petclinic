@@ -257,13 +257,37 @@ elif [[ "$LABEL" == "crac" ]]; then
   $TRAIN_CMD >/tmp/app_out.log 2>&1 &
   pid=$!
 
-  # Find the Java process to take checkpoint
-  for _ in {1..10}; do
-    app_pid=$(pgrep -P "$pid" java) && break || sleep 0.5
+  # Wait for application to start and extract PID from Spring Boot log
+  echo "    Waiting for application to start..."
+  timeout_counter=0
+  app_pid=""
+  while [[ $timeout_counter -lt 60 ]]; do
+    # Try to extract PID from Spring Boot startup log
+    if grep -q "Starting PetClinicApplication.*with PID" /tmp/app_out.log; then
+      app_pid=$(grep "Starting PetClinicApplication.*with PID" /tmp/app_out.log | tail -1 | grep -o "with PID [0-9]*" | awk '{print $3}')
+      if [[ -n "$app_pid" ]]; then
+        echo "    Found application PID from log: $app_pid"
+        break
+      fi
+    fi
+
+    # Also check if application has started
+    if grep -q "Started PetClinicApplication in" /tmp/app_out.log; then
+      echo "    Application started successfully"
+      break
+    fi
+
+    sleep 1
+    timeout_counter=$((timeout_counter + 1))
   done
 
   if [[ -z "$app_pid" ]]; then
-    echo "    Error: Could not find Java process for checkpoint creation"
+    echo "    Error: Could not find Java process PID from Spring Boot log"
+    echo "    Background process PID: $pid"
+    echo "    Available Java processes:"
+    pgrep -f java | while read p; do
+      echo "      PID $p: $(ps -p $p -o cmd= 2>/dev/null | head -1)"
+    done
     echo "    Last few lines of log:"
     tail -10 /tmp/app_out.log | sed 's/^/      /'
     kill -TERM "$pid" 2>/dev/null
@@ -272,70 +296,56 @@ elif [[ "$LABEL" == "crac" ]]; then
     exit 1
   fi
 
-  echo "    Found Java process PID: $app_pid"
-
-  # Wait for application to start
-  timeout_counter=0
-  while ! grep -qm1 "Started PetClinicApplication in" /tmp/app_out.log; do
-    sleep 1
-    timeout_counter=$((timeout_counter + 1))
-    if [[ $timeout_counter -ge 60 ]]; then
-      echo "    Timeout waiting for application to start (60s)"
-      echo "    Last few lines of log:"
-      tail -10 /tmp/app_out.log | sed 's/^/      /'
-      break
-    fi
-  done
-
-  if [[ $timeout_counter -lt 60 ]]; then
-    echo "    Application started successfully"
-    hit_urls
-  else
-    echo "    Warning: Could not detect application startup, but continuing..."
-    hit_urls
+  # Verify the process is still running
+  if ! kill -0 "$app_pid" 2>/dev/null; then
+    echo "    Error: Application process $app_pid is no longer running"
+    echo "    Last few lines of log:"
+    tail -10 /tmp/app_out.log | sed 's/^/      /'
+    kill -TERM "$pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    echo "    CRaC training failed - skipping benchmark"
+    exit 1
   fi
 
+  # Wait for application to fully start and hit URLs
+  echo "    Application started successfully"
+  hit_urls
+
   # Take CRaC checkpoint before killing
-  if [[ -n "$app_pid" ]]; then
-    echo "    Taking CRaC checkpoint..."
-    jcmd "$app_pid" JDK.checkpoint >/tmp/jcmd.log 2>&1
-    jcmd_exit_code=$?
+  echo "    Taking CRaC checkpoint..."
+  jcmd "$app_pid" JDK.checkpoint >/tmp/jcmd.log 2>&1
+  jcmd_exit_code=$?
 
-    if [[ $jcmd_exit_code -eq 0 ]]; then
-      echo "    Checkpoint command executed successfully"
-    else
-      echo "    Warning: jcmd checkpoint command failed with exit code $jcmd_exit_code"
-      echo "    jcmd output:"
-      cat /tmp/jcmd.log | sed 's/^/      /'
-    fi
+  if [[ $jcmd_exit_code -eq 0 ]]; then
+    echo "    Checkpoint command executed successfully"
+  else
+    echo "    Warning: jcmd checkpoint command failed with exit code $jcmd_exit_code"
+    echo "    jcmd output:"
+    cat /tmp/jcmd.log | sed 's/^/      /'
+  fi
 
-    # Wait for checkpoint to complete
-    sleep 5
+  # Wait for checkpoint to complete
+  sleep 5
 
-    # Verify checkpoint file was created
-    if [[ -f petclinic.bin ]]; then
-      echo "    Checkpoint file created successfully: $(ls -lh petclinic.bin)"
-    else
-      echo "    Error: Checkpoint file petclinic.bin was not created"
-      echo "    Last few lines of application log:"
-      tail -10 /tmp/app_out.log | sed 's/^/      /'
-      kill -TERM "$app_pid" 2>/dev/null
-      wait "$pid" 2>/dev/null
-      echo "    CRaC training failed - skipping benchmark"
-      exit 1
-    fi
+  # Verify checkpoint file was created
+  if [[ -f petclinic.bin ]]; then
+    echo "    Checkpoint file created successfully: $(ls -lh petclinic.bin)"
+  else
+    echo "    Error: Checkpoint file petclinic.bin was not created"
+    echo "    Last few lines of application log:"
+    tail -10 /tmp/app_out.log | sed 's/^/      /'
+    kill -TERM "$app_pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    echo "    CRaC training failed - skipping benchmark"
+    exit 1
   fi
 
   # Kill the application
-  if [[ -n "$app_pid" ]]; then
-    kill -TERM "$app_pid" 2>/dev/null
-    sleep 1
-    # Force kill if still running
-    if kill -0 "$app_pid" 2>/dev/null; then
-      kill -9 "$app_pid" 2>/dev/null
-    fi
-  else
-    kill -TERM "$pid" 2>/dev/null
+  kill -TERM "$app_pid" 2>/dev/null
+  sleep 1
+  # Force kill if still running
+  if kill -0 "$app_pid" 2>/dev/null; then
+    kill -9 "$app_pid" 2>/dev/null
   fi
   wait "$pid" 2>/dev/null
   train_end=$(date +%s)
