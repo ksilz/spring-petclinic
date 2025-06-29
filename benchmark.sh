@@ -523,25 +523,47 @@ elif [[ "$LABEL" == "crac" ]]; then
   # Verify the process is still running
   if ! kill -0 "$app_pid" 2>/dev/null; then
     echo "    Error: Application process $app_pid is no longer running"
+    echo "    Process details:"
+    echo "      PID: $app_pid"
+    echo "      Background process PID: $pid"
+    echo "      Background process status: $(kill -0 "$pid" 2>/dev/null && echo "running" || echo "terminated")"
+    echo "    Available Java processes:"
+    pgrep -f java | while read p; do
+      echo "      PID $p: $(ps -p $p -o user=,cmd= 2>/dev/null | head -1)"
+    done
     echo "    Last few lines of log:"
-    tail -10 "$LOG_FILE" | sed 's/^/      /'
+    tail -15 "$LOG_FILE" | sed 's/^/      /'
     kill -TERM "$pid" 2>/dev/null
     wait "$pid" 2>/dev/null
     echo "    CRaC training failed - skipping benchmark"
     exit 1
   fi
 
+  # Additional debugging: show process details
+  echo "    Process details before checkpoint:"
+  echo "      PID: $app_pid"
+  echo "      Owner: $(ps -p "$app_pid" -o user= 2>/dev/null)"
+  echo "      Command: $(ps -p "$app_pid" -o cmd= 2>/dev/null | head -1)"
+  echo "      Process tree:"
+  pstree -p "$app_pid" 2>/dev/null | sed 's/^/        /' || echo "        (pstree not available)"
+
   # Wait for application to fully start and hit URLs
   echo "    Application started successfully"
   hit_urls
 
-  # Give the application some time to stabilize before taking checkpoint
-  echo "    Waiting for application to stabilize before checkpoint..."
-  sleep 5
+  # Check if application is responding to requests
+  echo "    Verifying application is responding to requests..."
+  response_status=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080" 2>/dev/null || echo "000")
+  if [[ "$response_status" == "200" ]]; then
+    echo "    Application is responding correctly (status: $response_status)"
+  else
+    echo "    Warning: Application may not be fully ready (status: $response_status)"
+  fi
 
   # Take CRaC checkpoint before killing
   echo "    Taking CRaC checkpoint..."
-  jcmd "$app_pid" JDK.checkpoint >/tmp/jcmd.log 2>&1
+  echo "    Using jcmd to initiate checkpoint on process $app_pid (running as root)"
+  sudo jcmd "$app_pid" JDK.checkpoint >/tmp/jcmd.log 2>&1
   jcmd_exit_code=$?
 
   if [[ $jcmd_exit_code -eq 0 ]]; then
@@ -550,6 +572,14 @@ elif [[ "$LABEL" == "crac" ]]; then
     echo "    Warning: jcmd checkpoint command failed with exit code $jcmd_exit_code"
     echo "    jcmd output:"
     cat /tmp/jcmd.log | sed 's/^/      /'
+    echo "    Process status check:"
+    if kill -0 "$app_pid" 2>/dev/null; then
+      echo "      Process $app_pid is still running"
+      echo "      Process owner: $(ps -p "$app_pid" -o user= 2>/dev/null)"
+      echo "      Process command: $(ps -p "$app_pid" -o cmd= 2>/dev/null | head -1)"
+    else
+      echo "      Process $app_pid has terminated"
+    fi
   fi
 
   # Wait for checkpoint to complete - give it more time
