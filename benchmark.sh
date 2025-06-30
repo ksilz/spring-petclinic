@@ -128,7 +128,7 @@ check_crac_requirements() {
 # Set initial log file based on current mode
 if [[ "$TRAINING_MODE" == "training" ]]; then
   set_log_file "training"
-elif [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]] || [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]] || [[ "$LABEL" == "crac" ]]; then
+elif [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]] || [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]] || [[ "$LABEL" == "crac" && ! -d petclinic-crac ]]; then
   set_log_file "training"
 else
   set_log_file "benchmark"
@@ -137,7 +137,7 @@ fi
 if [[ "$LABEL" == "graalvm" ]]; then
   APP_CMD="./build/native/nativeCompile/spring-petclinic --spring.profiles.active=postgres -Xms512m -Xmx1g"
   TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres"
-elif [[ "$LABEL" == "crac" && ! -d petclinic-crac ]]; then
+elif [[ "$LABEL" == "crac" ]]; then
   # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
   # Use CRaCEngine=warp to avoid requiring elevated privileges
   # Checkpoint creation: use -jar with relative path
@@ -173,7 +173,7 @@ echo "****************************************************************"
 echo
 echo "Running application"
 echo
-if [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]] || [[ "$LABEL" == "crac" ]] || [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]] || [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]]; then
+if [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]] || [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]] || [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]] || [[ "$LABEL" == "crac" && ! -d petclinic-crac ]]; then
   echo "-> $TRAIN_CMD"
 else
   echo "-> $APP_CMD"
@@ -482,7 +482,7 @@ elif [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]]; then
   train_end=$(date +%s)
   train_duration=$(awk "BEGIN {print ($train_end-$train_start)}")
   printf "Training run took %.1f seconds\n" "$train_duration"
-elif [[ "$LABEL" == "crac" && ! -d petclinic-crac ]]; then
+elif [[ "$LABEL" == "crac" ]]; then
   echo "  CRaC (creates checkpoint)"
 
   # Check CRaC system requirements first
