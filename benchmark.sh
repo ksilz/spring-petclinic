@@ -256,9 +256,16 @@ extract_startup_time() {
   local log_file="$2"
   case "$label" in
   "crac")
-    # For CRaC, we don't have a startup time in the same format
-    # The restart completion doesn't include timing information
-    echo "N/A"
+    # For CRaC, look for "(restored JVM running for X ms)" message
+    local line=$(grep -m1 "restored JVM running for" "$log_file")
+    if [[ $line =~ running\ for\ ([0-9]+)\ ms ]]; then
+      # Convert milliseconds to seconds
+      local ms="${BASH_REMATCH[1]}"
+      local seconds=$(awk "BEGIN {printf \"%.3f\", $ms/1000}")
+      echo "$seconds"
+    else
+      echo "N/A"
+    fi
     ;;
   *)
     # For other labels, extract time from "Started PetClinicApplication in X.XXX seconds"
