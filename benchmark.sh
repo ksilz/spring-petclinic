@@ -327,7 +327,7 @@ cleanup_processes
 
 # --- Special training run for CDS, Leyden, and CRaC ---
 if [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]]; then
-  echo "  CDS (creates petclinic.jsa)"
+  echo "Training run CDS (creates petclinic.jsa)"
 
   # Delete existing CDS cache file if it exists
   if [[ -f petclinic.jsa ]]; then
@@ -349,7 +349,7 @@ if [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]]; then
   printf "Training run took %.1f seconds\n" "$train_duration"
   echo "  CDS training run complete. Proceeding with benchmark measurements."
 elif [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]]; then
-  echo "  Leyden (creates petclinic.aot in two steps)"
+  echo "Training run Leyden (creates petclinic.aot in two steps)"
 
   # Delete existing AOT cache file if it exists
   if [[ -f petclinic.aot ]]; then
@@ -873,6 +873,9 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   echo "  GraalVM training run complete. Returning control to compile-and-run.sh for rebuild."
   exit 0
 fi
+
+# ---------------- Warm-up phase ---------------------
+echo "Starting $WARMUPS warm-up run$([[ $WARMUPS -eq 1 ]] && echo '' || echo 's')…"
 
 for ((i = 1; i <= WARMUPS; i++)); do
   echo "  Warm-up $i"
