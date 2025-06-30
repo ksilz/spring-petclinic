@@ -887,7 +887,7 @@ for ((i = 1; i <= WARMUPS; i++)); do
   if [[ "$LABEL" == "graalvm" ]]; then
     # For native executables, look for the correct spring-petclinic process
     for _ in {1..10}; do
-      app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic" | grep -v "$pid" | head -1)
+      app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic" | grep -v "$pid" | grep -v "$$" | grep -v "benchmark.sh" | head -1)
       [[ -n "$app_pid" ]] && break
       sleep 0.5
     done
