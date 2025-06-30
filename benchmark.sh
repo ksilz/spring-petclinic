@@ -301,7 +301,7 @@ cleanup_processes() {
 
   # Kill any running native spring-petclinic processes to avoid conflicts
   # But be careful not to kill the current training process
-  NATIVE_PIDS=$(pgrep -f "build/native/nativeCompile/spring-petclinic")
+  NATIVE_PIDS=$(pgrep -f "build/native/nativeCompile/spring-petclinic" | grep -v "$$" | grep -v "benchmark.sh")
   if [[ -n "$NATIVE_PIDS" ]]; then
     echo "${indent}Found existing native spring-petclinic processes: $NATIVE_PIDS"
 
