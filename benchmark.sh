@@ -279,6 +279,42 @@ extract_startup_time() {
   esac
 }
 
+# Function to extract PID from log file
+extract_pid_from_log() {
+  local log_file="$1"
+  local label="$2"
+
+  case "$label" in
+  "graalvm")
+    # For GraalVM, look for "Started PetClinicApplication" with PID in log level
+    local line=$(grep -m1 "Started PetClinicApplication" "$log_file")
+    if [[ $line =~ INFO\ ([0-9]+)\ --- ]]; then
+      echo "${BASH_REMATCH[1]}"
+    else
+      echo ""
+    fi
+    ;;
+  "crac")
+    # For CRaC, look for "Starting PetClinicApplication" with PID in log level
+    local line=$(grep -m1 "Starting PetClinicApplication" "$log_file")
+    if [[ $line =~ INFO\ ([0-9]+)\ --- ]]; then
+      echo "${BASH_REMATCH[1]}"
+    else
+      echo ""
+    fi
+    ;;
+  *)
+    # For other labels, look for "Started PetClinicApplication" with PID in log level
+    local line=$(grep -m1 "Started PetClinicApplication" "$log_file")
+    if [[ $line =~ INFO\ ([0-9]+)\ --- ]]; then
+      echo "${BASH_REMATCH[1]}"
+    else
+      echo ""
+    fi
+    ;;
+  esac
+}
+
 # ---------- Centralized process cleanup function ----------
 cleanup_processes() {
   local indent="${1:-}" # Optional indent parameter for consistent formatting
@@ -877,14 +913,30 @@ for ((i = 1; i <= WARMUPS; i++)); do
   $APP_CMD >"$LOG_FILE" 2>&1 &
   pid=$!
 
-  # Find the actual application process to kill (same logic as benchmark loop)
+  # Find the actual application process to kill
   if [[ "$LABEL" == "graalvm" ]]; then
-    # For native executables, look for the correct spring-petclinic process
-    for _ in {1..10}; do
-      app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic" | grep -v "$pid" | grep -v "$$" | grep -v "benchmark.sh" | head -1)
-      [[ -n "$app_pid" ]] && break
-      sleep 0.5
+    # For native executables, extract PID from log file
+    echo "    Waiting for application to start and extract PID from log..."
+    timeout_counter=0
+    while [[ $timeout_counter -lt 30 ]]; do
+      app_pid=$(extract_pid_from_log "$LOG_FILE" "$LABEL")
+      if [[ -n "$app_pid" ]]; then
+        echo "    Found GraalVM app process PID from log: $app_pid"
+        break
+      fi
+      sleep 1
+      timeout_counter=$((timeout_counter + 1))
     done
+
+    # Fallback to pgrep if PID extraction failed
+    if [[ -z "$app_pid" ]]; then
+      echo "    Warning: Could not extract PID from log, falling back to pgrep..."
+      for _ in {1..10}; do
+        app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic" | grep -v "$pid" | grep -v "$$" | grep -v "benchmark.sh" | head -1)
+        [[ -n "$app_pid" ]] && break
+        sleep 0.5
+      done
+    fi
   elif [[ "$LABEL" == "crac" ]]; then
     # For CRaC, the Java process is not a child of the background process
     # Look for the Java process that's running the CRaC restore command
@@ -953,18 +1005,24 @@ for ((i = 1; i <= RUNS; i++)); do
 
   # Find the actual application process to kill
   if [[ "$LABEL" == "graalvm" ]]; then
-    # For native executables, look for the correct spring-petclinic process
-    if [[ "$TRAINING_MODE" == "training" ]]; then
-      # Training run uses instrumented binary
+    # For native executables, extract PID from log file
+    echo "    Waiting for application to start and extract PID from log..."
+    timeout_counter=0
+    while [[ $timeout_counter -lt 30 ]]; do
+      app_pid=$(extract_pid_from_log "$LOG_FILE" "$LABEL")
+      if [[ -n "$app_pid" ]]; then
+        echo "    Found GraalVM app process PID from log: $app_pid"
+        break
+      fi
+      sleep 1
+      timeout_counter=$((timeout_counter + 1))
+    done
+
+    # Fallback to pgrep if PID extraction failed
+    if [[ -z "$app_pid" ]]; then
+      echo "    Warning: Could not extract PID from log, falling back to pgrep..."
       for _ in {1..10}; do
-        app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic-instrumented" | grep -v "$tpid" | head -1)
-        [[ -n "$app_pid" ]] && break
-        sleep 0.5
-      done
-    else
-      # Benchmark run uses regular binary
-      for _ in {1..10}; do
-        app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic" | grep -v "$tpid" | head -1)
+        app_pid=$(pgrep -f "build/native/nativeCompile/spring-petclinic" | grep -v "$tpid" | grep -v "$$" | grep -v "benchmark.sh" | head -1)
         [[ -n "$app_pid" ]] && break
         sleep 0.5
       done
