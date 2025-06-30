@@ -128,7 +128,7 @@ check_crac_requirements() {
 # Set initial log file based on current mode
 if [[ "$TRAINING_MODE" == "training" ]]; then
   set_log_file "training"
-elif [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]] || [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]] || [[ "$LABEL" == "crac" && ! -d petclinic-crac ]]; then
+elif [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]] || [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]] || [[ "$LABEL" == "crac" && (! -d petclinic-crac || -z "$(ls -A petclinic-crac 2>/dev/null)") ]]; then
   set_log_file "training"
 else
   set_log_file "benchmark"
@@ -173,7 +173,7 @@ echo "****************************************************************"
 echo
 echo "Running application"
 echo
-if [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]] || [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]] || [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]] || [[ "$LABEL" == "crac" && ! -d petclinic-crac ]]; then
+if [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]] || [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]] || [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]] || [[ "$LABEL" == "crac" && (! -d petclinic-crac || -z "$(ls -A petclinic-crac 2>/dev/null)") ]]; then
   echo "-> $TRAIN_CMD"
 else
   echo "-> $APP_CMD"
@@ -518,7 +518,7 @@ elif [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]]; then
   train_end=$(date +%s)
   train_duration=$(awk "BEGIN {print ($train_end-$train_start)}")
   printf "Training run took %.1f seconds\n" "$train_duration"
-elif [[ "$LABEL" == "crac" && ! -d petclinic-crac ]]; then
+elif [[ "$LABEL" == "crac" && (! -d petclinic-crac || -z "$(ls -A petclinic-crac 2>/dev/null)") ]]; then
   echo "  CRaC (creates checkpoint)"
 
   # Check CRaC system requirements first
