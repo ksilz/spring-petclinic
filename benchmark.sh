@@ -328,6 +328,13 @@ cleanup_processes
 # --- Special training run for CDS, Leyden, and CRaC ---
 if [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]]; then
   echo "  CDS (creates petclinic.jsa)"
+
+  # Delete existing CDS cache file if it exists
+  if [[ -f petclinic.jsa ]]; then
+    echo "    Deleting existing CDS cache: petclinic.jsa"
+    rm -f petclinic.jsa
+  fi
+
   cds_cmd="java -XX:ArchiveClassesAtExit=petclinic.jsa -jar $JAR_PATH"
   echo "    Command: $cds_cmd"
   train_start=$(date +%s)
@@ -343,7 +350,15 @@ if [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]]; then
   echo "  CDS training run complete. Proceeding with benchmark measurements."
 elif [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]]; then
   echo "  Leyden (creates petclinic.aot in two steps)"
+
+  # Delete existing AOT cache file if it exists
+  if [[ -f petclinic.aot ]]; then
+    echo "    Deleting existing Leyden AOT cache: petclinic.aot"
+    rm -f petclinic.aot
+  fi
+
   train_start=$(date +%s)
+
   # Step 1: Record mode - collect AOT configuration
   echo "    Step 1: Recording AOT configuration..."
   record_cmd="java -XX:AOTMode=record -XX:AOTConfiguration=petclinic.aotconf -jar $JAR_PATH"
