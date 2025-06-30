@@ -733,6 +733,12 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
     mkdir -p src/pgo-profiles/main
   fi
 
+  # Clean up any existing default.iprof in current directory
+  if [[ -f "default.iprof" ]]; then
+    echo "    Deleting existing default.iprof in current directory"
+    rm -f default.iprof
+  fi
+
   echo "    Command: $TRAIN_CMD"
   train_start=$(date +%s)
 
