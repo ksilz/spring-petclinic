@@ -1056,7 +1056,14 @@ for ((i = 1; i <= RUNS; i++)); do
   echo "$i,$s_time,$m_rss" >>"$CSV_FILE"
   times+=("$s_time")
   mems+=("$m_rss")
-  printf "    %ss, %s KB\n" "$s_time" "$m_rss"
+
+  # Display memory in MB for screen output, but keep KB for CSV
+  if [[ "$m_rss" == "N/A" ]]; then
+    printf "    %ss, %s\n" "$s_time" "$m_rss"
+  else
+    m_rss_mb=$(awk "BEGIN {printf \"%.1f\", $m_rss/1024}")
+    printf "    %ss, %.1f MB\n" "$s_time" "$m_rss_mb"
+  fi
 
   # Add debugging information
   echo "    Debug: Run $i finished, continuing to next run..."
