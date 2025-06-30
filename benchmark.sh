@@ -137,7 +137,7 @@ fi
 if [[ "$LABEL" == "graalvm" ]]; then
   APP_CMD="./build/native/nativeCompile/spring-petclinic --spring.profiles.active=postgres -Xms512m -Xmx1g"
   TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres"
-elif [[ "$LABEL" == "crac" ]]; then
+elif [[ "$LABEL" == "crac" && ! -d petclinic-crac ]]; then
   # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
   # Use CRaCEngine=warp to avoid requiring elevated privileges
   # Checkpoint creation: use -jar with relative path
@@ -482,7 +482,7 @@ elif [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]]; then
   train_end=$(date +%s)
   train_duration=$(awk "BEGIN {print ($train_end-$train_start)}")
   printf "Training run took %.1f seconds\n" "$train_duration"
-elif [[ "$LABEL" == "crac" ]]; then
+elif [[ "$LABEL" == "crac" && ! -d petclinic-crac ]]; then
   echo "  CRaC (creates checkpoint)"
 
   # Check CRaC system requirements first
