@@ -149,8 +149,8 @@ else
   TRAIN_CMD="java -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
 fi
 CSV_FILE="result_${LABEL}.csv"
-WARMUPS=1
-RUNS=4
+WARMUPS=3
+RUNS=7
 
 # Debug information for configuration
 echo "DEBUG: Configuration set:"
