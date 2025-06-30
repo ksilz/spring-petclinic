@@ -144,6 +144,10 @@ elif [[ "$LABEL" == "crac" ]]; then
   # Checkpoint restore: use only -XX:CRaCRestoreFrom without -jar
   APP_CMD="java -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -XX:CRaCEngine=warp --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
   TRAIN_CMD="java -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -XX:CRaCEngine=warp -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+elif [[ "$LABEL" == "leyden" ]]; then
+  # For Leyden, use AOT cache if available
+  APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=true -XX:AOTCache=petclinic.aot -jar $JAR_PATH --spring.profiles.active=postgres"
+  TRAIN_CMD="java -XX:+UseG1GC -Dspring.aot.enabled=true -XX:AOTCache=petclinic.aot -jar $JAR_PATH --spring.profiles.active=postgres"
 else
   APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
   TRAIN_CMD="java -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
