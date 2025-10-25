@@ -55,3 +55,4 @@ petclinic.aot
 petclinic.jsa
 result_*.csv
 default.iprof
+/.claude/settings.local.json
