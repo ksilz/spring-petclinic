@@ -134,23 +134,48 @@ else
   set_log_file "benchmark"
 fi
 
+# ---------------- Parameter Variables ---------------------
+# Standard JVM parameters shared across variants for consistency
+# Training and benchmark runs use identical params except where technical constraints differ
+
+# Base JVM parameters (without AOT)
+BASE_JVM_PARAMS="-Xms512m -Xmx1g -XX:+UseG1GC --spring.profiles.active=postgres"
+
+# Base JVM parameters with AOT enabled
+BASE_JVM_PARAMS_WITH_AOT="-Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=true --spring.profiles.active=postgres"
+
+# CRaC-specific parameters
+# Training: Includes GC for fresh JVM start with full heap/GC configuration
+CRAC_TRAINING_PARAMS="-Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=false --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+# Restore: NO GC flag because GC configuration is restored from checkpoint
+CRAC_RESTORE_PARAMS="-Xms512m -Xmx1g -Dspring.aot.enabled=false --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+
+# GraalVM parameters (native binary - no JVM-specific GC flag)
+GRAALVM_PARAMS="-Xms512m -Xmx1g --spring.profiles.active=postgres"
+
+# ---------------- Command Definitions ---------------------
 if [[ "$LABEL" == "graalvm" ]]; then
-  APP_CMD="./build/native/nativeCompile/spring-petclinic --spring.profiles.active=postgres -Xms512m -Xmx1g"
-  TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented --spring.profiles.active=postgres"
+  APP_CMD="./build/native/nativeCompile/spring-petclinic $GRAALVM_PARAMS"
+  TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented $GRAALVM_PARAMS"
 elif [[ "$LABEL" == "crac" ]]; then
   # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
   # Use CRaCEngine=warp to avoid requiring elevated privileges
   # Checkpoint creation: use -jar with relative path
   # Checkpoint restore: use only -XX:CRaCRestoreFrom without -jar
-  APP_CMD="java -Xms512m -Xmx1g -Dspring.aot.enabled=false -XX:CRaCRestoreFrom=petclinic-crac -XX:CRaCEngine=warp --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
-  TRAIN_CMD="java -XX:+UseG1GC -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac -XX:CRaCEngine=warp -jar $JAR_PATH --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+  # IMPORTANT: Training and restore use DIFFERENT parameters:
+  #  - Training: includes -XX:+UseG1GC (fresh JVM start)
+  #  - Restore: NO GC flag (GC configuration restored from checkpoint)
+  APP_CMD="java $CRAC_RESTORE_PARAMS -XX:CRaCRestoreFrom=petclinic-crac -XX:CRaCEngine=warp"
+  TRAIN_CMD="java $CRAC_TRAINING_PARAMS -XX:CRaCCheckpointTo=petclinic-crac -XX:CRaCEngine=warp -jar $JAR_PATH"
 elif [[ "$LABEL" == "leyden" ]]; then
-  # For Leyden, use AOT cache if available
-  APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=true -XX:AOTCache=petclinic.aot -jar $JAR_PATH --spring.profiles.active=postgres"
-  TRAIN_CMD="java -XX:+UseG1GC -Dspring.aot.enabled=true -XX:AOTCache=petclinic.aot -jar $JAR_PATH --spring.profiles.active=postgres"
+  # For Leyden, training and benchmark use identical base parameters
+  APP_CMD="java $BASE_JVM_PARAMS_WITH_AOT -XX:AOTCache=petclinic.aot -jar $JAR_PATH"
+  TRAIN_CMD="java $BASE_JVM_PARAMS_WITH_AOT -XX:AOTCache=petclinic.aot -jar $JAR_PATH"
 else
-  APP_CMD="java -Xms512m -Xmx1g -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
-  TRAIN_CMD="java -XX:+UseG1GC ${AOT_FLAG} -jar $JAR_PATH --spring.profiles.active=postgres"
+  # Baseline, Tuning, and CDS variants
+  # Use BASE_JVM_PARAMS with AOT_FLAG to control AOT setting
+  APP_CMD="java $BASE_JVM_PARAMS ${AOT_FLAG} -jar $JAR_PATH"
+  TRAIN_CMD="java $BASE_JVM_PARAMS ${AOT_FLAG} -jar $JAR_PATH"
 fi
 CSV_FILE="result_${LABEL}.csv"
 WARMUPS=3
@@ -375,7 +400,7 @@ if [[ "$LABEL" == "cds" && ! -f petclinic.jsa ]]; then
     rm -f petclinic.jsa
   fi
 
-  cds_cmd="java -XX:ArchiveClassesAtExit=petclinic.jsa -jar $JAR_PATH"
+  cds_cmd="java $BASE_JVM_PARAMS_WITH_AOT -XX:ArchiveClassesAtExit=petclinic.jsa -jar $JAR_PATH"
   echo "    Command: $cds_cmd"
   train_start=$(date +%s)
   $cds_cmd >"$LOG_FILE" 2>&1 &
@@ -401,7 +426,7 @@ elif [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]]; then
 
   # Step 1: Record mode - collect AOT configuration
   echo "    Step 1: Recording AOT configuration..."
-  record_cmd="java -XX:AOTMode=record -XX:AOTConfiguration=petclinic.aotconf -jar $JAR_PATH"
+  record_cmd="java $BASE_JVM_PARAMS_WITH_AOT -XX:AOTMode=record -XX:AOTConfiguration=petclinic.aotconf -jar $JAR_PATH"
   echo "    Command: $record_cmd"
 
   # Run without resource limits to avoid memory allocation failures
@@ -469,7 +494,7 @@ elif [[ "$LABEL" == "leyden" && ! -f petclinic.aot ]]; then
   if [[ -f petclinic.aotconf ]]; then
     echo "    Step 2: Creating AOT cache from configuration..."
     echo "    Configuration file size: $(ls -lh petclinic.aotconf | awk '{print $5}')"
-    create_cmd="java -XX:AOTMode=create -XX:AOTConfiguration=petclinic.aotconf -XX:AOTCache=petclinic.aot -jar $JAR_PATH"
+    create_cmd="java $BASE_JVM_PARAMS_WITH_AOT -XX:AOTMode=create -XX:AOTConfiguration=petclinic.aotconf -XX:AOTCache=petclinic.aot -jar $JAR_PATH"
     echo "    Command: $create_cmd"
 
     # Run without resource limits to avoid memory allocation failures

@@ -123,10 +123,15 @@ mv default.iprof src/pgo-profiles/main/
 
 #### 1. Training Runs (if needed)
 
+**IMPORTANT**: All training runs MUST use the same Java parameters as production/benchmark runs for consistency. Training-specific flags are added to the standard parameter set.
+
 **CDS Training**:
 ```bash
-# Run with archive creation
-java -XX:ArchiveClassesAtExit=petclinic.jsa -jar <JAR>
+# Run with archive creation - uses same heap/GC settings as production
+java -Xms512m -Xmx1g -XX:+UseG1GC \
+  -Dspring.aot.enabled=true \
+  -XX:ArchiveClassesAtExit=petclinic.jsa \
+  --spring.profiles.active=postgres -jar <JAR>
 
 # Wait for startup → hit URLs → terminate
 # Output: petclinic.jsa (~50-100 MB)
@@ -134,22 +139,33 @@ java -XX:ArchiveClassesAtExit=petclinic.jsa -jar <JAR>
 
 **Leyden Training** (2-step):
 ```bash
-# Step 1: Record AOT configuration
-java -XX:AOTMode=record -XX:AOTConfiguration=petclinic.aotconf -jar <JAR>
+# Step 1: Record AOT configuration - uses same heap/GC settings
+java -Xms512m -Xmx1g -XX:+UseG1GC \
+  -Dspring.aot.enabled=true \
+  -XX:AOTMode=record -XX:AOTConfiguration=petclinic.aotconf \
+  --spring.profiles.active=postgres -jar <JAR>
 
-# Step 2: Create AOT cache from configuration
-java -XX:AOTMode=create \
+# Step 2: Create AOT cache from configuration - uses same heap/GC settings
+java -Xms512m -Xmx1g -XX:+UseG1GC \
+  -Dspring.aot.enabled=true \
+  -XX:AOTMode=create \
   -XX:AOTConfiguration=petclinic.aotconf \
-  -XX:AOTCache=petclinic.aot -jar <JAR>
+  -XX:AOTCache=petclinic.aot \
+  --spring.profiles.active=postgres -jar <JAR>
 
 # Output: petclinic.aot (~100-200 MB)
 ```
 
 **CRaC Training**:
 ```bash
-# 1. Start application
-java -XX:CRaCCheckpointTo=petclinic-crac \
-  -XX:CRaCEngine=warp -jar <JAR>
+# 1. Start application - uses full heap/GC settings for fresh JVM start
+java -Xms512m -Xmx1g -XX:+UseG1GC \
+  -Dspring.aot.enabled=false \
+  -XX:CRaCCheckpointTo=petclinic-crac \
+  -XX:CRaCEngine=warp \
+  --spring.profiles.active=postgres \
+  --spring.datasource.hikari.allow-pool-suspension=true \
+  -jar <JAR>
 
 # 2. Wait for startup → hit URLs
 
@@ -162,8 +178,9 @@ jcmd <PID> JDK.checkpoint
 
 **GraalVM Training**:
 ```bash
-# Run instrumented binary
-./spring-petclinic-instrumented
+# Run instrumented binary - uses same heap settings as production
+./spring-petclinic-instrumented -Xms512m -Xmx1g \
+  --spring.profiles.active=postgres
 
 # Wait for startup → hit URLs → terminate
 # Output: default.iprof (~10-50 MB)
@@ -284,9 +301,66 @@ A,0.353,155968  # Trimmed mean
 
 ---
 
+## Parameter Consistency Strategy
+
+### Overview
+
+Training and benchmark runs use **shared parameter variables** to ensure consistency across all variants. The benchmark.sh script defines these variables at the top to minimize drift and configuration errors.
+
+### Parameter Variables
+
+```bash
+# Base JVM parameters (without AOT)
+BASE_JVM_PARAMS="-Xms512m -Xmx1g -XX:+UseG1GC --spring.profiles.active=postgres"
+
+# Base JVM parameters with AOT enabled
+BASE_JVM_PARAMS_WITH_AOT="-Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=true --spring.profiles.active=postgres"
+
+# CRaC Training: Includes GC for fresh JVM start
+CRAC_TRAINING_PARAMS="-Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=false --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+
+# CRaC Restore: NO GC flag (restored from checkpoint)
+CRAC_RESTORE_PARAMS="-Xms512m -Xmx1g -Dspring.aot.enabled=false --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+
+# GraalVM: Native binary (no JVM-specific GC flag)
+GRAALVM_PARAMS="-Xms512m -Xmx1g --spring.profiles.active=postgres"
+```
+
+### Consistency Rules
+
+#### ✅ Variants with Identical Training/Benchmark Parameters
+
+These variants use **identical base parameters** for both training and benchmark runs:
+
+1. **Baseline & Tuning** - Use `BASE_JVM_PARAMS` with AOT flag toggle
+2. **CDS** - Uses `BASE_JVM_PARAMS_WITH_AOT` + archive-specific flags
+3. **Leyden** - Uses `BASE_JVM_PARAMS_WITH_AOT` + AOT mode flags
+4. **GraalVM** - Uses `GRAALVM_PARAMS` for both instrumented and optimized binaries
+
+**Rationale:** These variants load cached/compiled artifacts but the JVM starts fresh, so all parameters can and should match.
+
+#### ❌ CRaC: Training ≠ Benchmark (Technical Constraint)
+
+CRaC is **the only variant** where training and benchmark parameters differ:
+
+| Phase | Parameters | Reason |
+|-------|-----------|--------|
+| **Training** (Checkpoint) | `CRAC_TRAINING_PARAMS`<br/>Includes `-XX:+UseG1GC` | Fresh JVM start requires full heap/GC configuration |
+| **Benchmark** (Restore) | `CRAC_RESTORE_PARAMS`<br/>NO `-XX:+UseG1GC` | GC configuration is restored from checkpoint state;<br/>specifying GC flags would conflict with restored state |
+
+**Technical Background:**
+- During checkpoint creation, the entire JVM state (heap, GC configuration, thread state) is serialized
+- During restore, this state is loaded back into memory
+- The GC algorithm and configuration are **part of the checkpointed state** and cannot be overridden
+- Heap size parameters are included for clarity but the actual heap state comes from the checkpoint
+
+---
+
 ## Configuration
 
 ### Runtime Parameters
+
+**Parameter Consistency Requirement**: Training runs and production/benchmark runs MUST use identical Java parameters (heap size, GC settings, system properties) except where technical constraints require differences (CRaC restore). Only training-specific operational flags (e.g., `-XX:ArchiveClassesAtExit`, `-XX:AOTMode=record`) differ between training and production modes.
 
 ```bash
 # baseline
@@ -308,9 +382,12 @@ java -Xms512m -Xmx1g -XX:+UseG1GC \
   -XX:AOTCache=petclinic.aot -jar <JAR>
 
 # crac (restore)
+# NOTE: NO -XX:+UseG1GC flag - GC configuration restored from checkpoint
 java -Xms512m -Xmx1g \
+  -Dspring.aot.enabled=false \
   -XX:CRaCRestoreFrom=petclinic-crac \
-  -XX:CRaCEngine=warp
+  -XX:CRaCEngine=warp \
+  --spring.datasource.hikari.allow-pool-suspension=true
 
 # graalvm (native)
 ./spring-petclinic -Xms512m -Xmx1g
