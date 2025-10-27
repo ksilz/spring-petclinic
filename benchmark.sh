@@ -80,7 +80,7 @@ check_crac_requirements() {
     echo "      sudo apt install criu"
     echo ""
     echo "   2. Try backports repository:"
-    echo "      sudo add-apt-repository \"deb http://archive.ubuntu.com/ubuntu \$(lsb_release -cs)-backports main\""
+    echo "      sudo add-apt-repository \"deb https://archive.ubuntu.com/ubuntu \$(lsb_release -cs)-backports main\""
     echo "      sudo apt update"
     echo "      sudo apt install criu"
     echo ""
