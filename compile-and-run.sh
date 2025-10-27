@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-JAR_NAME_PART="spring-petclinic-3.5.0"
+JAR_NAME_PART="spring-petclinic-4.0.0-SNAPSHOT"
 JAR_NAME="$JAR_NAME_PART.jar"
 
 # ────────────────────────────────────────────────────────────────
