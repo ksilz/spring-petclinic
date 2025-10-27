@@ -225,7 +225,7 @@ The benchmarks are orchestrated by two bash scripts:
 - `./compile-and-run.sh` - Main orchestrator that builds variants and coordinates measurement
 - `benchmark.sh` - Performance measurement script that executes training, warm-ups, and benchmarks
 
-**Comprehensive documentation**: See `specs/Startup Benchmark PRD.md` for detailed information about:
+**Comprehensive documentation**: See [`specs/Startup-Benchmark-PRD.md`](specs/Startup-Benchmark-PRD.md) for detailed information about:
 - How each optimization technique works
 - Build commands and runtime parameters for each variant
 - Java version requirements and platform compatibility
