@@ -12,12 +12,12 @@ A benchmarking system for measuring Spring Boot application startup performance 
 
 | Variant | Description | Startup Time | Java Version |
 |---------|-------------|--------------|--------------|
-| baseline | Standard Spring Boot (AOT disabled) | ~3-5s | 21 |
-| tuning | Spring Boot with AOT enabled | ~2-4s | 21 |
-| cds | Class Data Sharing with AOT | ~1.5-3s | 21 |
-| leyden | OpenJDK Leyden AOT cache | ~1-2s | 25 EA |
-| crac | Coordinated Restore at Checkpoint | ~0.5-1s | 24 (CRaC-enabled) |
-| graalvm | Native image with PGO | ~0.3-0.8s | 24 (GraalVM) |
+| baseline | Standard Spring Boot (AOT disabled) | ~3-5s | 25 |
+| tuning | Spring Boot with AOT enabled | ~2-4s | 25 |
+| cds | Class Data Sharing with AOT | ~1.5-3s | 25 |
+| leyden | OpenJDK Leyden AOT cache | ~1-2s | 25 |
+| crac | Coordinated Restore at Checkpoint | ~0.5-1s | 25 (CRaC-enabled) |
+| graalvm | Native image with PGO | ~0.3-0.8s | 25 (GraalVM) |
 
 ---
 
@@ -292,7 +292,7 @@ A,0.353,155968  # Trimmed mean
 
 **CRaC Requirements** (Linux only):
 - CRIU installed (`apt install criu`)
-- Java 24 with CRaC support (e.g., Azul Zulu CRaC)
+- Java 25 with CRaC support (e.g., Azul Zulu CRaC)
 - Either root privileges OR CRaCEngine=warp
 
 **GraalVM Platform Differences**:
@@ -410,8 +410,8 @@ RUNS=7        # Number of benchmark runs
 
 **Java version mismatch**:
 ```bash
-sdk install java 21.0.7-tem
-sdk use java 21.0.7-tem
+sdk install java 25-tem
+sdk use java 25-tem
 ```
 
 **CRIU not installed** (CRaC):

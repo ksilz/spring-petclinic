@@ -95,18 +95,18 @@ NAME[leyden]="Project Leyden"
 NAME[crac]="CRaC"
 NAME[graalvm]="GraalVM Native Image"
 
-JAVA[baseline]='21.0.7-tem'
-EXPECT[baseline]='21'
-JAVA[tuning]='21.0.7-tem'
-EXPECT[tuning]='21'
-JAVA[cds]='21.0.7-tem'
-EXPECT[cds]='21'
-JAVA[leyden]='25.ea.28-open'
+JAVA[baseline]='25-tem'
+EXPECT[baseline]='25'
+JAVA[tuning]='25-tem'
+EXPECT[tuning]='25'
+JAVA[cds]='25-tem'
+EXPECT[cds]='25'
+JAVA[leyden]='25-tem'
 EXPECT[leyden]='25'
-JAVA[crac]='24.0.1.crac-zulu'
-EXPECT[crac]='24'
-JAVA[graalvm]='24.0.1-graal'
-EXPECT[graalvm]='GraalVM CE'
+JAVA[crac]='25.crac-zulu'
+EXPECT[crac]='25'
+JAVA[graalvm]='25-graal'
+EXPECT[graalvm]='25'
 
 JAR_PATH[baseline]="build/libs/${JAR_NAME}"
 JAR_PATH[tuning]="${JAR_NAME%.jar}/${JAR_NAME}"
@@ -184,7 +184,7 @@ for label in "${REQUESTED[@]}"; do
       echo
     else
       jdk="${JAVA[$label]}"
-      echo "The GraalVM Native Image scenario needs GraalVM Oracle 24. But you currently run:"
+      echo "The GraalVM Native Image scenario needs GraalVM Oracle 25. But you currently run:"
       echo "$java_version_output"
       echo
       echo "If you have SDKMAN, you can install and use the needed Java version easily:"
