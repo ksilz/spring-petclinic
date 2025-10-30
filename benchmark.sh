@@ -139,19 +139,19 @@ fi
 # Training and benchmark runs use identical params except where technical constraints differ
 
 # Base JVM parameters (without AOT)
-BASE_JVM_PARAMS="-Xms512m -Xmx1g -XX:+UseG1GC --spring.profiles.active=postgres"
+BASE_JVM_PARAMS="-Xms512m -Xmx1g -XX:+UseG1GC -Dspring.profiles.active=postgres"
 
 # Base JVM parameters with AOT enabled
-BASE_JVM_PARAMS_WITH_AOT="-Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=true --spring.profiles.active=postgres"
+BASE_JVM_PARAMS_WITH_AOT="-Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=true -Dspring.profiles.active=postgres"
 
 # CRaC-specific parameters
 # Training: Includes GC for fresh JVM start with full heap/GC configuration
-CRAC_TRAINING_PARAMS="-Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=false --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+CRAC_TRAINING_PARAMS="-Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
 # Restore: NO GC flag because GC configuration is restored from checkpoint
-CRAC_RESTORE_PARAMS="-Xms512m -Xmx1g -Dspring.aot.enabled=false --spring.profiles.active=postgres --spring.datasource.hikari.allow-pool-suspension=true"
+CRAC_RESTORE_PARAMS="-Xms512m -Xmx1g -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
 
 # GraalVM parameters (native binary - no JVM-specific GC flag)
-GRAALVM_PARAMS="-Xms512m -Xmx1g --spring.profiles.active=postgres"
+GRAALVM_PARAMS="-Xms512m -Xmx1g -Dspring.profiles.active=postgres"
 
 # ---------------- Command Definitions ---------------------
 if [[ "$LABEL" == "graalvm" ]]; then
