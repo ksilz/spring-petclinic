@@ -95,13 +95,13 @@ NAME[leyden]="Project Leyden"
 NAME[crac]="CRaC"
 NAME[graalvm]="GraalVM Native Image"
 
-JAVA[baseline]='25-tem'
+JAVA[baseline]='25.0.1-tem'
 EXPECT[baseline]='25'
-JAVA[tuning]='25-tem'
+JAVA[tuning]='25.0.1-tem'
 EXPECT[tuning]='25'
-JAVA[cds]='25-tem'
+JAVA[cds]='25.0.1-tem'
 EXPECT[cds]='25'
-JAVA[leyden]='25-tem'
+JAVA[leyden]='25.0.1-tem'
 EXPECT[leyden]='25'
 JAVA[crac]='25.crac-zulu'
 EXPECT[crac]='25'
