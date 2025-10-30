@@ -178,8 +178,8 @@ else
   TRAIN_CMD="java $BASE_JVM_PARAMS ${AOT_FLAG} -jar $JAR_PATH"
 fi
 CSV_FILE="result_${LABEL}.csv"
-WARMUPS=3
-RUNS=7
+WARMUPS=2
+RUNS=2
 
 # Debug information for configuration
 echo "DEBUG: Configuration set:"
