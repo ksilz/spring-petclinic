@@ -139,20 +139,20 @@ fi
 # Training and benchmark runs use identical params except where technical constraints differ
 
 # Base JVM parameters (without AOT)
-# Heap set to 768m for reduced memory footprint
-BASE_JVM_PARAMS="-Xms768m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.profiles.active=postgres"
+# Heap: initial 256m, max 768m for reduced memory footprint
+BASE_JVM_PARAMS="-Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.profiles.active=postgres"
 
 # Base JVM parameters with AOT enabled
-BASE_JVM_PARAMS_WITH_AOT="-Xms768m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=true -Dspring.profiles.active=postgres"
+BASE_JVM_PARAMS_WITH_AOT="-Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=true -Dspring.profiles.active=postgres"
 
 # CRaC-specific parameters
 # Training: Includes GC for fresh JVM start with full heap/GC configuration
-CRAC_TRAINING_PARAMS="-Xms768m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
+CRAC_TRAINING_PARAMS="-Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
 # Restore: NO GC flag because GC configuration is restored from checkpoint, but we still log GC
-CRAC_RESTORE_PARAMS="-Xms768m -Xmx768m -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
+CRAC_RESTORE_PARAMS="-Xms256m -Xmx768m -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
 
 # GraalVM parameters (native binary - uses native image GC logging)
-GRAALVM_PARAMS="-Xms768m -Xmx768m -Dspring.profiles.active=postgres -XX:+PrintGC"
+GRAALVM_PARAMS="-Xms256m -Xmx768m -Dspring.profiles.active=postgres -XX:+PrintGC"
 
 # ---------------- Command Definitions ---------------------
 if [[ "$LABEL" == "graalvm" ]]; then
