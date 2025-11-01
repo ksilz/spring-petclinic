@@ -139,19 +139,20 @@ fi
 # Training and benchmark runs use identical params except where technical constraints differ
 
 # Base JVM parameters (without AOT)
-BASE_JVM_PARAMS="-Xms512m -Xmx1g -XX:+UseG1GC -Dspring.profiles.active=postgres"
+# Heap set to 1024m based on GC tuning results: 22 startup GCs, 2 benchmark GCs (optimal compromise)
+BASE_JVM_PARAMS="-Xms1024m -Xmx1024m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.profiles.active=postgres"
 
 # Base JVM parameters with AOT enabled
-BASE_JVM_PARAMS_WITH_AOT="-Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=true -Dspring.profiles.active=postgres"
+BASE_JVM_PARAMS_WITH_AOT="-Xms1024m -Xmx1024m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=true -Dspring.profiles.active=postgres"
 
 # CRaC-specific parameters
 # Training: Includes GC for fresh JVM start with full heap/GC configuration
-CRAC_TRAINING_PARAMS="-Xms512m -Xmx1g -XX:+UseG1GC -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
-# Restore: NO GC flag because GC configuration is restored from checkpoint
-CRAC_RESTORE_PARAMS="-Xms512m -Xmx1g -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
+CRAC_TRAINING_PARAMS="-Xms1024m -Xmx1024m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
+# Restore: NO GC flag because GC configuration is restored from checkpoint, but we still log GC
+CRAC_RESTORE_PARAMS="-Xms1024m -Xmx1024m -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
 
-# GraalVM parameters (native binary - no JVM-specific GC flag)
-GRAALVM_PARAMS="-Xms512m -Xmx1g -Dspring.profiles.active=postgres"
+# GraalVM parameters (native binary - uses native image GC logging)
+GRAALVM_PARAMS="-Xms1024m -Xmx1024m -Dspring.profiles.active=postgres -XX:+PrintGC"
 
 # ---------------- Command Definitions ---------------------
 if [[ "$LABEL" == "graalvm" ]]; then
@@ -249,19 +250,21 @@ hit_urls() {
     echo "    Warning: Application readiness timeout reached, proceeding anyway..."
   fi
 
-  # Now call the actual URLs
+  # Now call the actual URLs (repeated 5x to generate more garbage)
   printf '    Calling URLs: ' # four-space indent
-  for url in "${URLS[@]}"; do
-    sleep 3
-    # For training runs, be more tolerant of errors
-    if [[ "$TRAINING_MODE" == "training" ]]; then
-      # Just make the request and show the status, don't fail on errors
-      status=$(curl -s -o /dev/null -w '%{http_code}' "$url" 2>/dev/null || echo "000")
-      printf '%s ' "$status"
-    else
-      # For benchmark runs, be more strict
-      curl -s -o /dev/null -w '%{http_code} ' "$url"
-    fi
+  for round in {1..5}; do
+    for url in "${URLS[@]}"; do
+      sleep 1  # Reduced sleep for more requests/sec
+      # For training runs, be more tolerant of errors
+      if [[ "$TRAINING_MODE" == "training" ]]; then
+        # Just make the request and show the status, don't fail on errors
+        status=$(curl -s -o /dev/null -w '%{http_code}' "$url" 2>/dev/null || echo "000")
+        printf '%s ' "$status"
+      else
+        # For benchmark runs, be more strict
+        curl -s -o /dev/null -w '%{http_code} ' "$url"
+      fi
+    done
   done
   echo # newline
 }
@@ -342,6 +345,61 @@ extract_pid_from_log() {
     fi
     ;;
   esac
+}
+
+# Function to extract GC counts from logs
+# Returns two numbers separated by comma: startup_gcs,benchmark_gcs
+extract_gc_counts() {
+  local label="$1"
+  local app_log="$2"
+  local gc_log="$3"
+
+  # If GC log doesn't exist, return 0,0
+  if [[ ! -f "$gc_log" ]]; then
+    echo "0,0"
+    return
+  fi
+
+  # Get startup timestamp from app log
+  local startup_line=$(grep "Started PetClinicApplication\|Spring-managed lifecycle restart completed" "$app_log" | head -1)
+  if [[ -z "$startup_line" ]]; then
+    echo "0,0"
+    return
+  fi
+
+  # Extract timestamp
+  local startup_ts=$(echo "$startup_line" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}' | head -1)
+  if [[ -z "$startup_ts" ]]; then
+    echo "0,0"
+    return
+  fi
+
+  # Convert to epoch for comparison
+  local startup_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${startup_ts%.*}" +%s 2>/dev/null || date -d "$startup_ts" +%s 2>/dev/null || echo "0")
+  if [[ "$startup_epoch" == "0" ]]; then
+    echo "0,0"
+    return
+  fi
+
+  # Count GC pause events before and after startup
+  local startup_count=0
+  local benchmark_count=0
+
+  while IFS= read -r line; do
+    local gc_ts=$(echo "$line" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}' | head -1)
+    if [[ -n "$gc_ts" ]]; then
+      local gc_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${gc_ts%.*}" +%s 2>/dev/null || date -d "$gc_ts" +%s 2>/dev/null || echo "0")
+      if [[ "$gc_epoch" != "0" ]]; then
+        if [[ $gc_epoch -lt $startup_epoch ]]; then
+          ((startup_count++))
+        else
+          ((benchmark_count++))
+        fi
+      fi
+    fi
+  done < <(grep "Pause" "$gc_log" | grep -E "\[gc")
+
+  echo "${startup_count},${benchmark_count}"
 }
 
 # ---------- Centralized process cleanup function ----------
@@ -1018,9 +1076,9 @@ done
 
 # ---------------- Benchmark phase ---------------------
 echo "Starting $RUNS benchmark runs…"
-echo "Run,Startup Time (s),Max Memory (KB)" >"$CSV_FILE"
+echo "Run,Startup Time (s),Max Memory (KB),Startup GCs,Benchmark GCs" >"$CSV_FILE"
 
-declare -a times mems
+declare -a times mems startup_gcs benchmark_gcs
 for ((i = 1; i <= RUNS; i++)); do
   echo "  Run $i"
   set_log_file "benchmark"
@@ -1134,9 +1192,24 @@ for ((i = 1; i <= RUNS; i++)); do
     m_rss="N/A"
   fi
 
-  echo "$i,$s_time,$m_rss" >>"$CSV_FILE"
+  # Extract GC counts
+  gc_counts=$(extract_gc_counts "$LABEL" "$LOG_FILE" "/tmp/gc_${LABEL}.log")
+  startup_gc=$(echo "$gc_counts" | cut -d',' -f1)
+  benchmark_gc=$(echo "$gc_counts" | cut -d',' -f2)
+
+  # Ensure we have valid GC count values
+  if [[ -z "$startup_gc" ]]; then
+    startup_gc="N/A"
+  fi
+  if [[ -z "$benchmark_gc" ]]; then
+    benchmark_gc="N/A"
+  fi
+
+  echo "$i,$s_time,$m_rss,$startup_gc,$benchmark_gc" >>"$CSV_FILE"
   times+=("$s_time")
   mems+=("$m_rss")
+  startup_gcs+=("$startup_gc")
+  benchmark_gcs+=("$benchmark_gc")
 
   # Display memory in MB for screen output, but keep KB for CSV
   if [[ "$m_rss" == "N/A" ]]; then
@@ -1172,8 +1245,10 @@ trimmed_mean() {
 }
 avg_time=$(trimmed_mean "${times[@]}")
 avg_mem=$(trimmed_mean "${mems[@]}")
+avg_startup_gc=$(trimmed_mean "${startup_gcs[@]}")
+avg_benchmark_gc=$(trimmed_mean "${benchmark_gcs[@]}")
 
-echo "A,$avg_time,$avg_mem" >>"$CSV_FILE"
+echo "A,$avg_time,$avg_mem,$avg_startup_gc,$avg_benchmark_gc" >>"$CSV_FILE"
 
 # ---------------- Show results -------------------------
 echo -e "\n--- Benchmark Results ---"

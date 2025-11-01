@@ -129,9 +129,9 @@ if [[ $BUILD_SYS == gradle ]]; then
   CMD[leyden]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[crac]="SPRING_PROFILES_ACTIVE=postgres ./gradlew --no-daemon -Dorg.gradle.jvmargs=-Xmx1g --build-cache --parallel clean bootJar -Pcrac=true"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=\"--gc=G1\" --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\""
+    CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=\"--gc=G1 --parallelism=4\" --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\""
   else
-    CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\""
+    CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args=\"--parallelism=4\" --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\""
   fi
 
   OUT_DIR[gradle]="build/libs"
@@ -293,7 +293,11 @@ for label in "${REQUESTED[@]}"; do
     fi
     # Rebuild optimized native image
     echo "Rebuilding optimized native image..."
-    rebuild_cmd="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --build-args=\"--gc=G1\" --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\""
+    if [[ "$(uname)" == "Linux" ]]; then
+      rebuild_cmd="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --build-args=\"--gc=G1 --parallelism=4\" --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\""
+    else
+      rebuild_cmd="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --build-args=\"--parallelism=4\" --jvm-args-native=\"-XX:MaxRAMPercentage=90.0\""
+    fi
     echo "-> $rebuild_cmd"
     echo
     rebuild_start=$(date +%s)
