@@ -179,8 +179,8 @@ else
   TRAIN_CMD="java $BASE_JVM_PARAMS ${AOT_FLAG} -jar $JAR_PATH"
 fi
 CSV_FILE="result_${LABEL}.csv"
-WARMUPS=2
-RUNS=2
+WARMUPS=3
+RUNS=7
 
 # Debug information for configuration
 echo "DEBUG: Configuration set:"
@@ -1081,13 +1081,15 @@ done
 
 # ---------------- Benchmark phase ---------------------
 echo "Starting $RUNS benchmark runs…"
-echo "Run,Startup Time (s),Max Memory (KB),Startup GCs,Benchmark GCs" >"$CSV_FILE"
+echo "Run,Startup Time (s),Max Memory (KB),Startup GCs,Benchmark GCs,Ran at" >"$CSV_FILE"
 
 declare -a times mems startup_gcs benchmark_gcs
 for ((i = 1; i <= RUNS; i++)); do
   echo "  Run $i"
   set_log_file "benchmark"
   : >"$LOG_FILE"
+  # Capture start timestamp in ISO 8601 format
+  start_timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   # For CRaC, use setsid to prevent process from receiving terminal signals
   if [[ "$LABEL" == "crac" ]]; then
     if [[ "$(uname)" == "Darwin" ]]; then
@@ -1219,7 +1221,7 @@ for ((i = 1; i <= RUNS; i++)); do
     benchmark_gc="N/A"
   fi
 
-  echo "$i,$s_time,$m_rss,$startup_gc,$benchmark_gc" >>"$CSV_FILE"
+  echo "$i,$s_time,$m_rss,$startup_gc,$benchmark_gc,$start_timestamp" >>"$CSV_FILE"
   times+=("$s_time")
   mems+=("$m_rss")
   startup_gcs+=("$startup_gc")
@@ -1262,7 +1264,9 @@ avg_mem=$(trimmed_mean "${mems[@]}")
 avg_startup_gc=$(trimmed_mean "${startup_gcs[@]}")
 avg_benchmark_gc=$(trimmed_mean "${benchmark_gcs[@]}")
 
-echo "A,$avg_time,$avg_mem,$avg_startup_gc,$avg_benchmark_gc" >>"$CSV_FILE"
+# Capture calculation timestamp in ISO 8601 format
+calc_timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+echo "A,$avg_time,$avg_mem,$avg_startup_gc,$avg_benchmark_gc,$calc_timestamp" >>"$CSV_FILE"
 
 # ---------------- Show results -------------------------
 echo -e "\n--- Benchmark Results ---"

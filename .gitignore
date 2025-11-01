@@ -54,3 +54,4 @@ result_*.csv
 default.iprof
 /.claude/settings.local.json
 /CLAUDE.local.md
+/*.log

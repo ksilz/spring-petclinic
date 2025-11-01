@@ -105,7 +105,7 @@ JAVA[leyden]='25.0.1-tem'
 EXPECT[leyden]='25'
 JAVA[crac]='25.crac-zulu'
 EXPECT[crac]='25'
-JAVA[graalvm]='25-graal'
+JAVA[graalvm]='25.0.1-graal'
 EXPECT[graalvm]='25'
 
 JAR_PATH[baseline]="build/libs/${JAR_NAME}"
