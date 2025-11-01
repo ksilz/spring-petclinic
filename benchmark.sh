@@ -152,7 +152,9 @@ CRAC_TRAINING_PARAMS="-Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LA
 CRAC_RESTORE_PARAMS="-Xms256m -Xmx768m -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
 
 # GraalVM parameters (native binary - uses native image GC logging)
-GRAALVM_PARAMS="-Xms256m -Xmx768m -Dspring.profiles.active=postgres -XX:+PrintGC"
+# Note: Native images don't support JVM heap parameters like -Xms/-Xmx
+# Memory is controlled via build-time settings (see compile-and-run.sh)
+GRAALVM_PARAMS="-Dspring.profiles.active=postgres"
 
 # ---------------- Command Definitions ---------------------
 if [[ "$LABEL" == "graalvm" ]]; then
