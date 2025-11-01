@@ -139,20 +139,20 @@ fi
 # Training and benchmark runs use identical params except where technical constraints differ
 
 # Base JVM parameters (without AOT)
-# Heap set to 1024m based on GC tuning results: 22 startup GCs, 2 benchmark GCs (optimal compromise)
-BASE_JVM_PARAMS="-Xms1024m -Xmx1024m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.profiles.active=postgres"
+# Heap set to 768m for reduced memory footprint
+BASE_JVM_PARAMS="-Xms768m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.profiles.active=postgres"
 
 # Base JVM parameters with AOT enabled
-BASE_JVM_PARAMS_WITH_AOT="-Xms1024m -Xmx1024m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=true -Dspring.profiles.active=postgres"
+BASE_JVM_PARAMS_WITH_AOT="-Xms768m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=true -Dspring.profiles.active=postgres"
 
 # CRaC-specific parameters
 # Training: Includes GC for fresh JVM start with full heap/GC configuration
-CRAC_TRAINING_PARAMS="-Xms1024m -Xmx1024m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
+CRAC_TRAINING_PARAMS="-Xms768m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
 # Restore: NO GC flag because GC configuration is restored from checkpoint, but we still log GC
-CRAC_RESTORE_PARAMS="-Xms1024m -Xmx1024m -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
+CRAC_RESTORE_PARAMS="-Xms768m -Xmx768m -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
 
 # GraalVM parameters (native binary - uses native image GC logging)
-GRAALVM_PARAMS="-Xms1024m -Xmx1024m -Dspring.profiles.active=postgres -XX:+PrintGC"
+GRAALVM_PARAMS="-Xms768m -Xmx768m -Dspring.profiles.active=postgres -XX:+PrintGC"
 
 # ---------------- Command Definitions ---------------------
 if [[ "$LABEL" == "graalvm" ]]; then
@@ -309,6 +309,37 @@ extract_startup_time() {
     fi
     ;;
   esac
+}
+
+# Function to get current swap usage
+get_swap_used() {
+  if [[ "$(uname)" == "Darwin" ]]; then
+    # macOS: use sysctl to get swap usage
+    local swap_info=$(sysctl vm.swapusage 2>/dev/null)
+    if [[ $swap_info =~ used\ =\ ([0-9.]+)([MG]) ]]; then
+      local value="${BASH_REMATCH[1]}"
+      local unit="${BASH_REMATCH[2]}"
+      # Convert to MB
+      if [[ "$unit" == "G" ]]; then
+        echo "$(awk "BEGIN {printf \"%.0f\", $value * 1024}")"
+      else
+        echo "$(awk "BEGIN {printf \"%.0f\", $value}")"
+      fi
+    else
+      echo "0"
+    fi
+  else
+    # Linux: use /proc/meminfo
+    local swap_total=$(grep "^SwapTotal:" /proc/meminfo | awk '{print $2}')
+    local swap_free=$(grep "^SwapFree:" /proc/meminfo | awk '{print $2}')
+    if [[ -n "$swap_total" && -n "$swap_free" ]]; then
+      local swap_used=$((swap_total - swap_free))
+      # Convert from KB to MB
+      echo "$((swap_used / 1024))"
+    else
+      echo "0"
+    fi
+  fi
 }
 
 # Function to extract PID from log file
@@ -1083,6 +1114,10 @@ done
 echo "Starting $RUNS benchmark runs…"
 echo "Run,Startup Time (s),Max Memory (KB),Startup GCs,Benchmark GCs,Ran at" >"$CSV_FILE"
 
+# Capture swap usage before benchmark
+SWAP_BEFORE=$(get_swap_used)
+echo "Swap usage before benchmark: ${SWAP_BEFORE} MB"
+
 declare -a times mems startup_gcs benchmark_gcs
 for ((i = 1; i <= RUNS; i++)); do
   echo "  Run $i"
@@ -1267,6 +1302,24 @@ avg_benchmark_gc=$(trimmed_mean "${benchmark_gcs[@]}")
 # Capture calculation timestamp in ISO 8601 format
 calc_timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 echo "A,$avg_time,$avg_mem,$avg_startup_gc,$avg_benchmark_gc,$calc_timestamp" >>"$CSV_FILE"
+
+# Check swap usage after benchmark
+SWAP_AFTER=$(get_swap_used)
+SWAP_DELTA=$((SWAP_AFTER - SWAP_BEFORE))
+
+echo -e "\n--- Swap Usage ---"
+echo "Swap before benchmark: ${SWAP_BEFORE} MB"
+echo "Swap after benchmark:  ${SWAP_AFTER} MB"
+echo "Swap delta:            ${SWAP_DELTA} MB"
+
+if [[ $SWAP_DELTA -gt 0 ]]; then
+  echo "WARNING: Swap space increased by ${SWAP_DELTA} MB during benchmark!"
+  echo "This indicates the system may have run out of physical memory."
+elif [[ $SWAP_BEFORE -gt 0 ]]; then
+  echo "Note: System started with ${SWAP_BEFORE} MB swap in use (not caused by this benchmark)"
+else
+  echo "OK: No swap space was used during the benchmark."
+fi
 
 # ---------------- Show results -------------------------
 echo -e "\n--- Benchmark Results ---"
