@@ -997,7 +997,12 @@ echo "Starting $WARMUPS warm-up run$([[ $WARMUPS -eq 1 ]] && echo '' || echo 's'
 for ((i = 1; i <= WARMUPS; i++)); do
   echo "  Warm-up $i"
   set_log_file "warmup"
-  $APP_CMD >"$LOG_FILE" 2>&1 &
+  # For CRaC, use setsid to prevent process from receiving terminal signals
+  if [[ "$LABEL" == "crac" ]]; then
+    setsid $APP_CMD >"$LOG_FILE" 2>&1 &
+  else
+    $APP_CMD >"$LOG_FILE" 2>&1 &
+  fi
   pid=$!
 
   # Find the actual application process to kill
@@ -1083,10 +1088,19 @@ for ((i = 1; i <= RUNS; i++)); do
   echo "  Run $i"
   set_log_file "benchmark"
   : >"$LOG_FILE"
-  if [[ "$(uname)" == "Darwin" ]]; then
-    /usr/bin/time -l stdbuf -oL $APP_CMD >"$LOG_FILE" 2>/tmp/time_out.log &
+  # For CRaC, use setsid to prevent process from receiving terminal signals
+  if [[ "$LABEL" == "crac" ]]; then
+    if [[ "$(uname)" == "Darwin" ]]; then
+      /usr/bin/time -l setsid stdbuf -oL $APP_CMD >"$LOG_FILE" 2>/tmp/time_out.log &
+    else
+      /usr/bin/time -v -o /tmp/time_out.log setsid stdbuf -oL $APP_CMD >"$LOG_FILE" 2>&1 &
+    fi
   else
-    /usr/bin/time -v -o /tmp/time_out.log stdbuf -oL $APP_CMD >"$LOG_FILE" 2>&1 &
+    if [[ "$(uname)" == "Darwin" ]]; then
+      /usr/bin/time -l stdbuf -oL $APP_CMD >"$LOG_FILE" 2>/tmp/time_out.log &
+    else
+      /usr/bin/time -v -o /tmp/time_out.log stdbuf -oL $APP_CMD >"$LOG_FILE" 2>&1 &
+    fi
   fi
   tpid=$!
 
