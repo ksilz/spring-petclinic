@@ -258,7 +258,7 @@ hit_urls() {
   printf '    Calling URLs: ' # four-space indent
   for round in {1..5}; do
     for url in "${URLS[@]}"; do
-      sleep 1  # Reduced sleep for more requests/sec
+      sleep 3  # Pause between URL requests
       # For training runs, be more tolerant of errors
       if [[ "$TRAINING_MODE" == "training" ]]; then
         # Just make the request and show the status, don't fail on errors
