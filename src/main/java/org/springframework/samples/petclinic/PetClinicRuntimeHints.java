@@ -34,6 +34,15 @@ public class PetClinicRuntimeHints implements RuntimeHintsRegistrar {
 		hints.serialization().registerType(BaseEntity.class);
 		hints.serialization().registerType(Person.class);
 		hints.serialization().registerType(Vet.class);
+
+		// Jackson 3 reflection hints for native image
+		try {
+			Class<?> namedType = Class.forName("tools.jackson.databind.jsontype.NamedType");
+			hints.reflection().registerType(namedType);
+		}
+		catch (ClassNotFoundException ex) {
+			// Jackson 3 not present
+		}
 	}
 
 }
