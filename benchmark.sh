@@ -4,8 +4,10 @@
 # ---------------- Parameters & checks ----------------
 JAR_PATH="$1"
 LABEL="$2"
-AOT_FLAG="${3:-}"      # optional third param
-TRAINING_MODE="${4:-}" # optional fourth param for training mode
+AOT_FLAG="${3:-}"       # optional third param
+TRAINING_MODE="${4:-}"  # optional fourth param for training mode
+SIZE_APP_MB="${5:-}"    # optional 5th param: application size in MB
+SIZE_EXTRA_MB="${6:-}"  # optional 6th param: extra artifacts size in MB
 
 # Add timestamp marker for process tracking
 SCRIPT_START_TIME=$(date +%s)
@@ -1110,7 +1112,7 @@ done
 
 # ---------------- Benchmark phase ---------------------
 echo "Starting $RUNS benchmark runs…"
-echo "Run,Startup Time (s),Max Memory (KB),Startup GCs,Benchmark GCs,Ran at" >"$CSV_FILE"
+echo "Run,Startup Time (s),Max Memory (MB),Startup GCs,Benchmark GCs,Ran at,Size App (MB),Size Extra (MB)" >"$CSV_FILE"
 
 # Capture swap usage before benchmark
 SWAP_BEFORE=$(get_swap_used)
@@ -1231,6 +1233,9 @@ for ((i = 1; i <= RUNS; i++)); do
   # Ensure we have a valid memory value
   if [[ -z "$m_rss" || "$m_rss" -eq 0 ]]; then
     m_rss="N/A"
+  else
+    # Convert KB to MB with 1 decimal place
+    m_rss=$(awk "BEGIN {printf \"%.1f\", $m_rss/1024}")
   fi
 
   # Extract GC counts
@@ -1246,18 +1251,17 @@ for ((i = 1; i <= RUNS; i++)); do
     benchmark_gc="N/A"
   fi
 
-  echo "$i,$s_time,$m_rss,$startup_gc,$benchmark_gc,$start_timestamp" >>"$CSV_FILE"
+  echo "$i,$s_time,$m_rss,$startup_gc,$benchmark_gc,$start_timestamp,," >>"$CSV_FILE"
   times+=("$s_time")
   mems+=("$m_rss")
   startup_gcs+=("$startup_gc")
   benchmark_gcs+=("$benchmark_gc")
 
-  # Display memory in MB for screen output, but keep KB for CSV
+  # Display memory in MB for screen output
   if [[ "$m_rss" == "N/A" ]]; then
     printf "    %ss, %s\n" "$s_time" "$m_rss"
   else
-    m_rss_mb=$(awk "BEGIN {printf \"%.1f\", $m_rss/1024}")
-    printf "    %ss, %.1f MB\n" "$s_time" "$m_rss_mb"
+    printf "    %ss, %s MB\n" "$s_time" "$m_rss"
   fi
 
   # Add debugging information
@@ -1291,7 +1295,7 @@ avg_benchmark_gc=$(trimmed_mean "${benchmark_gcs[@]}")
 
 # Capture calculation timestamp in ISO 8601 format
 calc_timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-echo "A,$avg_time,$avg_mem,$avg_startup_gc,$avg_benchmark_gc,$calc_timestamp" >>"$CSV_FILE"
+echo "A,$avg_time,$avg_mem,$avg_startup_gc,$avg_benchmark_gc,$calc_timestamp,$SIZE_APP_MB,$SIZE_EXTRA_MB" >>"$CSV_FILE"
 
 # Check swap usage after benchmark
 SWAP_AFTER=$(get_swap_used)

@@ -92,6 +92,71 @@ get_cpu_count() {
   echo "$cpu_count"
 }
 
+# Calculate size of application and extra artifacts for a variant
+# Returns: "app_size_mb extra_size_mb" (space-separated, in MB with 1 decimal)
+get_variant_sizes() {
+  local label=$1
+  local app_kb=0
+  local extra_kb=0
+
+  case "$label" in
+    baseline)
+      # App: JAR file, Extra: none
+      if [[ -f "build/libs/${JAR_NAME}" ]]; then
+        app_kb=$(du -sk "build/libs/${JAR_NAME}" | cut -f1)
+      fi
+      ;;
+    tuning)
+      # App: Extracted directory, Extra: none
+      if [[ -d "${JAR_NAME%.jar}" ]]; then
+        app_kb=$(du -sk "${JAR_NAME%.jar}" | cut -f1)
+      fi
+      ;;
+    cds)
+      # App: Extracted directory, Extra: CDS archive
+      if [[ -d "${JAR_NAME%.jar}" ]]; then
+        app_kb=$(du -sk "${JAR_NAME%.jar}" | cut -f1)
+      fi
+      if [[ -f "petclinic.jsa" ]]; then
+        extra_kb=$(du -sk "petclinic.jsa" | cut -f1)
+      fi
+      ;;
+    leyden)
+      # App: Extracted directory, Extra: AOT cache
+      if [[ -d "${JAR_NAME%.jar}" ]]; then
+        app_kb=$(du -sk "${JAR_NAME%.jar}" | cut -f1)
+      fi
+      if [[ -f "petclinic.aot" ]]; then
+        extra_kb=$(du -sk "petclinic.aot" | cut -f1)
+      fi
+      ;;
+    crac)
+      # App: JAR, Extra: checkpoint directory
+      if [[ -f "build/libs/${JAR_NAME}" ]]; then
+        app_kb=$(du -sk "build/libs/${JAR_NAME}" | cut -f1)
+      fi
+      if [[ -d "petclinic-crac" ]]; then
+        extra_kb=$(du -sk "petclinic-crac" | cut -f1)
+      fi
+      ;;
+    graalvm)
+      # App: Native binary, Extra: PGO profile
+      if [[ -f "build/native/nativeCompile/spring-petclinic" ]]; then
+        app_kb=$(du -sk "build/native/nativeCompile/spring-petclinic" | cut -f1)
+      fi
+      if [[ -f "src/pgo-profiles/main/default.iprof" ]]; then
+        extra_kb=$(du -sk "src/pgo-profiles/main/default.iprof" | cut -f1)
+      fi
+      ;;
+  esac
+
+  # Convert KB to MB with 1 decimal place
+  local app_mb=$(awk "BEGIN {printf \"%.1f\", $app_kb/1024}")
+  local extra_mb=$(awk "BEGIN {printf \"%.1f\", $extra_kb/1024}")
+
+  echo "$app_mb $extra_mb"
+}
+
 GRAALVM_MAX_HEAP=$(get_graalvm_max_heap)
 CPU_COUNT=$(get_cpu_count)
 GRAALVM_GRADLE_ARGS="-Xmx24g"
@@ -298,7 +363,7 @@ for label in "${REQUESTED[@]}"; do
       continue
     fi
     # First run: training run for PGO
-    ./benchmark.sh "$train_path" "$label" "${PARAMETERS[$label]}" training
+    ./benchmark.sh "$train_path" "$label" "${PARAMETERS[$label]}" training "" ""
     # Move default.iprof to src/pgo-profiles/main, create dir if needed
     if [[ -f default.iprof ]]; then
       mkdir -p src/pgo-profiles/main
@@ -326,8 +391,11 @@ for label in "${REQUESTED[@]}"; do
       echo
       continue
     fi
+    # Calculate artifact sizes for this variant
+    read variant_app_size variant_extra_size <<< $(get_variant_sizes "$label")
+    echo "Artifact sizes - App: ${variant_app_size} MB, Extra: ${variant_extra_size} MB"
     # Second run: actual benchmark
-    ./benchmark.sh "$jar_path" "$label" "${PARAMETERS[$label]}"
+    ./benchmark.sh "$jar_path" "$label" "${PARAMETERS[$label]}" "" "$variant_app_size" "$variant_extra_size"
   else
     jar_path="${JAR_PATH[$label]}"
     if [[ ! -f $jar_path ]]; then
@@ -335,7 +403,10 @@ for label in "${REQUESTED[@]}"; do
       echo
       continue
     fi
-    ./benchmark.sh "$jar_path" "$label" "${PARAMETERS[$label]}"
+    # Calculate artifact sizes for this variant
+    read variant_app_size variant_extra_size <<< $(get_variant_sizes "$label")
+    echo "Artifact sizes - App: ${variant_app_size} MB, Extra: ${variant_extra_size} MB"
+    ./benchmark.sh "$jar_path" "$label" "${PARAMETERS[$label]}" "" "$variant_app_size" "$variant_extra_size"
   fi
   executed_stages+=("$label")
   echo
