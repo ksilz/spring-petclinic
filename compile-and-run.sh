@@ -59,7 +59,7 @@ fi
 # ────────────────────────────────────────────────────────────────
 # 4. Memory calculation for GraalVM
 # ────────────────────────────────────────────────────────────────
-# Calculate 85% of available memory for GraalVM native-image
+# Calculate 80% of available memory for GraalVM native-image
 get_graalvm_max_heap() {
   local total_mem_mb
   if [[ "$(uname)" == "Darwin" ]]; then
@@ -70,16 +70,29 @@ get_graalvm_max_heap() {
   else
     total_mem_mb=8192
   fi
-  local heap_mb=$((total_mem_mb * 85 / 100))
-  # Minimum 2048MB, maximum 131072MB (128GB)
+  local heap_mb=$((total_mem_mb * 80 / 100))
+  # Minimum 2048MB
   if [[ $heap_mb -lt 2048 ]]; then
     heap_mb=2048
-  elif [[ $heap_mb -gt 131072 ]]; then
-    heap_mb=131072
   fi
   echo "${heap_mb}m"
 }
+
+# Get the number of available CPUs for parallel builds
+get_cpu_count() {
+  local cpu_count
+  if [[ "$(uname)" == "Darwin" ]]; then
+    cpu_count=$(sysctl -n hw.ncpu 2>/dev/null || echo "4")
+  elif [[ "$(uname)" == "Linux" ]]; then
+    cpu_count=$(nproc 2>/dev/null || echo "4")
+  else
+    cpu_count=4
+  fi
+  echo "$cpu_count"
+}
+
 GRAALVM_MAX_HEAP=$(get_graalvm_max_heap)
+CPU_COUNT=$(get_cpu_count)
 GRAALVM_GRADLE_ARGS="-Xmx24g"
 GRAALVM_NATIVE_ARGS="-Xmx${GRAALVM_MAX_HEAP} -H:+UseG1GC"
 
@@ -129,9 +142,9 @@ if [[ $BUILD_SYS == gradle ]]; then
   CMD[leyden]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
   CMD[crac]="SPRING_PROFILES_ACTIVE=postgres ./gradlew --no-daemon -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar -Pcrac=true"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args='--gc=G1' --build-args='-R:MaxHeapSize=128m' --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=4' --jvm-args-native=\"-Xmx128m\""
+    CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args='--gc=G1' --build-args='-R:MaxHeapSize=128m' --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=${CPU_COUNT}' --jvm-args-native=\"-Xmx128m\""
   else
-    CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=4' --build-args='-R:MaxHeapSize=128m' --jvm-args-native=\"-Xmx128m\""
+    CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=${CPU_COUNT}' --build-args='-R:MaxHeapSize=128m' --jvm-args-native=\"-Xmx128m\""
   fi
 
   OUT_DIR[gradle]="build/libs"
@@ -294,9 +307,9 @@ for label in "${REQUESTED[@]}"; do
     # Rebuild optimized native image
     echo "Rebuilding optimized native image..."
     if [[ "$(uname)" == "Linux" ]]; then
-      rebuild_cmd="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --build-args='--gc=G1' --build-args='-R:MaxHeapSize=128m' --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=4' --jvm-args-native=\"-Xmx128m\""
+      rebuild_cmd="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --build-args='--gc=G1' --build-args='-R:MaxHeapSize=128m' --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=${CPU_COUNT}' --jvm-args-native=\"-Xmx128m\""
     else
-      rebuild_cmd="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=4' --build-args='-R:MaxHeapSize=128m' --jvm-args-native=\"-Xmx128m\""
+      rebuild_cmd="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=${CPU_COUNT}' --build-args='-R:MaxHeapSize=128m' --jvm-args-native=\"-Xmx128m\""
     fi
     echo "-> $rebuild_cmd"
     echo
