@@ -166,11 +166,11 @@ elif [[ "$LABEL" == "crac" ]]; then
   # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
   # Use CRaCEngine=warp to avoid requiring elevated privileges
   # Checkpoint creation: use -jar with relative path
-  # Checkpoint restore: use only -XX:CRaCRestoreFrom without -jar
+  # Checkpoint restore: use -XX:CRaCRestoreFrom with -jar to specify the application
   # IMPORTANT: Training and restore use DIFFERENT parameters:
   #  - Training: includes -XX:+UseG1GC (fresh JVM start)
   #  - Restore: NO GC flag (GC configuration restored from checkpoint)
-  APP_CMD="java $CRAC_RESTORE_PARAMS -XX:CRaCRestoreFrom=petclinic-crac -XX:CRaCEngine=warp"
+  APP_CMD="java $CRAC_RESTORE_PARAMS -XX:CRaCRestoreFrom=petclinic-crac -XX:CRaCEngine=warp -jar $JAR_PATH"
   TRAIN_CMD="java $CRAC_TRAINING_PARAMS -XX:CRaCCheckpointTo=petclinic-crac -XX:CRaCEngine=warp -jar $JAR_PATH"
 elif [[ "$LABEL" == "leyden" ]]; then
   # For Leyden, training and benchmark use identical base parameters
@@ -251,7 +251,9 @@ hit_urls() {
   done
 
   if [[ $readiness_counter -ge $readiness_timeout ]]; then
-    echo "    Warning: Application readiness timeout reached, proceeding anyway..."
+    echo "    ❌ ERROR: Application readiness timeout reached (60 seconds). Application failed to start."
+    echo "    Check the log file for errors: $LOG_FILE"
+    exit 1
   fi
 
   # Now call the actual URLs (repeated 5x to generate more garbage)
@@ -264,9 +266,24 @@ hit_urls() {
         # Just make the request and show the status, don't fail on errors
         status=$(curl -s -o /dev/null -w '%{http_code}' "$url" 2>/dev/null || echo "000")
         printf '%s ' "$status"
+        # Abort if connection failed
+        if [[ "$status" == "000" ]]; then
+          echo
+          echo "    ❌ ERROR: Application stopped responding (HTTP status 000)"
+          echo "    Check the log file for errors: $LOG_FILE"
+          exit 1
+        fi
       else
         # For benchmark runs, be more strict
-        curl -s -o /dev/null -w '%{http_code} ' "$url"
+        status=$(curl -s -o /dev/null -w '%{http_code}' "$url" 2>/dev/null || echo "000")
+        printf '%s ' "$status"
+        # Abort if connection failed
+        if [[ "$status" == "000" ]]; then
+          echo
+          echo "    ❌ ERROR: Application stopped responding (HTTP status 000)"
+          echo "    Check the log file for errors: $LOG_FILE"
+          exit 1
+        fi
       fi
     done
   done
