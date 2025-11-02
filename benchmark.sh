@@ -166,11 +166,11 @@ elif [[ "$LABEL" == "crac" ]]; then
   # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
   # Use CRaCEngine=warp to avoid requiring elevated privileges
   # Checkpoint creation: use -jar with relative path
-  # Checkpoint restore: use -XX:CRaCRestoreFrom with -jar to specify the application
+  # Checkpoint restore: use -XX:CRaCRestoreFrom WITHOUT -jar (checkpoint contains all state)
   # IMPORTANT: Training and restore use DIFFERENT parameters:
   #  - Training: includes -XX:+UseG1GC (fresh JVM start)
   #  - Restore: NO GC flag (GC configuration restored from checkpoint)
-  APP_CMD="java $CRAC_RESTORE_PARAMS -XX:CRaCRestoreFrom=petclinic-crac -XX:CRaCEngine=warp -jar $JAR_PATH"
+  APP_CMD="java $CRAC_RESTORE_PARAMS -XX:CRaCRestoreFrom=petclinic-crac -XX:CRaCEngine=warp"
   TRAIN_CMD="java $CRAC_TRAINING_PARAMS -XX:CRaCCheckpointTo=petclinic-crac -XX:CRaCEngine=warp -jar $JAR_PATH"
 elif [[ "$LABEL" == "leyden" ]]; then
   # For Leyden, training and benchmark use identical base parameters
