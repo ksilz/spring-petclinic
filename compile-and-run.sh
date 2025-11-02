@@ -65,8 +65,9 @@ get_graalvm_max_heap() {
   if [[ "$(uname)" == "Darwin" ]]; then
     total_mem_mb=$(($(sysctl -n hw.memsize) / 1024 / 1024))
   elif [[ "$(uname)" == "Linux" ]]; then
+    # /proc/meminfo reports MemTotal in KB, convert to MB
     total_mem_mb=$(awk '/MemTotal/ {print int($2/1)}' /proc/meminfo)
-    total_mem_mb=$((total_mem_mb / 1))
+    total_mem_mb=$((total_mem_mb / 1024))
   else
     total_mem_mb=8192
   fi
