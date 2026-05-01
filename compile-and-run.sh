@@ -174,17 +174,17 @@ NAME[leyden]="Project Leyden"
 NAME[crac]="CRaC"
 NAME[graalvm]="GraalVM Native Image"
 
-JAVA[baseline]='25.0.1-tem'
+JAVA[baseline]='25.0.3-tem'
 EXPECT[baseline]='25'
-JAVA[tuning]='25.0.1-tem'
+JAVA[tuning]='25.0.3-tem'
 EXPECT[tuning]='25'
-JAVA[cds]='25.0.1-tem'
+JAVA[cds]='25.0.3-tem'
 EXPECT[cds]='25'
-JAVA[leyden]='25.0.1-tem'
+JAVA[leyden]='25.0.3-tem'
 EXPECT[leyden]='25'
 JAVA[crac]='25.crac-zulu'
 EXPECT[crac]='25'
-JAVA[graalvm]='25.0.1-graal'
+JAVA[graalvm]='25.0.3-graal'
 EXPECT[graalvm]='25'
 
 JAR_PATH[baseline]="build/libs/${JAR_NAME}"
