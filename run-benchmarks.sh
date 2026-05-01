@@ -10,11 +10,11 @@ set -euo pipefail
 # ────────────────────────────────────────────────────────────────
 # Configuration — change these as needed
 # ────────────────────────────────────────────────────────────────
-SSH_KEY="${SSH_KEY:-~/.ssh/AWS-Better-Projects-Faster-GmbH.pem}"
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/AWS-Better-Projects-Faster-GmbH.pem}"
 SMALL_HOST="ubuntu@ec2-18-192-45-97.eu-central-1.compute.amazonaws.com"
 BIG_HOST="ubuntu@ec2-18-195-174-209.eu-central-1.compute.amazonaws.com"
 PROJECT_DIR="/home/ubuntu/projects/spring-petclinic"
-SSH_OPTS="-i ${SSH_KEY} -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o BatchMode=yes"
+SSH_OPTS=(-i "$SSH_KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o BatchMode=yes)
 JAVA_TEM="25.0.3-tem"
 JAVA_CRAC="25.crac-zulu"
 JAVA_GRAAL="25.0.3-graal"
@@ -28,13 +28,24 @@ BIG_GRAAL_PARALLELISM="8"
 # ────────────────────────────────────────────────────────────────
 # Scenario metadata
 # ────────────────────────────────────────────────────────────────
-declare -A SCENARIO_DISPLAY
-SCENARIO_DISPLAY[baseline]="Baseline"
-SCENARIO_DISPLAY[tuning]="Spring Boot Tuning"
-SCENARIO_DISPLAY[cds]="Class Data Sharing"
-SCENARIO_DISPLAY[leyden]="Project Leyden"
-SCENARIO_DISPLAY[crac]="CRaC"
-SCENARIO_DISPLAY[graalvm]="GraalVM Native Image"
+get_display_name() {
+  case "$1" in
+    baseline) echo "Baseline" ;;
+    tuning)   echo "Spring Boot Tuning" ;;
+    cds)      echo "Class Data Sharing" ;;
+    leyden)   echo "Project Leyden" ;;
+    crac)     echo "CRaC" ;;
+    graalvm)  echo "GraalVM Native Image" ;;
+    *)        echo "$1" ;;
+  esac
+}
+
+is_valid_scenario() {
+  case "$1" in
+    baseline|tuning|cds|leyden|crac|graalvm) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 ALL_SCENARIOS=(baseline tuning cds leyden crac graalvm)
 
@@ -49,7 +60,7 @@ fi
 
 # Validate requested scenario names
 for s in "${REQUESTED[@]}"; do
-  if [[ ! -v SCENARIO_DISPLAY[$s] ]]; then
+  if ! is_valid_scenario "$s"; then
     echo "ERROR: Unknown scenario '${s}'. Valid: ${ALL_SCENARIOS[*]}"
     exit 1
   fi
@@ -65,14 +76,12 @@ log() {
 
 # SSH to small server and run a raw command (no SDKman sourcing)
 ssh_small_raw() {
-  # shellcheck disable=SC2086
-  ssh $SSH_OPTS "$SMALL_HOST" "$@"
+  ssh "${SSH_OPTS[@]}" "$SMALL_HOST" "$@"
 }
 
 # SSH to big server and run a raw command (no SDKman sourcing)
 ssh_big_raw() {
-  # shellcheck disable=SC2086
-  ssh $SSH_OPTS "$BIG_HOST" "$@"
+  ssh "${SSH_OPTS[@]}" "$BIG_HOST" "$@"
 }
 
 # SSH to small server, source SDKman, switch Java, then run command.
@@ -82,8 +91,7 @@ ssh_small_java() {
   local cmd="$2"
   local full_cmd
   full_cmd="export SDKMAN_DIR=\"\$HOME/.sdkman\" && source \"\$HOME/.sdkman/bin/sdkman-init.sh\" && sdk use java ${java_version} 2>/dev/null && ${cmd}"
-  # shellcheck disable=SC2086
-  ssh $SSH_OPTS "$SMALL_HOST" "bash -l -c $(printf '%q' "$full_cmd")"
+  ssh "${SSH_OPTS[@]}" "$SMALL_HOST" "bash -l -c $(printf '%q' "$full_cmd")"
 }
 
 # SSH to big server, source SDKman, switch Java, then run command.
@@ -93,8 +101,7 @@ ssh_big_java() {
   local cmd="$2"
   local full_cmd
   full_cmd="export SDKMAN_DIR=\"\$HOME/.sdkman\" && source \"\$HOME/.sdkman/bin/sdkman-init.sh\" && sdk use java ${java_version} 2>/dev/null && ${cmd}"
-  # shellcheck disable=SC2086
-  ssh $SSH_OPTS "$BIG_HOST" "bash -l -c $(printf '%q' "$full_cmd")"
+  ssh "${SSH_OPTS[@]}" "$BIG_HOST" "bash -l -c $(printf '%q' "$full_cmd")"
 }
 
 # SCP from small server → local
@@ -102,8 +109,7 @@ ssh_big_java() {
 scp_from_small() {
   local remote_path="$1"
   local local_path="$2"
-  # shellcheck disable=SC2086
-  scp $SSH_OPTS "${SMALL_HOST}:${remote_path}" "$local_path"
+  scp "${SSH_OPTS[@]}" "${SMALL_HOST}:${remote_path}" "$local_path"
 }
 
 # SCP from local → small server
@@ -111,8 +117,7 @@ scp_from_small() {
 scp_to_small() {
   local local_path="$1"
   local remote_path="$2"
-  # shellcheck disable=SC2086
-  scp $SSH_OPTS "$local_path" "${SMALL_HOST}:${remote_path}"
+  scp "${SSH_OPTS[@]}" "$local_path" "${SMALL_HOST}:${remote_path}"
 }
 
 # SCP from big server → local
@@ -120,8 +125,7 @@ scp_to_small() {
 scp_from_big() {
   local remote_path="$1"
   local local_path="$2"
-  # shellcheck disable=SC2086
-  scp $SSH_OPTS "${BIG_HOST}:${remote_path}" "$local_path"
+  scp "${SSH_OPTS[@]}" "${BIG_HOST}:${remote_path}" "$local_path"
 }
 
 # SCP from local → big server
@@ -129,8 +133,7 @@ scp_from_big() {
 scp_to_big() {
   local local_path="$1"
   local remote_path="$2"
-  # shellcheck disable=SC2086
-  scp $SSH_OPTS "$local_path" "${BIG_HOST}:${remote_path}"
+  scp "${SSH_OPTS[@]}" "$local_path" "${BIG_HOST}:${remote_path}"
 }
 
 # ────────────────────────────────────────────────────────────────
@@ -140,7 +143,7 @@ scp_to_big() {
 run_standard_scenario() {
   local label="$1"
   local java_version="$2"
-  local display_name="${SCENARIO_DISPLAY[$label]}"
+  local display_name; display_name=$(get_display_name "$label")
 
   log "=== ${display_name}: start ==="
   local t_start
@@ -157,7 +160,7 @@ run_standard_scenario() {
 }
 
 run_graalvm_scenario() {
-  local display_name="${SCENARIO_DISPLAY[graalvm]}"
+  local display_name; display_name=$(get_display_name "graalvm")
   log "=== ${display_name}: start ==="
   local t_start
   t_start=$(date +%s)
@@ -230,6 +233,11 @@ run_graalvm_scenario() {
     "${LOCAL_TMP}/spring-petclinic" \
     "${PROJECT_DIR}/build/native/nativeCompile/spring-petclinic"
 
+  # Measure artifact sizes on small server for CSV output
+  local graal_app_size graal_extra_size
+  graal_app_size=$(ssh_small_raw "du -sk ${PROJECT_DIR}/build/native/nativeCompile/spring-petclinic 2>/dev/null | cut -f1 || echo 0" | awk '{printf "%.1f", $1/1024}')
+  graal_extra_size=$(ssh_small_raw "du -sk ${PROJECT_DIR}/src/pgo-profiles/main/default.iprof 2>/dev/null | cut -f1 || echo 0" | awk '{printf "%.1f", $1/1024}')
+
   # Step G7 — Benchmark on small server
   log "[graalvm] G7: running benchmark on small server..."
   ssh_small_java "$JAVA_GRAAL" \
@@ -239,7 +247,7 @@ run_graalvm_scenario() {
        graalvm \
        '-Dspring.aot.enabled=true' \
        '' \
-       '' ''"
+       '${graal_app_size}' '${graal_extra_size}'"
 
   # Step G8 — Collect results
   log "[graalvm] G8: collecting result_graalvm.csv from small server..."
@@ -284,7 +292,7 @@ print_summary() {
     local csv_file="${LOCAL_TMP}/result_${label}.csv"
     if [[ ! -f "$csv_file" ]]; then
       printf "%-20s | %12s | %13s | %12s | %15s\n" \
-        "${SCENARIO_DISPLAY[$label]}" "N/A" "N/A" "N/A" "N/A"
+        "$(get_display_name "$label")" "N/A" "N/A" "N/A" "N/A"
       continue
     fi
 
@@ -294,7 +302,7 @@ print_summary() {
 
     if [[ -z "$a_row" ]]; then
       printf "%-20s | %12s | %13s | %12s | %15s\n" \
-        "${SCENARIO_DISPLAY[$label]}" "no row A" "N/A" "N/A" "N/A"
+        "$(get_display_name "$label")" "no row A" "N/A" "N/A" "N/A"
       continue
     fi
 
@@ -306,7 +314,7 @@ print_summary() {
     benchmark_gcs=$(echo "$a_row"| cut -d',' -f5)
 
     printf "%-20s | %12s | %13s | %12s | %15s\n" \
-      "${SCENARIO_DISPLAY[$label]}" "$startup" "$max_mem" "$startup_gcs" "$benchmark_gcs"
+      "$(get_display_name "$label")" "$startup" "$max_mem" "$startup_gcs" "$benchmark_gcs"
   done
   printf "\n"
   echo "Full CSV files saved in: ${LOCAL_TMP}/"
