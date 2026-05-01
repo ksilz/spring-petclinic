@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "task_key": "CREATE-BENCHMARK-RUNNER-SCRIPT",
+  "status": "in_progress",
+  "current_step": "4.5",
+  "started": "2026-05-01T00:00:00Z",
+  "updated": "2026-05-01T00:00:00Z",
+  "config": {
+    "input_mode": "freeform",
+    "user_description": "Create a script (run-benchmarks.sh or similar) to run the five benchmark scenarios (baseline, tuning, cds, leyden, crac) on the small EC2 server AND the graalvm scenario using a combination of big server (compile) + small server (run). Required metrics: startup time in X.Y seconds, max memory usage (MB/GB), GC count during startup, GC count during the benchmark run. The script must run remotely on the servers via SSH from the local Mac. It should coordinate: build on small server, copy GraalVM binary from big server to small server, then run all six scenarios on the small server and produce a summary table.",
+    "special_instructions": null,
+    "ticket_id": null,
+    "ticket_url": null,
+    "branch_name": "create-benchmark-runner-script",
+    "original_branch": "update-ec2-java25-graalvm25",
+    "docs_folder": "docs",
+    "workflow_scope": null,
+    "keep_files": null
+  },
+  "discovery": {
+    "agents_available": true,
+    "writer_agents": [],
+    "coding_agents": ["shell-coder", "be-coder"],
+    "review_agents": ["shell-reviewer", "be-reviewer"],
+    "test_command": null,
+    "youtrack_available": false,
+    "youtrack_mcp": null,
+    "youtrack_on_start": null,
+    "youtrack_on_resolve": null
+  },
+  "artifacts": {
+    "prd_skipped": null,
+    "prd_file": null,
+    "plan_file": null,
+    "pr_url": null
+  },
+  "completed_steps": ["2", "3", "4.1", "4.2", "4.3", "4.4"]
+}
