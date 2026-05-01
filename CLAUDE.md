@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+Updated: 2026-05-01 15:29 Europe/Berlin
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
@@ -7,13 +9,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Spring PetClinic is a sample Spring Boot application demonstrating best practices for building web applications with Spring. It's a veterinary clinic management system that tracks owners, their pets, visits, and veterinarians.
 
 **Technology Stack:**
-- Spring Boot 3.5.0
+- Spring Boot 4.0.3
 - Spring Data JPA with support for H2 (default), MySQL, and PostgreSQL
 - Thymeleaf templating engine
 - JCache/Caffeine for caching
-- Bootstrap 5.3.6 for frontend styling
-- Maven for build management
-- Java 17+
+- Bootstrap 5.3.8 for frontend styling
+- Gradle 9.2.1 for build management (primary); Maven also available
+- Java 25 (Temurin `25.0.3-tem`)
 
 ## Build and Run Commands
 
@@ -140,7 +142,7 @@ Application runs with H2 by default. Console available at `http://localhost:8080
 # Start MySQL with Docker
 docker run -e MYSQL_USER=petclinic -e MYSQL_PASSWORD=petclinic \
   -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=petclinic \
-  -p 3306:3306 mysql:9.2
+  -p 3306:3306 mysql:9.6
 
 # Or use docker-compose
 docker compose up mysql
@@ -154,7 +156,7 @@ docker compose up mysql
 ```bash
 # Start PostgreSQL with Docker
 docker run -e POSTGRES_USER=petclinic -e POSTGRES_PASSWORD=petclinic \
-  -e POSTGRES_DB=petclinic -p 5432:5432 postgres:17.5
+  -e POSTGRES_DB=petclinic -p 5432:5432 postgres:18.3
 
 # Or use docker-compose
 docker compose up postgres
@@ -193,7 +195,7 @@ Note: Tests using Testcontainers are disabled when Docker is not available and i
 - **Line endings:** LF (Unix-style)
 - **Encoding:** UTF-8
 - The build will fail if code doesn't conform to Spring Java Format
-- Run `./mvnw spring-javaformat:apply` to auto-format code before committing
+- Run `./gradlew spring-javaformat:apply` to auto-format code before committing (or `./mvnw spring-javaformat:apply` for Maven)
 
 ## Contributing Requirements
 
@@ -236,3 +238,12 @@ The benchmarks are orchestrated by two bash scripts:
 ### Build System
 
 Although both Maven and Gradle builds exist, **Gradle is the actively used and maintained build system**. When making changes, prioritize Gradle compatibility.
+
+## Agents
+
+| Agent | When to Use | File Types |
+|---|---|---|
+| be-coder | Implement Java/Spring Boot features — entities, controllers, repositories, tests | `*.java` |
+| be-reviewer | Review Java/Spring Boot code changes for correctness and Spring conventions | `*.java` |
+| shell-coder | Implement changes to benchmark scripts — compile-and-run.sh, benchmark.sh | `*.sh` |
+| shell-reviewer | Review benchmark script changes for correctness and safety | `*.sh` |
