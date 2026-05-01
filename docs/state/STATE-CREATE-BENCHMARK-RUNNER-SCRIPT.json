@@ -2,7 +2,7 @@
   "version": 1,
   "task_key": "CREATE-BENCHMARK-RUNNER-SCRIPT",
   "status": "in_progress",
-  "current_step": "4.5",
+  "current_step": "8",
   "started": "2026-05-01T00:00:00Z",
   "updated": "2026-05-01T00:00:00Z",
   "config": {
@@ -14,7 +14,7 @@
     "branch_name": "create-benchmark-runner-script",
     "original_branch": "update-ec2-java25-graalvm25",
     "docs_folder": "docs",
-    "workflow_scope": null,
+    "workflow_scope": "implement_and_review",
     "keep_files": null
   },
   "discovery": {
@@ -31,7 +31,7 @@
   "artifacts": {
     "prd_skipped": null,
     "prd_file": null,
-    "plan_file": null,
+    "plan_file": "docs/plans/PLAN-CREATE-BENCHMARK-RUNNER-SCRIPT.md",
     "pr_url": null
   },
   "completed_steps": ["2", "3", "4.1", "4.2", "4.3", "4.4"]
