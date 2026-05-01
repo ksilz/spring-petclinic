@@ -98,7 +98,7 @@ mv default.iprof src/pgo-profiles/main/
 
 **GraalVM Build Parameters**:
 - `--pgo-instrument`: Creates instrumented binary for profiling
-- `-J-Xmx${GRAALVM_MAX_HEAP}`: JVM heap for native-image build process (85% of system memory)
+- `-J-Xmx${GRAALVM_MAX_HEAP}`: JVM heap for native-image build process (80% of system memory)
 - `--parallelism=4`: Uses 4 parallel compilation threads
 - `-R:MaxHeapSize=128m`: Runtime heap limit for the native binary
 - `--jvm-args-native="-Xmx128m"`: JVM args passed to the native binary at runtime
