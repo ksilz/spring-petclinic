@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "task_key": "MERGE-UPSTREAM-JAVA-25",
+  "status": "in_progress",
+  "current_step": "4.5",
+  "started": "2026-05-01T00:00:00Z",
+  "updated": "2026-05-01T00:00:00Z",
+  "config": {
+    "input_mode": "freeform",
+    "user_description": "Merge changes of upstream original Spring PetClinic repo (Spring Boot 4 update) and switch to Java 25 using sdk use 25.0.3-tem and GraalVM with sdk use 25.0.3-graal",
+    "special_instructions": null,
+    "ticket_id": null,
+    "ticket_url": null,
+    "branch_name": "merge-upstream-java-25",
+    "original_branch": "main",
+    "docs_folder": "docs",
+    "workflow_scope": null,
+    "keep_files": null
+  },
+  "discovery": {
+    "agents_available": false,
+    "writer_agents": [],
+    "coding_agents": [],
+    "review_agents": [],
+    "test_command": null,
+    "youtrack_available": false,
+    "youtrack_mcp": null,
+    "youtrack_on_start": null,
+    "youtrack_on_resolve": null
+  },
+  "artifacts": {
+    "prd_skipped": null,
+    "prd_file": null,
+    "plan_file": null,
+    "pr_url": null
+  },
+  "completed_steps": []
+}
