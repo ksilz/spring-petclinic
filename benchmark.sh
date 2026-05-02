@@ -582,12 +582,19 @@ wait_for_port_free() {
       echo "    Waiting for port 8080 to be released... (${counter}s)"
     fi
     if [[ $counter -ge $timeout ]]; then
-      echo "    Warning: port 8080 still occupied after ${timeout}s, force-killing"
+      echo "    Warning: port 8080 still occupied after ${timeout}s, terminating"
       local stuck_pid
-      stuck_pid=$(ss -tlnp 2>/dev/null | grep ':8080' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
+      stuck_pid=$(jcmd 2>/dev/null | grep -i "petclinic" | awk '{print $1}' | head -1)
+      [[ -z "$stuck_pid" ]] && stuck_pid=$(pgrep -f "spring-petclinic.*jar" 2>/dev/null | head -1)
+      [[ -z "$stuck_pid" ]] && stuck_pid=$(ss -tlnp 2>/dev/null | grep ':8080' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
       if [[ -n "$stuck_pid" ]]; then
-        echo "    Force-killing PID $stuck_pid holding port 8080"
-        kill -9 "$stuck_pid" 2>/dev/null || true
+        echo "    Sending SIGTERM to PID $stuck_pid (preserves CRaC checkpoint integrity)"
+        kill -TERM "$stuck_pid" 2>/dev/null || true
+        sleep 5
+        if kill -0 "$stuck_pid" 2>/dev/null; then
+          echo "    Force-killing PID $stuck_pid (SIGTERM ignored)"
+          kill -9 "$stuck_pid" 2>/dev/null || true
+        fi
       fi
       break
     fi
@@ -1175,12 +1182,13 @@ for ((i = 1; i <= WARMUPS; i++)); do
       done
     fi
   elif [[ "$LABEL" == "crac" ]]; then
-    # CRaC warp restores in <100ms; after restore the cmdline may no longer contain
-    # CRaCRestoreFrom, so search by child PID first, then fall back to port 8080.
+    # The restored process has the original training cmdline (-jar spring-petclinic*),
+    # not CRaCRestoreFrom. Port 8080 is not yet in LISTEN until Spring lifecycle
+    # callbacks finish, so ss-based detection is deferred to after startup.
     for _ in {1..10}; do
       app_pid=$(pgrep -P "$pid" java 2>/dev/null | head -1)
       [[ -n "$app_pid" ]] && break
-      app_pid=$(ss -tlnp 2>/dev/null | grep ':8080' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
+      app_pid=$(pgrep -f "spring-petclinic.*jar" 2>/dev/null | head -1)
       [[ -n "$app_pid" ]] && break
       sleep 0.5
     done
@@ -1206,6 +1214,14 @@ for ((i = 1; i <= WARMUPS; i++)); do
   done
 
   if [[ $timeout_counter -lt 60 ]]; then
+    # For CRaC: retry PID detection now that the restored process is fully up
+    # (port 8080 is in LISTEN state and Spring lifecycle is complete)
+    if [[ "$LABEL" == "crac" && -z "$app_pid" ]]; then
+      app_pid=$(jcmd 2>/dev/null | grep -i "petclinic" | awk '{print $1}' | head -1)
+      [[ -z "$app_pid" ]] && app_pid=$(pgrep -f "spring-petclinic.*jar" 2>/dev/null | head -1)
+      [[ -z "$app_pid" ]] && app_pid=$(ss -tlnp 2>/dev/null | grep ':8080' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
+      [[ -n "$app_pid" ]] && echo "    Found CRaC app PID after startup: $app_pid"
+    fi
     hit_urls # --- load generator ---
   fi
 
@@ -1277,12 +1293,13 @@ for ((i = 1; i <= RUNS; i++)); do
       done
     fi
   elif [[ "$LABEL" == "crac" ]]; then
-    # CRaC warp restores in <100ms; after restore the cmdline may no longer contain
-    # CRaCRestoreFrom, so search by child PID first, then fall back to port 8080.
+    # The restored process has the original training cmdline (-jar spring-petclinic*),
+    # not CRaCRestoreFrom. Port 8080 is not yet in LISTEN until Spring lifecycle
+    # callbacks finish, so ss-based detection is deferred to after startup.
     for _ in {1..10}; do
       app_pid=$(pgrep -P "$tpid" java 2>/dev/null | head -1)
       [[ -n "$app_pid" ]] && break
-      app_pid=$(ss -tlnp 2>/dev/null | grep ':8080' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
+      app_pid=$(pgrep -f "spring-petclinic.*jar" 2>/dev/null | head -1)
       [[ -n "$app_pid" ]] && break
       sleep 0.5
     done
@@ -1309,6 +1326,14 @@ for ((i = 1; i <= RUNS; i++)); do
 
   if [[ $timeout_counter -lt 60 ]]; then
     s_time=$(extract_startup_time "$LABEL" "$LOG_FILE")
+    # For CRaC: retry PID detection now that the restored process is fully up
+    # (port 8080 is in LISTEN state and Spring lifecycle is complete)
+    if [[ "$LABEL" == "crac" && -z "$app_pid" ]]; then
+      app_pid=$(jcmd 2>/dev/null | grep -i "petclinic" | awk '{print $1}' | head -1)
+      [[ -z "$app_pid" ]] && app_pid=$(pgrep -f "spring-petclinic.*jar" 2>/dev/null | head -1)
+      [[ -z "$app_pid" ]] && app_pid=$(ss -tlnp 2>/dev/null | grep ':8080' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
+      [[ -n "$app_pid" ]] && echo "    Found CRaC app PID after startup: $app_pid"
+    fi
     hit_urls # --- load generator ---
   else
     s_time="N/A"
