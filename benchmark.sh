@@ -150,8 +150,9 @@ BASE_JVM_PARAMS_WITH_AOT="-Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_
 # CRaC-specific parameters
 # Training: Includes GC for fresh JVM start with full heap/GC configuration
 CRAC_TRAINING_PARAMS="-Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
-# Restore: NO GC flag because GC configuration is restored from checkpoint, but we still log GC
-CRAC_RESTORE_PARAMS="-Xms256m -Xmx768m -Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true"
+# Restore: heap, Spring properties, and datasource settings are restored from the checkpoint;
+# only specify a fresh GC log so this run's GC metrics are captured independently
+CRAC_RESTORE_PARAMS="-Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags"
 
 # GraalVM parameters (native binary - uses native image GC logging)
 # Note: Native images don't support JVM heap parameters like -Xms/-Xmx
@@ -237,22 +238,37 @@ hit_urls() {
   echo "    Waiting for application to be ready..."
   readiness_timeout=60
   readiness_counter=0
+  local process_died=false
   while [[ $readiness_counter -lt $readiness_timeout ]]; do
-    status=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080" 2>/dev/null || echo "000")
+    # Note: curl writes "000" on connection failure; the plain subshell captures that correctly
+    # without the old "|| echo 000" that caused double-000 output
+    status=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080" 2>/dev/null)
     if [[ "$status" == "200" ]]; then
       echo "    Application is ready (status: $status)"
       break
     fi
     sleep 1
     readiness_counter=$((readiness_counter + 1))
+    # Fast-fail: detect if the tracked process has already exited
+    local check_pid="${app_pid:-${pid:-}}"
+    if [[ -n "$check_pid" ]] && ! kill -0 "$check_pid" 2>/dev/null; then
+      process_died=true
+      break
+    fi
     if [[ $((readiness_counter % 5)) -eq 0 ]]; then
       echo "    Still waiting for application readiness... ($readiness_counter seconds elapsed, status: $status)"
     fi
   done
 
-  if [[ $readiness_counter -ge $readiness_timeout ]]; then
-    echo "    ❌ ERROR: Application readiness timeout reached (60 seconds). Application failed to start."
+  if [[ $readiness_counter -ge $readiness_timeout ]] || [[ "$process_died" == "true" ]]; then
+    if [[ "$process_died" == "true" ]]; then
+      echo "    ❌ ERROR: Application process has exited unexpectedly."
+    else
+      echo "    ❌ ERROR: Application readiness timeout reached (60 seconds). Application failed to start."
+    fi
     echo "    Check the log file for errors: $LOG_FILE"
+    echo "    Last lines of application log:"
+    tail -30 "$LOG_FILE" 2>/dev/null | sed 's/^/      /' || echo "      (log file empty or missing)"
     exit 1
   fi
 
@@ -261,29 +277,14 @@ hit_urls() {
   for round in {1..5}; do
     for url in "${URLS[@]}"; do
       sleep 3  # Pause between URL requests
-      # For training runs, be more tolerant of errors
-      if [[ "$TRAINING_MODE" == "training" ]]; then
-        # Just make the request and show the status, don't fail on errors
-        status=$(curl -s -o /dev/null -w '%{http_code}' "$url" 2>/dev/null || echo "000")
-        printf '%s ' "$status"
-        # Abort if connection failed
-        if [[ "$status" == "000" ]]; then
-          echo
-          echo "    ❌ ERROR: Application stopped responding (HTTP status 000)"
-          echo "    Check the log file for errors: $LOG_FILE"
-          exit 1
-        fi
-      else
-        # For benchmark runs, be more strict
-        status=$(curl -s -o /dev/null -w '%{http_code}' "$url" 2>/dev/null || echo "000")
-        printf '%s ' "$status"
-        # Abort if connection failed
-        if [[ "$status" == "000" ]]; then
-          echo
-          echo "    ❌ ERROR: Application stopped responding (HTTP status 000)"
-          echo "    Check the log file for errors: $LOG_FILE"
-          exit 1
-        fi
+      status=$(curl -s -o /dev/null -w '%{http_code}' "$url" 2>/dev/null)
+      printf '%s ' "$status"
+      # Abort if connection failed
+      if [[ "$status" == "000" ]]; then
+        echo
+        echo "    ❌ ERROR: Application stopped responding (HTTP status 000)"
+        echo "    Check the log file for errors: $LOG_FILE"
+        exit 1
       fi
     done
   done

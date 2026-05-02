@@ -351,6 +351,12 @@ for label in "${REQUESTED[@]}"; do
       rm -f petclinic.aot
       echo
     fi
+  elif [[ "$label" == "crac" ]]; then
+    if [[ -d petclinic-crac ]]; then
+      echo "Deleting existing CRaC checkpoint: petclinic-crac/"
+      rm -rf petclinic-crac
+      echo
+    fi
   fi
 
   # ----- benchmark --------------------------------------------------------
