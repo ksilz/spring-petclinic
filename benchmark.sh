@@ -571,6 +571,29 @@ cleanup_processes() {
   fi
 }
 
+# Wait for port 8080 to be released after killing the app
+wait_for_port_free() {
+  local timeout="${1:-30}"
+  local counter=0
+  while ss -tlnp 2>/dev/null | grep -q ':8080 '; do
+    sleep 1
+    counter=$((counter + 1))
+    if [[ $((counter % 5)) -eq 0 ]]; then
+      echo "    Waiting for port 8080 to be released... (${counter}s)"
+    fi
+    if [[ $counter -ge $timeout ]]; then
+      echo "    Warning: port 8080 still occupied after ${timeout}s, force-killing"
+      local stuck_pid
+      stuck_pid=$(ss -tlnp 2>/dev/null | grep ':8080' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
+      if [[ -n "$stuck_pid" ]]; then
+        echo "    Force-killing PID $stuck_pid holding port 8080"
+        kill -9 "$stuck_pid" 2>/dev/null || true
+      fi
+      break
+    fi
+  done
+}
+
 # Clean up any existing processes before starting warm-up runs
 cleanup_processes
 
@@ -1152,10 +1175,12 @@ for ((i = 1; i <= WARMUPS; i++)); do
       done
     fi
   elif [[ "$LABEL" == "crac" ]]; then
-    # For CRaC, the Java process is not a child of the background process
-    # Look for the Java process that's running the CRaC restore command
+    # CRaC warp restores in <100ms; after restore the cmdline may no longer contain
+    # CRaCRestoreFrom, so search by child PID first, then fall back to port 8080.
     for _ in {1..10}; do
-      app_pid=$(pgrep -f "java.*CRaCRestoreFrom=petclinic-crac" | grep -v "$pid" | head -1)
+      app_pid=$(pgrep -P "$pid" java 2>/dev/null | head -1)
+      [[ -n "$app_pid" ]] && break
+      app_pid=$(ss -tlnp 2>/dev/null | grep ':8080' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
       [[ -n "$app_pid" ]] && break
       sleep 0.5
     done
@@ -1199,6 +1224,9 @@ for ((i = 1; i <= WARMUPS; i++)); do
     kill -TERM "$pid" 2>/dev/null
   fi
   wait "$pid" 2>/dev/null
+  if [[ "$LABEL" == "crac" ]]; then
+    wait_for_port_free 30
+  fi
 done
 
 # ---------------- Benchmark phase ---------------------
@@ -1249,10 +1277,12 @@ for ((i = 1; i <= RUNS; i++)); do
       done
     fi
   elif [[ "$LABEL" == "crac" ]]; then
-    # For CRaC, the Java process is not a child of the time process
-    # Look for the Java process that's running the CRaC restore command
+    # CRaC warp restores in <100ms; after restore the cmdline may no longer contain
+    # CRaCRestoreFrom, so search by child PID first, then fall back to port 8080.
     for _ in {1..10}; do
-      app_pid=$(pgrep -f "java.*CRaCRestoreFrom=petclinic-crac" | grep -v "$tpid" | head -1)
+      app_pid=$(pgrep -P "$tpid" java 2>/dev/null | head -1)
+      [[ -n "$app_pid" ]] && break
+      app_pid=$(ss -tlnp 2>/dev/null | grep ':8080' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
       [[ -n "$app_pid" ]] && break
       sleep 0.5
     done
@@ -1299,6 +1329,9 @@ for ((i = 1; i <= RUNS; i++)); do
     kill -TERM "$tpid" 2>/dev/null
   fi
   wait "$tpid" 2>/dev/null
+  if [[ "$LABEL" == "crac" ]]; then
+    wait_for_port_free 30
+  fi
   echo "    Run $i completed successfully"
 
   # Memory measurement
