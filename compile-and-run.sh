@@ -57,6 +57,33 @@ fi
 #   sdk install java <version> && sdk use java <version>
 
 # ────────────────────────────────────────────────────────────────
+# 3a. Kill any running Java / native petclinic processes
+# ────────────────────────────────────────────────────────────────
+echo "Checking for running Java processes before benchmarks..."
+if command -v jps >/dev/null 2>&1; then
+  # jps lists all JVMs; skip the jps process itself (first field is PID)
+  java_pids=$(jps -l 2>/dev/null | grep -v "^[0-9]* sun.tools.jps" | awk '{print $1}' | grep -v '^$')
+else
+  java_pids=$(pgrep -x java 2>/dev/null || true)
+fi
+if [[ -n "$java_pids" ]]; then
+  echo "  Killing Java processes: $java_pids"
+  # shellcheck disable=SC2086
+  kill -9 $java_pids 2>/dev/null || true
+  sleep 1
+else
+  echo "  No running Java processes found."
+fi
+native_pids=$(pgrep -f "build/native/nativeCompile/spring-petclinic" 2>/dev/null || true)
+if [[ -n "$native_pids" ]]; then
+  echo "  Killing native spring-petclinic processes: $native_pids"
+  # shellcheck disable=SC2086
+  kill -9 $native_pids 2>/dev/null || true
+  sleep 1
+fi
+echo
+
+# ────────────────────────────────────────────────────────────────
 # 4. Memory calculation for GraalVM
 # ────────────────────────────────────────────────────────────────
 # Calculate 80% of available memory for GraalVM native-image
