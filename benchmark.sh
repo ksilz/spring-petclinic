@@ -585,8 +585,13 @@ wait_for_port_free() {
       echo "    Warning: port 8080 still occupied after ${timeout}s, terminating"
       local stuck_pid
       stuck_pid=$(jcmd 2>/dev/null | grep -i "petclinic" | awk '{print $1}' | head -1)
-      [[ -z "$stuck_pid" ]] && stuck_pid=$(pgrep -f "spring-petclinic.*jar" 2>/dev/null | head -1)
+      [[ -z "$stuck_pid" ]] && stuck_pid=$(pgrep -f "java .*-jar.*spring-petclinic" 2>/dev/null | head -1)
       [[ -z "$stuck_pid" ]] && stuck_pid=$(ss -tlnp 2>/dev/null | grep ':8080' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
+      # Safety: refuse to kill self, parent, or init
+      if [[ -n "$stuck_pid" ]] && { [[ "$stuck_pid" == "$$" ]] || [[ "$stuck_pid" == "$PPID" ]] || [[ "$stuck_pid" == "1" ]]; }; then
+        echo "    WARNING: stuck PID detection returned $stuck_pid (self/parent/init); ignoring"
+        stuck_pid=""
+      fi
       if [[ -n "$stuck_pid" ]]; then
         echo "    Sending SIGTERM to PID $stuck_pid (preserves CRaC checkpoint integrity)"
         kill -TERM "$stuck_pid" 2>/dev/null || true
@@ -1188,10 +1193,15 @@ for ((i = 1; i <= WARMUPS; i++)); do
     for _ in {1..10}; do
       app_pid=$(pgrep -P "$pid" java 2>/dev/null | head -1)
       [[ -n "$app_pid" ]] && break
-      app_pid=$(pgrep -f "spring-petclinic.*jar" 2>/dev/null | head -1)
+      app_pid=$(pgrep -f "java .*-jar.*spring-petclinic" 2>/dev/null | head -1)
       [[ -n "$app_pid" ]] && break
       sleep 0.5
     done
+    # Safety: refuse to ever kill our own script, our parent shell, or PID 1
+    if [[ -n "$app_pid" ]] && { [[ "$app_pid" == "$$" ]] || [[ "$app_pid" == "$PPID" ]] || [[ "$app_pid" == "1" ]]; }; then
+      echo "    WARNING: PID detection returned $app_pid (self/parent/init); ignoring"
+      app_pid=""
+    fi
   else
     # For Java applications, look for the Java process
     for _ in {1..5}; do
@@ -1218,8 +1228,13 @@ for ((i = 1; i <= WARMUPS; i++)); do
     # (port 8080 is in LISTEN state and Spring lifecycle is complete)
     if [[ "$LABEL" == "crac" && -z "$app_pid" ]]; then
       app_pid=$(jcmd 2>/dev/null | grep -i "petclinic" | awk '{print $1}' | head -1)
-      [[ -z "$app_pid" ]] && app_pid=$(pgrep -f "spring-petclinic.*jar" 2>/dev/null | head -1)
+      [[ -z "$app_pid" ]] && app_pid=$(pgrep -f "java .*-jar.*spring-petclinic" 2>/dev/null | head -1)
       [[ -z "$app_pid" ]] && app_pid=$(ss -tlnp 2>/dev/null | grep ':8080' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
+      # Safety: refuse to ever kill our own script, our parent shell, or PID 1
+      if [[ -n "$app_pid" ]] && { [[ "$app_pid" == "$$" ]] || [[ "$app_pid" == "$PPID" ]] || [[ "$app_pid" == "1" ]]; }; then
+        echo "    WARNING: PID detection returned $app_pid (self/parent/init); ignoring"
+        app_pid=""
+      fi
       [[ -n "$app_pid" ]] && echo "    Found CRaC app PID after startup: $app_pid"
     fi
     hit_urls # --- load generator ---
@@ -1299,10 +1314,15 @@ for ((i = 1; i <= RUNS; i++)); do
     for _ in {1..10}; do
       app_pid=$(pgrep -P "$tpid" java 2>/dev/null | head -1)
       [[ -n "$app_pid" ]] && break
-      app_pid=$(pgrep -f "spring-petclinic.*jar" 2>/dev/null | head -1)
+      app_pid=$(pgrep -f "java .*-jar.*spring-petclinic" 2>/dev/null | head -1)
       [[ -n "$app_pid" ]] && break
       sleep 0.5
     done
+    # Safety: refuse to ever kill our own script, our parent shell, or PID 1
+    if [[ -n "$app_pid" ]] && { [[ "$app_pid" == "$$" ]] || [[ "$app_pid" == "$PPID" ]] || [[ "$app_pid" == "1" ]]; }; then
+      echo "    WARNING: PID detection returned $app_pid (self/parent/init); ignoring"
+      app_pid=""
+    fi
   else
     # For Java applications, look for the Java process
     for _ in {1..5}; do
@@ -1330,8 +1350,13 @@ for ((i = 1; i <= RUNS; i++)); do
     # (port 8080 is in LISTEN state and Spring lifecycle is complete)
     if [[ "$LABEL" == "crac" && -z "$app_pid" ]]; then
       app_pid=$(jcmd 2>/dev/null | grep -i "petclinic" | awk '{print $1}' | head -1)
-      [[ -z "$app_pid" ]] && app_pid=$(pgrep -f "spring-petclinic.*jar" 2>/dev/null | head -1)
+      [[ -z "$app_pid" ]] && app_pid=$(pgrep -f "java .*-jar.*spring-petclinic" 2>/dev/null | head -1)
       [[ -z "$app_pid" ]] && app_pid=$(ss -tlnp 2>/dev/null | grep ':8080' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
+      # Safety: refuse to ever kill our own script, our parent shell, or PID 1
+      if [[ -n "$app_pid" ]] && { [[ "$app_pid" == "$$" ]] || [[ "$app_pid" == "$PPID" ]] || [[ "$app_pid" == "1" ]]; }; then
+        echo "    WARNING: PID detection returned $app_pid (self/parent/init); ignoring"
+        app_pid=""
+      fi
       [[ -n "$app_pid" ]] && echo "    Found CRaC app PID after startup: $app_pid"
     fi
     hit_urls # --- load generator ---
