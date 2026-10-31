@@ -9,13 +9,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Spring PetClinic is a sample Spring Boot application demonstrating best practices for building web applications with Spring. It's a veterinary clinic management system that tracks owners, their pets, visits, and veterinarians.
 
 **Technology Stack:**
-- Spring Boot 4.0.3
+- Spring Boot 4.1.2
 - Spring Data JPA with support for H2 (default), MySQL, and PostgreSQL
 - Thymeleaf templating engine
 - JCache/Caffeine for caching
 - Bootstrap 5.3.8 for frontend styling
-- Gradle 9.2.1 for build management (primary); Maven also available
-- Java 25 (Temurin `25.0.3-tem`)
+- Gradle 9.5.1 for build management (primary); Maven also available
+- Java 25 LTS (Temurin `25.0.5.0+8-tem`) and Java 27 (Temurin `27.0.0.0+35-tem`); pick with `JDK_TRACK=25|27` (GraalVM variant only on 25)
 
 ## Build and Run Commands
 

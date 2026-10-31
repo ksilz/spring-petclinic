@@ -343,7 +343,7 @@ A,0.353,155968,4.8,11.8,2025-11-02T10:24:15Z  # Trimmed mean
 
 **CRaC Requirements** (Linux only):
 - CRIU installed (`apt install criu`)
-- Java 25 with CRaC support (e.g., Azul Zulu CRaC)
+- Java 25 or 27 with CRaC support (Azul Zulu CRaC: `25.0.4.1-crac+1-zulu` on track 25, `27.0.0.0-crac+35-zulu` on track 27)
 - Either root privileges OR CRaCEngine=warp
 
 **GraalVM Platform Differences**:
