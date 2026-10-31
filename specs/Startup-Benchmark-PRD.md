@@ -468,6 +468,8 @@ WARMUPS=3     # Number of warm-up runs
 RUNS=7        # Number of benchmark runs
 ```
 
+Both can be overridden with the environment variables `BENCH_WARMUPS` (integer >= 0) and `BENCH_RUNS` (integer >= 3, because the A row is a trimmed mean that drops min and max). The overrides are intended for smoke tests only; official results use the defaults (3 warm-ups, 7 runs). Example: `BENCH_WARMUPS=1 BENCH_RUNS=3 ./compile-and-run.sh baseline`
+
 ---
 
 ## Troubleshooting

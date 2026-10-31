@@ -197,14 +197,27 @@ if [[ "$JDK_TRACK" != "25" ]]; then
   CSV_SUFFIX="_jdk${JDK_TRACK}"
 fi
 CSV_FILE="result_${LABEL}${CSV_SUFFIX}.csv"
-WARMUPS=3
-RUNS=7
+WARMUPS="${BENCH_WARMUPS:-3}"
+RUNS="${BENCH_RUNS:-7}"
+if ! [[ "$WARMUPS" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: BENCH_WARMUPS must be a non-negative integer (got '$WARMUPS')" >&2
+  exit 1
+fi
+if ! [[ "$RUNS" =~ ^[0-9]+$ ]] || (( 10#$RUNS < 3 )); then
+  echo "ERROR: BENCH_RUNS must be an integer >= 3 (got '$RUNS')" >&2
+  exit 1
+fi
+WARMUPS=$((10#$WARMUPS))
+RUNS=$((10#$RUNS))
 
 # Debug information for configuration
 echo "DEBUG: Configuration set:"
 echo "  WARMUPS: $WARMUPS"
 echo "  RUNS: $RUNS"
 echo "  CSV_FILE: $CSV_FILE"
+if [[ "$WARMUPS" -ne 3 || "$RUNS" -ne 7 ]]; then
+  echo "NOTE: non-default run counts (smoke test): WARMUPS=$WARMUPS, RUNS=$RUNS"
+fi
 echo "DEBUG: End of configuration debug"
 echo
 
