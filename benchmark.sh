@@ -965,9 +965,45 @@ elif [[ "$LABEL" == "crac" && (! -d petclinic-crac || ! -f petclinic-crac/*.img)
     echo "    Last few lines of application log:"
     tail -15 "$LOG_FILE" | sed 's/^/      /'
     kill -TERM "$pid" 2>/dev/null
+    kill -TERM "$app_pid" 2>/dev/null
+    sleep 2
+    kill -0 "$app_pid" 2>/dev/null && kill -9 "$app_pid" 2>/dev/null
     wait "$pid" 2>/dev/null
     echo "    CRaC training failed - skipping benchmark"
     exit 1
+  fi
+
+  # The application exited by itself (older CRaC builds do that after checkpointing):
+  # re-check the completion predicate once, with one extra 1-second check for a stable size
+  if [[ "$checkpoint_complete" != "true" ]]; then
+    recheck_size_1=-1
+    if [[ -f petclinic-crac/core.img ]]; then
+      recheck_size_1=$(wc -c <petclinic-crac/core.img 2>/dev/null | tr -d '[:space:]')
+      [[ "$recheck_size_1" =~ ^[0-9]+$ ]] || recheck_size_1=-1
+    fi
+    sleep 1
+    recheck_size_2=-1
+    if [[ -f petclinic-crac/core.img ]]; then
+      recheck_size_2=$(wc -c <petclinic-crac/core.img 2>/dev/null | tr -d '[:space:]')
+      [[ "$recheck_size_2" =~ ^[0-9]+$ ]] || recheck_size_2=-1
+    fi
+    if grep -q "warp: Checkpoint successful!" "$LOG_FILE" 2>/dev/null &&
+      [[ $recheck_size_1 -gt 0 ]] &&
+      ! compgen -G "petclinic-crac/core.img.*" >/dev/null &&
+      [[ $recheck_size_1 -eq $recheck_size_2 ]]; then
+      echo "    Checkpoint image complete after ${checkpoint_wait}s (core.img ${recheck_size_2} bytes, size stable)"
+      checkpoint_complete=true
+    else
+      echo "    Error: Application exited before the checkpoint image was complete"
+      echo "    Checkpoint directory contents:"
+      ls -lh petclinic-crac 2>&1 | sed 's/^/      /'
+      echo "    Last few lines of application log:"
+      tail -15 "$LOG_FILE" | sed 's/^/      /'
+      kill -TERM "$pid" 2>/dev/null
+      wait "$pid" 2>/dev/null
+      echo "    CRaC training failed - skipping benchmark"
+      exit 1
+    fi
   fi
 
   # Verify checkpoint directory was created and has content
@@ -985,9 +1021,13 @@ elif [[ "$LABEL" == "crac" && (! -d petclinic-crac || ! -f petclinic-crac/*.img)
         if grep -q "warp: Checkpoint successful!" "$LOG_FILE"; then
           echo "    ✅ Checkpoint success confirmed in application log"
         else
-          echo "    ⚠️  Warning: 'warp: Checkpoint successful!' message not found in application log"
+          echo "    Error: 'warp: Checkpoint successful!' message not found in application log"
           echo "    Last few lines of application log:"
-          tail -10 "$LOG_FILE" | sed 's/^/      /'
+          tail -15 "$LOG_FILE" | sed 's/^/      /'
+          kill -TERM "$pid" 2>/dev/null
+          wait "$pid" 2>/dev/null
+          echo "    CRaC training failed - skipping benchmark"
+          exit 1
         fi
       else
         echo "    Error: Checkpoint directory petclinic-crac exists but has no final core.img (or a core.img.* temp file remains)"
