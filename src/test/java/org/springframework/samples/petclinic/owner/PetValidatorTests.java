@@ -63,6 +63,16 @@ class PetValidatorTests {
 	}
 
 	@Test
+	void supportsPetClass() {
+		assertTrue(petValidator.supports(Pet.class));
+	}
+
+	@Test
+	void doesNotSupportNonPetClass() {
+		assertFalse(petValidator.supports(String.class));
+	}
+
+	@Test
 	void validate() {
 		petType.setName(petTypeName);
 		pet.setName(petName);
@@ -110,6 +120,18 @@ class PetValidatorTests {
 			petValidator.validate(pet, errors);
 
 			assertTrue(errors.hasFieldErrors("birthDate"));
+		}
+
+		@Test
+		void validateWithLongPetName() {
+			petType.setName(petTypeName);
+			pet.setName("A".repeat(31));
+			pet.setType(petType);
+			pet.setBirthDate(petBirthDate);
+
+			petValidator.validate(pet, errors);
+
+			assertTrue(errors.hasFieldErrors("name"));
 		}
 
 	}

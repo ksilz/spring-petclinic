@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.Assert;
@@ -120,8 +121,17 @@ class PetController {
 			return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
 		}
 
-		owner.addPet(pet);
-		this.owners.save(owner);
+		try {
+			owner.addPet(pet);
+			this.owners.saveAndFlush(owner);
+		}
+		catch (DataIntegrityViolationException ex) {
+			if (!isDuplicatePetNameViolation(ex)) {
+				throw ex;
+			}
+			result.rejectValue("name", "duplicate", "already exists");
+			return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
+		}
 		redirectAttributes.addFlashAttribute("message", "New Pet has been Added");
 		return "redirect:/owners/{ownerId}";
 	}
@@ -154,7 +164,16 @@ class PetController {
 			return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
 		}
 
-		updatePetDetails(owner, pet);
+		try {
+			updatePetDetails(owner, pet);
+		}
+		catch (DataIntegrityViolationException ex) {
+			if (!isDuplicatePetNameViolation(ex)) {
+				throw ex;
+			}
+			result.rejectValue("name", "duplicate", "already exists");
+			return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
+		}
 		redirectAttributes.addFlashAttribute("message", "Pet details has been edited");
 		return "redirect:/owners/{ownerId}";
 	}
@@ -177,7 +196,12 @@ class PetController {
 		else {
 			owner.addPet(pet);
 		}
-		this.owners.save(owner);
+		this.owners.saveAndFlush(owner);
+	}
+
+	private boolean isDuplicatePetNameViolation(DataIntegrityViolationException ex) {
+		String message = ex.getMessage();
+		return message != null && message.toLowerCase().contains("unique_owner_pet_name");
 	}
 
 }
