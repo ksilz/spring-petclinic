@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "task_key": "RUN-UPGRADE-BENCHMARKS",
+  "status": "in_progress",
+  "current_step": "4.5",
+  "started": "2026-10-31T17:04:44Z",
+  "updated": "2026-10-31T17:05:30Z",
+  "config": {
+    "input_mode": "freeform",
+    "user_description": "Run and compare the startup benchmarks for the upgraded PetClinic fork (JDK 25 track incl. GraalVM native build on the big server, then JDK 27 track on the small server); collect result CSVs and logs, compare old vs new track 25 and track 25 vs track 27, add tested-versions table and results to specs/Startup-Benchmark-PRD.md and docs/specs/SPECS-overview.md, commit on a new branch from merge-upstream-2026-10.",
+    "special_instructions": "Ask before long or memory-heavy runs, deleting server data, changing benchmark scripts/methodology, and pushing. Never run compile-and-run.sh on the Mac. Do not touch ~/projects/spring-petclinic on the servers. Use -x checkstyleNohttp for Gradle test/build runs. Commit with git commit -s.",
+    "ticket_id": null,
+    "ticket_url": null,
+    "branch_name": "run-upgrade-benchmarks-jdk25-jdk27",
+    "original_branch": "merge-upstream-2026-10",
+    "docs_folder": "docs",
+    "workflow_scope": null,
+    "keep_settings": { "prd": "ask", "plan": "ask", "review": "always", "state": "ask" },
+    "keep_files": null,
+    "open_md_setting": "never",
+    "auto_open_md": false,
+    "unattended": false,
+    "profiling_enabled": true,
+    "profile_parent_path": null,
+    "audience": "business",
+    "audience_source": "default",
+    "git_identity": "ksilz@outlook.com (user.email)"
+  },
+  "discovery": {
+    "agents_available": true,
+    "planner_agents": [],
+    "writer_agents": [],
+    "coding_agents": ["be-coder", "shell-coder"],
+    "review_agents": ["be-reviewer", "shell-reviewer"],
+    "test_runner_agents": [],
+    "test_command": null,
+    "test_scopes": [],
+    "youtrack_available": false,
+    "youtrack_mcp": null,
+    "youtrack_on_start": null,
+    "youtrack_on_resolve": null
+  },
+  "artifacts": {
+    "prd_skipped": null,
+    "prd_file": null,
+    "plan_file": null,
+    "profile_path": "docs/profiles/plan-and-do/PROFILE-RUN-UPGRADE-BENCHMARKS-20261031T170444Z.json",
+    "pr_url": null,
+    "last_test_run": null,
+    "branch_sync": null,
+    "ci": null,
+    "blocker": null,
+    "critical_findings": []
+  },
+  "delegation": {
+    "assignments": [],
+    "escalations": []
+  },
+  "unattended_log": [],
+  "completed_steps": ["1", "2", "3", "4"],
+  "reference_files_read": [
+    "bpf-plan-and-do-setup.md",
+    "bpf-plan-and-do-audience.md",
+    "bpf-plan-and-do-audience-business.md",
+    "bpf-plan-and-do-audience-delegate.md",
+    "bpf-plan-and-do-profiling.md",
+    "bpf-plan-and-do-templates.md"
+  ]
+}
