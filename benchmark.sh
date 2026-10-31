@@ -349,6 +349,23 @@ hit_urls() {
     if [[ -n "$launcher_pid" ]] && { [[ "$launcher_pid" == "$$" ]] || [[ "$launcher_pid" == "$PPID" ]] || [[ "$launcher_pid" == "1" ]]; }; then
       launcher_pid=""
     fi
+    # Only kill app_pid if it is the launcher or a descendant of it (walk up at most 3 levels),
+    # so a stale or pgrep -f fallback PID that belongs to some other java process is left alone.
+    if [[ -n "$stop_pid" && "$stop_pid" != "$launcher_pid" ]]; then
+      local walk_pid="$stop_pid" is_descendant=false
+      for _ in 1 2 3; do
+        walk_pid=$(ps -o ppid= -p "$walk_pid" 2>/dev/null | tr -d '[:space:]')
+        [[ -z "$walk_pid" ]] && break
+        if [[ -n "$launcher_pid" && "$walk_pid" == "$launcher_pid" ]]; then
+          is_descendant=true
+          break
+        fi
+      done
+      if [[ "$is_descendant" != "true" ]]; then
+        echo "    Skipping kill of PID $stop_pid: it is not the launcher process or one of its descendants"
+        stop_pid=""
+      fi
+    fi
     echo "    Stopping the application after the failed status check..."
     [[ -n "$stop_pid" ]] && kill -TERM "$stop_pid" 2>/dev/null
     [[ -n "$launcher_pid" ]] && kill -TERM "$launcher_pid" 2>/dev/null
@@ -357,6 +374,16 @@ hit_urls() {
     [[ -n "$launcher_pid" ]] && kill -0 "$launcher_pid" 2>/dev/null && kill -9 "$launcher_pid" 2>/dev/null
     [[ -n "$launcher_pid" ]] && wait "$launcher_pid" 2>/dev/null
     wait_for_port_free 30
+
+    # A TERMed training run may still have written its cache from the broken build; remove it
+    # so the next run trains again instead of skipping training because the file exists.
+    if [[ "$LABEL" == "cds" ]]; then
+      rm -f petclinic.jsa
+      echo "    Removed petclinic.jsa written by the failed CDS training run"
+    elif [[ "$LABEL" == "leyden" ]]; then
+      rm -f petclinic.aotconf
+      echo "    Removed petclinic.aotconf written by the failed Leyden training run"
+    fi
     exit 1
   fi
 }
@@ -1239,8 +1266,8 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   # Check if we actually found the startup message
   if grep -q "Started PetClinicApplication in" "$LOG_FILE"; then
     echo "    Application started successfully"
-    # For training runs, we don't need to be as strict about URL errors
-    # Just hit the URLs to generate profiling data, even if some fail
+    # Hit the URLs to generate profiling data. The status guard in hit_urls also applies to
+    # training runs: unexpected HTTP status codes stop the application and fail the run.
     echo "    Hitting URLs for profiling data generation..."
     hit_urls
   else
