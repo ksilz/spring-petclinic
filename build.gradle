@@ -16,7 +16,8 @@ version = '4.0.0-SNAPSHOT'
 
 java {
   toolchain {
-    languageVersion = JavaLanguageVersion.of(25)
+    // JDK track: 25 (LTS, default) or 27. Set with -PjavaVersion=27 (compile-and-run.sh passes it via JDK_TRACK).
+    languageVersion = JavaLanguageVersion.of((findProperty('javaVersion') ?: '25') as int)
   }
 }
 

@@ -183,7 +183,20 @@ else
   APP_CMD="java $BASE_JVM_PARAMS ${AOT_FLAG} -jar $JAR_PATH"
   TRAIN_CMD="java $BASE_JVM_PARAMS ${AOT_FLAG} -jar $JAR_PATH"
 fi
-CSV_FILE="result_${LABEL}.csv"
+# JDK track (set by compile-and-run.sh): 25 keeps the historic file names, other tracks get a suffix.
+JDK_TRACK="${JDK_TRACK:-25}"
+case "$JDK_TRACK" in
+25 | 27) ;;
+*)
+  echo "JDK_TRACK must be 25 or 27 (got '$JDK_TRACK')" >&2
+  exit 1
+  ;;
+esac
+CSV_SUFFIX=""
+if [[ "$JDK_TRACK" != "25" ]]; then
+  CSV_SUFFIX="_jdk${JDK_TRACK}"
+fi
+CSV_FILE="result_${LABEL}${CSV_SUFFIX}.csv"
 WARMUPS=3
 RUNS=7
 
