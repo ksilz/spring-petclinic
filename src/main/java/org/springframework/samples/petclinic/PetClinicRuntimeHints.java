@@ -16,8 +16,10 @@
 
 package org.springframework.samples.petclinic;
 
+import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
+import org.springframework.aot.hint.TypeReference;
 import org.springframework.samples.petclinic.model.BaseEntity;
 import org.springframework.samples.petclinic.model.Person;
 import org.springframework.samples.petclinic.vet.Vet;
@@ -33,6 +35,15 @@ public class PetClinicRuntimeHints implements RuntimeHintsRegistrar {
 		hints.reflection().registerType(BaseEntity.class, typeHint -> typeHint.withJavaSerialization(true));
 		hints.reflection().registerType(Person.class, typeHint -> typeHint.withJavaSerialization(true));
 		hints.reflection().registerType(Vet.class, typeHint -> typeHint.withJavaSerialization(true));
+
+		// Templates call #strings.listJoin, #numbers.sequence and #temporals.format
+		// reflectively; GraalVM 25.0.5 / Boot 4.1.2 no longer register them
+		// automatically.
+		for (String helper : new String[] { "Strings", "Numbers", "Temporals" }) {
+			hints.reflection()
+				.registerType(TypeReference.of("org.thymeleaf.expression." + helper),
+						MemberCategory.INVOKE_PUBLIC_METHODS);
+		}
 
 		// Jackson 3 reflection hints for native image
 		try {
