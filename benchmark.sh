@@ -912,10 +912,18 @@ elif [[ "$LABEL" == "crac" && (! -d petclinic-crac || ! -f petclinic-crac/*.img)
     fi
   fi
 
-  # Wait for checkpoint to complete - give it more time
+  # Wait for checkpoint to complete.
+  # The warp engine (hardcoded via -XX:CRaCEngine=warp) writes the image to a temp file
+  # petclinic-crac/core.img.<random>, logs "warp: Checkpoint successful!" early, but keeps
+  # writing the image afterwards and renames it to core.img only when done. Sending TERM
+  # before that rename gets the shutdown captured in the image, so every restore exits
+  # immediately. Hence: wait for the success message, the final core.img, no temp file,
+  # and a core.img size that is stable between two consecutive 1-second checks.
   echo "    Waiting for checkpoint to complete..."
   checkpoint_wait=0
-  max_checkpoint_wait=60 # Increased from 30 to 60 seconds
+  max_checkpoint_wait=120 # Raised from 60: the image is ~240 MB and written to a slow disk on small servers
+  checkpoint_complete=false
+  prev_core_size=-2
   while [[ $checkpoint_wait -lt $max_checkpoint_wait ]]; do
     # Check if the application process is still running
     if ! kill -0 "$app_pid" 2>/dev/null; then
@@ -923,16 +931,20 @@ elif [[ "$LABEL" == "crac" && (! -d petclinic-crac || ! -f petclinic-crac/*.img)
       break
     fi
 
-    if [[ -d petclinic-crac ]] && [[ "$(ls -A petclinic-crac 2>/dev/null)" ]]; then
-      # Check if there are files other than log files
-      non_log_files=$(find petclinic-crac -type f ! -name "*.log" 2>/dev/null | wc -l)
-      if [[ $non_log_files -gt 0 ]]; then
-        echo "    Checkpoint directory has non-log files after ${checkpoint_wait}s"
-        break
-      else
-        echo "    Checkpoint directory exists but only contains log files, waiting for actual checkpoint data..."
-      fi
+    core_size=-1
+    if [[ -f petclinic-crac/core.img ]]; then
+      core_size=$(wc -c <petclinic-crac/core.img 2>/dev/null | tr -d '[:space:]')
+      [[ "$core_size" =~ ^[0-9]+$ ]] || core_size=-1
     fi
+    if grep -q "warp: Checkpoint successful!" "$LOG_FILE" 2>/dev/null &&
+      [[ $core_size -gt 0 ]] &&
+      ! compgen -G "petclinic-crac/core.img.*" >/dev/null &&
+      [[ $core_size -eq $prev_core_size ]]; then
+      echo "    Checkpoint image complete after ${checkpoint_wait}s (core.img ${core_size} bytes, size stable)"
+      checkpoint_complete=true
+      break
+    fi
+    prev_core_size=$core_size
     sleep 1
     checkpoint_wait=$((checkpoint_wait + 1))
     if [[ $((checkpoint_wait % 5)) -eq 0 ]]; then
@@ -945,12 +957,25 @@ elif [[ "$LABEL" == "crac" && (! -d petclinic-crac || ! -f petclinic-crac/*.img)
     fi
   done
 
+  # Timed out with the application still running: the image is not complete, do not benchmark
+  if [[ "$checkpoint_complete" != "true" ]] && kill -0 "$app_pid" 2>/dev/null; then
+    echo "    Error: Checkpoint image was not complete after ${max_checkpoint_wait}s"
+    echo "    Checkpoint directory contents:"
+    ls -lh petclinic-crac 2>&1 | sed 's/^/      /'
+    echo "    Last few lines of application log:"
+    tail -15 "$LOG_FILE" | sed 's/^/      /'
+    kill -TERM "$pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    echo "    CRaC training failed - skipping benchmark"
+    exit 1
+  fi
+
   # Verify checkpoint directory was created and has content
   if [[ -d petclinic-crac ]]; then
     if [[ "$(ls -A petclinic-crac 2>/dev/null)" ]]; then
-      # Check if there are non-log files
+      # Require the final core.img and no leftover core.img.* temp file (see comment above)
       non_log_files=$(find petclinic-crac -type f ! -name "*.log" 2>/dev/null | wc -l)
-      if [[ $non_log_files -gt 0 ]]; then
+      if [[ -f petclinic-crac/core.img ]] && ! compgen -G "petclinic-crac/core.img.*" >/dev/null; then
         echo "    Checkpoint directory created successfully: $(ls -lh petclinic-crac)"
         echo "    Checkpoint directory contents:"
         ls -lh petclinic-crac | sed 's/^/      /'
@@ -965,7 +990,7 @@ elif [[ "$LABEL" == "crac" && (! -d petclinic-crac || ! -f petclinic-crac/*.img)
           tail -10 "$LOG_FILE" | sed 's/^/      /'
         fi
       else
-        echo "    Error: Checkpoint directory petclinic-crac exists but only contains log files"
+        echo "    Error: Checkpoint directory petclinic-crac exists but has no final core.img (or a core.img.* temp file remains)"
         echo "    Application may have terminated during checkpoint creation"
         echo "    Checkpoint directory contents:"
         ls -lh petclinic-crac | sed 's/^/      /'
