@@ -299,6 +299,12 @@ hit_urls() {
   fi
 
   # Now call the actual URLs (repeated 5x to generate more garbage)
+  # Status guard: every URL must return 200, except /oups (the deliberate crash demo page),
+  # which must return 500. Any other status means the build is broken (e.g. a native image
+  # missing reflection hints returns 500 on most pages), so the run must fail instead of
+  # being timed and recorded as a success. The check applies to training runs as well.
+  local unexpected=()
+  local expected_status
   printf '    Calling URLs: ' # four-space indent
   for round in {1..5}; do
     for url in "${URLS[@]}"; do
@@ -312,9 +318,47 @@ hit_urls() {
         echo "    Check the log file for errors: $LOG_FILE"
         exit 1
       fi
+      expected_status="200"
+      [[ "$url" == */oups ]] && expected_status="500"
+      if [[ "$status" != "$expected_status" ]]; then
+        unexpected+=("$url=$status")
+      fi
     done
   done
   echo # newline
+
+  if [[ ${#unexpected[@]} -gt 0 ]]; then
+    local summary
+    summary=$(printf '%s\n' "${unexpected[@]}" | sort | uniq -c |
+      awk '{c=$1; $1=""; sub(/^ /,""); printf "%s%s (x%d)", (NR>1 ? ", " : ""), $0, c}')
+    echo "    ❌ ERROR: ${#unexpected[@]} unexpected HTTP status code(s): $summary"
+    echo "    Check the log file for errors: $LOG_FILE"
+    echo "    Last lines of application log:"
+    tail -30 "$LOG_FILE" 2>/dev/null | sed 's/^/      /' || echo "      (log file empty or missing)"
+
+    # Stop the application the same way the callers do after a normal run (SIGTERM, then
+    # SIGKILL if still alive), so nothing keeps port 8080. The tracked app process is
+    # stopped first; the launcher process is the fallback (tpid in the benchmark phase,
+    # pid in training and warm-up runs). SIGTERM first keeps a CRaC process shutting down
+    # normally; no checkpoint exists yet when hit_urls runs in the CRaC training run.
+    local stop_pid="${app_pid:-}"
+    local launcher_pid="${tpid:-${pid:-}}"
+    if [[ -n "$stop_pid" ]] && { [[ "$stop_pid" == "$$" ]] || [[ "$stop_pid" == "$PPID" ]] || [[ "$stop_pid" == "1" ]]; }; then
+      stop_pid=""
+    fi
+    if [[ -n "$launcher_pid" ]] && { [[ "$launcher_pid" == "$$" ]] || [[ "$launcher_pid" == "$PPID" ]] || [[ "$launcher_pid" == "1" ]]; }; then
+      launcher_pid=""
+    fi
+    echo "    Stopping the application after the failed status check..."
+    [[ -n "$stop_pid" ]] && kill -TERM "$stop_pid" 2>/dev/null
+    [[ -n "$launcher_pid" ]] && kill -TERM "$launcher_pid" 2>/dev/null
+    sleep 2
+    [[ -n "$stop_pid" ]] && kill -0 "$stop_pid" 2>/dev/null && kill -9 "$stop_pid" 2>/dev/null
+    [[ -n "$launcher_pid" ]] && kill -0 "$launcher_pid" 2>/dev/null && kill -9 "$launcher_pid" 2>/dev/null
+    [[ -n "$launcher_pid" ]] && wait "$launcher_pid" 2>/dev/null
+    wait_for_port_free 30
+    exit 1
+  fi
 }
 
 # Function to get the appropriate startup message based on label
