@@ -1696,6 +1696,21 @@ avg_mem=$(trimmed_mean "${mems[@]}")
 avg_startup_gc=$(trimmed_mean "${startup_gcs[@]}")
 avg_benchmark_gc=$(trimmed_mean "${benchmark_gcs[@]}")
 
+# Size Extra for cds, leyden and crac: compile-and-run.sh measures the sizes before this script
+# runs, when the CDS archive, the Leyden AOT cache and the CRaC checkpoint do not exist yet (it
+# deletes them, and the training run above creates them), so they came out as 0.0. Measure
+# them again now, the same way as compile-and-run.sh (du -sk, MB with one decimal).
+extra_path=""
+case "$LABEL" in
+cds) extra_path="petclinic.jsa" ;;
+leyden) extra_path="petclinic.aot" ;;
+crac) extra_path="petclinic-crac" ;;
+esac
+if [[ -n "$extra_path" && -e "$extra_path" ]]; then
+  extra_kb=$(du -sk "$extra_path" | cut -f1)
+  SIZE_EXTRA_MB=$(awk "BEGIN {printf \"%.1f\", $extra_kb/1024}")
+fi
+
 # Capture calculation timestamp in ISO 8601 format
 calc_timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 echo "A,$avg_time,$avg_mem,$avg_startup_gc,$avg_benchmark_gc,$calc_timestamp,$SIZE_APP_MB,$SIZE_EXTRA_MB" >>"$CSV_FILE"
