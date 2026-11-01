@@ -70,11 +70,14 @@ tasks.named('test') {
   useJUnitPlatform()
 }
 
-// Workaround: CycloneDX Gradle plugin 3.2.4 adds an artifact to the cyclonedxDirectBom
-// configuration when its task is created. On the nativeCompile path (GraalVM build tools 1.1.2)
-// that configuration is consumed as a variant first, so task creation fails with
-// "Cannot mutate the artifacts of configuration ':cyclonedxDirectBom'". Realizing the task
-// eagerly adds the artifact before any resolution. Remove once CycloneDX fixes this.
+// Workaround: CycloneDX Gradle plugin 3.2.4 fails on the nativeCompile path (GraalVM build tools
+// 1.1.2) with "Cannot mutate the artifacts of configuration ':cyclonedxDirectBom'".
+// Verified by decompiling plugin 3.2.4: its apply registers an afterEvaluate hook that lazily
+// configures the direct-BOM task (tasks.named(...).configure { ... project.artifacts.add(
+// "cyclonedxDirectBom", ...) }). On the nativeCompile path the configuration can be consumed
+// as a variant before that lazy action runs. Calling get() during script evaluation realizes the
+// task early, so the action runs right at afterEvaluate, before anything consumes the
+// configuration. Remove once CycloneDX fixes this; check newer plugin versions first.
 tasks.named("cyclonedxDirectBom").get()
 tasks.named("cyclonedxDirectBom").configure {
   dependsOn("compileJava")

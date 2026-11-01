@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.thymeleaf.expression.Numbers;
 import org.thymeleaf.expression.Strings;
 import org.thymeleaf.expression.Temporals;
+import org.thymeleaf.spring6.expression.Fields;
 
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.predicate.RuntimeHintsPredicates;
@@ -58,6 +59,18 @@ class PetClinicRuntimeHintsTests {
 	void thymeleafTemporalsFormatIsInvocable() throws NoSuchMethodException {
 		assertThat(RuntimeHintsPredicates.reflection()
 			.onMethodInvocation(Temporals.class.getMethod("format", Temporal.class, String.class))).accepts(this.hints);
+	}
+
+	@Test
+	void thymeleafFieldsHasErrorsIsInvocable() throws NoSuchMethodException {
+		assertThat(RuntimeHintsPredicates.reflection()
+			.onMethodInvocation(Fields.class.getMethod("hasErrors", String.class))).accepts(this.hints);
+	}
+
+	@Test
+	void thymeleafFieldsAllErrorsIsInvocable() throws NoSuchMethodException {
+		assertThat(RuntimeHintsPredicates.reflection().onMethodInvocation(Fields.class.getMethod("allErrors")))
+			.accepts(this.hints);
 	}
 
 }
