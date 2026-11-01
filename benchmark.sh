@@ -258,6 +258,64 @@ URLS=(
   "http://localhost:8080/oups"
 )
 
+# ---------- failure cleanup used by every failure path in hit_urls ----------
+# Stops the application the same way the callers do after a normal run (SIGTERM, then
+# SIGKILL if still alive), so nothing keeps port 8080, and removes cache files that the
+# failed run may have left behind. It does not exit; the caller exits afterwards.
+# Usage: stop_app_after_failure "<reason>"
+stop_app_after_failure() {
+  local reason="${1:-failure}"
+  # The tracked app process is stopped first; the launcher process is the fallback (tpid in
+  # the benchmark phase, pid in training and warm-up runs). SIGTERM first keeps a CRaC
+  # process shutting down normally; no checkpoint exists yet when hit_urls runs in the CRaC
+  # training run.
+  local stop_pid="${app_pid:-}"
+  local launcher_pid="${tpid:-${pid:-}}"
+  if [[ -n "$stop_pid" ]] && { [[ "$stop_pid" == "$$" ]] || [[ "$stop_pid" == "$PPID" ]] || [[ "$stop_pid" == "1" ]]; }; then
+    stop_pid=""
+  fi
+  if [[ -n "$launcher_pid" ]] && { [[ "$launcher_pid" == "$$" ]] || [[ "$launcher_pid" == "$PPID" ]] || [[ "$launcher_pid" == "1" ]]; }; then
+    launcher_pid=""
+  fi
+  # Only kill app_pid if it is the launcher or a descendant of it (walk up at most 3 levels),
+  # so a stale or pgrep -f fallback PID that belongs to some other java process is left alone.
+  if [[ -n "$stop_pid" && "$stop_pid" != "$launcher_pid" ]]; then
+    local walk_pid="$stop_pid" is_descendant=false
+    for _ in 1 2 3; do
+      walk_pid=$(ps -o ppid= -p "$walk_pid" 2>/dev/null | tr -d '[:space:]')
+      [[ -z "$walk_pid" ]] && break
+      if [[ -n "$launcher_pid" && "$walk_pid" == "$launcher_pid" ]]; then
+        is_descendant=true
+        break
+      fi
+    done
+    if [[ "$is_descendant" != "true" ]]; then
+      echo "    Skipping kill of PID $stop_pid: it is not the launcher process or one of its descendants"
+      stop_pid=""
+    fi
+  fi
+  echo "    Stopping the application after the failure ($reason)..."
+  [[ -n "$stop_pid" ]] && kill -TERM "$stop_pid" 2>/dev/null
+  [[ -n "$launcher_pid" ]] && kill -TERM "$launcher_pid" 2>/dev/null
+  sleep 2
+  [[ -n "$stop_pid" ]] && kill -0 "$stop_pid" 2>/dev/null && kill -9 "$stop_pid" 2>/dev/null
+  [[ -n "$launcher_pid" ]] && kill -0 "$launcher_pid" 2>/dev/null && kill -9 "$launcher_pid" 2>/dev/null
+  [[ -n "$launcher_pid" ]] && wait "$launcher_pid" 2>/dev/null
+  wait_for_port_free 30
+
+  # Stopping the app can still make a CDS/Leyden training run write its cache from the failed
+  # or broken run. Remove it so the next run rebuilds it instead of benchmarking a bad
+  # archive. CDS skips training when petclinic.jsa exists; the Leyden configuration is
+  # intermediate, so a leftover petclinic.aotconf is removed too.
+  if [[ "$LABEL" == "cds" && -f petclinic.jsa ]]; then
+    rm -f petclinic.jsa
+    echo "    Removed petclinic.jsa so the next run rebuilds the archive"
+  elif [[ "$LABEL" == "leyden" && -f petclinic.aotconf ]]; then
+    rm -f petclinic.aotconf
+    echo "    Removed leftover petclinic.aotconf"
+  fi
+}
+
 # ---------- function reused by warm-ups & benchmarks ----------
 hit_urls() {
   # First, wait for the application to be ready by checking the root URL
@@ -295,6 +353,7 @@ hit_urls() {
     echo "    Check the log file for errors: $LOG_FILE"
     echo "    Last lines of application log:"
     tail -30 "$LOG_FILE" 2>/dev/null | sed 's/^/      /' || echo "      (log file empty or missing)"
+    stop_app_after_failure "readiness failure"
     exit 1
   fi
 
@@ -316,6 +375,7 @@ hit_urls() {
         echo
         echo "    ❌ ERROR: Application stopped responding (HTTP status 000)"
         echo "    Check the log file for errors: $LOG_FILE"
+        stop_app_after_failure "no response"
         exit 1
       fi
       expected_status="200"
@@ -335,55 +395,7 @@ hit_urls() {
     echo "    Check the log file for errors: $LOG_FILE"
     echo "    Last lines of application log:"
     tail -30 "$LOG_FILE" 2>/dev/null | sed 's/^/      /' || echo "      (log file empty or missing)"
-
-    # Stop the application the same way the callers do after a normal run (SIGTERM, then
-    # SIGKILL if still alive), so nothing keeps port 8080. The tracked app process is
-    # stopped first; the launcher process is the fallback (tpid in the benchmark phase,
-    # pid in training and warm-up runs). SIGTERM first keeps a CRaC process shutting down
-    # normally; no checkpoint exists yet when hit_urls runs in the CRaC training run.
-    local stop_pid="${app_pid:-}"
-    local launcher_pid="${tpid:-${pid:-}}"
-    if [[ -n "$stop_pid" ]] && { [[ "$stop_pid" == "$$" ]] || [[ "$stop_pid" == "$PPID" ]] || [[ "$stop_pid" == "1" ]]; }; then
-      stop_pid=""
-    fi
-    if [[ -n "$launcher_pid" ]] && { [[ "$launcher_pid" == "$$" ]] || [[ "$launcher_pid" == "$PPID" ]] || [[ "$launcher_pid" == "1" ]]; }; then
-      launcher_pid=""
-    fi
-    # Only kill app_pid if it is the launcher or a descendant of it (walk up at most 3 levels),
-    # so a stale or pgrep -f fallback PID that belongs to some other java process is left alone.
-    if [[ -n "$stop_pid" && "$stop_pid" != "$launcher_pid" ]]; then
-      local walk_pid="$stop_pid" is_descendant=false
-      for _ in 1 2 3; do
-        walk_pid=$(ps -o ppid= -p "$walk_pid" 2>/dev/null | tr -d '[:space:]')
-        [[ -z "$walk_pid" ]] && break
-        if [[ -n "$launcher_pid" && "$walk_pid" == "$launcher_pid" ]]; then
-          is_descendant=true
-          break
-        fi
-      done
-      if [[ "$is_descendant" != "true" ]]; then
-        echo "    Skipping kill of PID $stop_pid: it is not the launcher process or one of its descendants"
-        stop_pid=""
-      fi
-    fi
-    echo "    Stopping the application after the failed status check..."
-    [[ -n "$stop_pid" ]] && kill -TERM "$stop_pid" 2>/dev/null
-    [[ -n "$launcher_pid" ]] && kill -TERM "$launcher_pid" 2>/dev/null
-    sleep 2
-    [[ -n "$stop_pid" ]] && kill -0 "$stop_pid" 2>/dev/null && kill -9 "$stop_pid" 2>/dev/null
-    [[ -n "$launcher_pid" ]] && kill -0 "$launcher_pid" 2>/dev/null && kill -9 "$launcher_pid" 2>/dev/null
-    [[ -n "$launcher_pid" ]] && wait "$launcher_pid" 2>/dev/null
-    wait_for_port_free 30
-
-    # A TERMed training run may still have written its cache from the broken build; remove it
-    # so the next run trains again instead of skipping training because the file exists.
-    if [[ "$LABEL" == "cds" ]]; then
-      rm -f petclinic.jsa
-      echo "    Removed petclinic.jsa written by the failed CDS training run"
-    elif [[ "$LABEL" == "leyden" ]]; then
-      rm -f petclinic.aotconf
-      echo "    Removed petclinic.aotconf written by the failed Leyden training run"
-    fi
+    stop_app_after_failure "unexpected HTTP status"
     exit 1
   fi
 }
@@ -874,6 +886,13 @@ elif [[ "$LABEL" == "crac" && (! -d petclinic-crac || ! -f petclinic-crac/*.img)
 
   # Clean up any existing processes before starting (with proper indentation)
   cleanup_processes "    "
+
+  # A killed or timed-out earlier checkpoint can leave a core.img.* temp file behind, which
+  # would make this training run fail the completeness check. Start from a clean directory.
+  if [[ -e petclinic-crac ]]; then
+    echo "    Removing old checkpoint directory petclinic-crac before training"
+    rm -rf petclinic-crac
+  fi
 
   echo "    Command: $TRAIN_CMD"
   train_start=$(date +%s)
