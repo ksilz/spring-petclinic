@@ -73,4 +73,10 @@ class PetClinicRuntimeHintsTests {
 			.accepts(this.hints);
 	}
 
+	@Test
+	void thymeleafFieldsHasAnyErrorsIsInvocable() throws NoSuchMethodException {
+		assertThat(RuntimeHintsPredicates.reflection().onMethodInvocation(Fields.class.getMethod("hasAnyErrors")))
+			.accepts(this.hints);
+	}
+
 }

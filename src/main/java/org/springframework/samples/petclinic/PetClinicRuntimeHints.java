@@ -36,16 +36,18 @@ public class PetClinicRuntimeHints implements RuntimeHintsRegistrar {
 		hints.reflection().registerType(Person.class, typeHint -> typeHint.withJavaSerialization(true));
 		hints.reflection().registerType(Vet.class, typeHint -> typeHint.withJavaSerialization(true));
 
-		// Templates call #strings.listJoin, #numbers.sequence, #temporals.format and
-		// #fields.* reflectively. The GraalVM reachability metadata for Thymeleaf
-		// 3.1.0.x registers the core expression helpers only when the OGNL evaluator
-		// is reachable, never for Spring's SpEL evaluator, and the project uses
-		// Thymeleaf 3.1.5, so register them here.
+		// Templates call #strings.listJoin, #numbers.sequence and #temporals.format
+		// reflectively. The GraalVM reachability metadata for Thymeleaf 3.1.0.x registers
+		// these core helpers only when the OGNL evaluator is reachable, never for
+		// Spring's SpEL evaluator, so register them here.
 		for (String helper : new String[] { "Strings", "Numbers", "Temporals" }) {
 			hints.reflection()
 				.registerType(TypeReference.of("org.thymeleaf.expression." + helper),
 						MemberCategory.INVOKE_PUBLIC_METHODS);
 		}
+		// #fields.* (Spring integration): the metadata does register Fields for the SpEL
+		// evaluator, but it was only tested against Thymeleaf 3.1.0.M2 and the project
+		// uses 3.1.5, so register it explicitly as a safeguard.
 		hints.reflection()
 			.registerType(TypeReference.of("org.thymeleaf.spring6.expression.Fields"),
 					MemberCategory.INVOKE_PUBLIC_METHODS);
