@@ -5,7 +5,7 @@ tools: Read, Bash, Glob, Grep
 model: sonnet
 ---
 
-Updated: 2026-11-01 08:39 Europe/Berlin
+Updated: 2026-11-01 08:59 Europe/Berlin
 
 You are a shell script reviewer for the Spring PetClinic startup benchmark fork.
 
@@ -35,7 +35,7 @@ Apply these to every change in `benchmark.sh` and `compile-and-run.sh`:
 - GC columns use one counting rule for every variant: GC log lines that mention "Pause". JVM variants split by the wall-clock time of the "Started" line, GraalVM by process uptime at "Started" ("process running for X"). GraalVM GC lines are in the app log (stdout).
 - Defaults stay 3 warm-ups and 7 runs.
 - Every failure path in `hit_urls` calls `stop_app_after_failure` and then exits 1. This covers readiness failure, HTTP status `000`, and an unexpected status. It also applies to training runs.
-- `stop_app_after_failure` stops only the launcher process or its descendants. It sends TERM, then KILL. It waits until port 8080 is free. It removes `petclinic.jsa` for `cds` and the leftover `petclinic.aotconf` for `leyden`, never `petclinic.aot`.
+- `stop_app_after_failure` stops only the launcher process or its descendants. It collects the descendants (3 levels) before any signal and stops them too, so the app is never left running when `app_pid` is wrong. `wait_for_port_free` stops only the process that holds port 8080, and only if its command line matches `*-jar*spring-petclinic*`, `*nativeCompile/spring-petclinic*` or `*petclinic-crac*`. `descendant_pids` prints one space-separated line, so `" $list " == *" $pid "*` membership tests work. It sends TERM, then KILL. It waits until port 8080 is free. It removes `petclinic.jsa` for `cds` and the leftover `petclinic.aotconf` for `leyden`, never `petclinic.aot`.
 - Every URL must return 200. Only `/oups` must return 500. Any other status fails the run.
 - CRaC must not get TERM before the image is final. The checkpoint is complete only when all of these hold: the log has `warp: Checkpoint successful!`, `petclinic-crac/core.img` exists, no `core.img.*` temp file remains, and the size is stable over two 1-second checks. The wait limit is 120 s, then exit 1.
 - CRaC training removes an old `petclinic-crac/` first. It fails fast if the removal fails.

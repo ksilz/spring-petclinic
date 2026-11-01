@@ -68,7 +68,7 @@ Done after the review, on the user's request:
 - `benchmark.sh:200`: smoke tests write `result_<label>[_jdk27]_smoke.csv` (`12d26ec`).
 - Also fixed: the pre-existing GraalVM GC columns at 0/0 (`de3b237`, `b78735e`).
 
-A shell and a Java reviewer checked these commits: no critical findings. Their code warnings were fixed in `b78735e` (GC format detection) and `ef9e49d` (`@DisabledInNativeImage`). `ef9e49d` also takes two of their suggestions (helper property access, `#themes`). Their documentation warnings were fixed in the docs commit that follows. Still open: `benchmark.sh:337` and `benchmark.sh:261` above.
+A shell and a Java reviewer checked these commits: no critical findings. Their code warnings were fixed in `b78735e` (GC format detection) and `ef9e49d` (`@DisabledInNativeImage`). `ef9e49d` also takes two of their suggestions (helper property access, `#themes`). Their documentation warnings were fixed in the docs commit that follows. `benchmark.sh:337` and `benchmark.sh:261` above were fixed later the same day in `bd04d84` and `fc24b83` (after a shell review of `bd04d84`): `stop_app_after_failure` stops the launcher's whole process tree, and `wait_for_port_free` stops only a benchmark app that holds port 8080.
 
 ## Project Context Validation
 

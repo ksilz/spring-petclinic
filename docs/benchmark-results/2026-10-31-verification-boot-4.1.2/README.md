@@ -160,13 +160,14 @@ The JVM variants pay for the duplicate indexes too. With the JVM baseline settin
 
 ### Before the official run
 
-1. **Remove the duplicate indexes** on the small server (and on the big server, which runs the PGO training). `tools/duplicate-indexes.sql` lists them per table, keeping the primary key and the named indexes from today's `schema.sql`. Nothing has been dropped yet; this needs the user's go-ahead.
+1. **Remove the duplicate indexes. Done on 2026-11-01** with the user's go-ahead, on both servers (the big server runs the PGO training). `tools/drop-duplicate-indexes.sql` kept the primary and unique keys and the named indexes from today's `schema.sql`: 4,152 to 15 indexes on the small server, 533 to 15 on the big server, row counts unchanged. `data.sql` through `psql` went from 0.32 s to 0.065 s on the small server (`index-drop-and-apt-timers.txt`). The old checkouts in `~/projects/spring-petclinic` still have the old `schema.sql`: running them against the `petclinic` database adds the copies again.
 2. **Automatic updates.** On 2026-11-01, `unattended-upgrade` ran on both servers (`small-server-auto-updates.txt`, which covers both):
    - Small server, 06:41-06:52 UTC: it upgraded PostgreSQL 16.13 to 16.15, and systemd restarted PostgreSQL twice (06:48:18-22 and 06:49:37-40). A start at 06:48 failed with "Connection to localhost:5432 refused".
    - Big server, about 06:24-06:31 UTC: PostgreSQL 18.3 stayed, but it was restarted 10 times as libraries changed.
    - Both: glibc 2.39-0ubuntu8.7 to 8.9, OpenSSL 3.0.13-0ubuntu3.9 to 3.16, a new kernel 7.0.0-1014-aws installed. Both report a pending reboot (libc6, linux-image-7.0.0-1014-aws, linux-base).
 
-   Keep official runs out of that window, or pause the apt timers during the run. The "Versions" table above (PostgreSQL 16.13, glibc 8.7, kernel 6.17) no longer matches the servers, so record the versions again for the official run.
+   **Paused on 2026-11-01** with the user's go-ahead: `apt-daily.timer` and `apt-daily-upgrade.timer` are disabled on both servers, so they stay off after a reboot. Re-enable them after the official run with `sudo systemctl enable --now apt-daily.timer apt-daily-upgrade.timer`. The "Versions" table above (PostgreSQL 16.13, glibc 8.7, kernel 6.17) no longer matches the servers, so record the versions again for the official run.
+3. **Reboot both servers** (the user), so the new kernel and glibc are active, then record the versions.
 
 ### Other changes, verified
 
@@ -174,6 +175,7 @@ The JVM variants pay for the duplicate indexes too. With the JVM baseline settin
 - **GraalVM GC columns (`de3b237`, `b78735e`).** The big-server check of that executable (1 warm-up + 3 runs, median 0.300 s) recorded 2 startup and 4 benchmark GC lines per run (`big-server-graalvm-smoke.csv`, run with `de3b237`; the current parser from `b78735e` gives the same 2/4 on that app log). The GC lines in `big-server-graalvm-gc-lines.txt` match: one pause before "Started" and two after it, two log lines each.
 - **Smoke CSV name (`12d26ec`).** The same check wrote `result_graalvm_smoke.csv`, not `result_graalvm.csv`.
 - **Template hint scan (`9c4f779`, `ef9e49d`).** `PetClinicRuntimeHintsTests.everyTemplateHelperUseIsInvocable` fails with the `Temporals` hint removed and with an added `${#execInfo.templateName}`, and ignores CSS such as `#navbar.active`.
+- **Failure paths (`bd04d84`, `fc24b83`), the last two review items.** `stop_app_after_failure` now stops the launcher's whole process tree, so a wrong `app_pid` no longer leaves the app running on port 8080 (2 s instead of 37 s in the test). `wait_for_port_free` stops only the process that holds port 8080, and only if its command line is a benchmark app (`-jar ...spring-petclinic`, `nativeCompile/spring-petclinic` or `petclinic-crac`). Tested on the small server with a stand-in app in 7 cases, including an app two levels below `/usr/bin/time` (`failure-path-tests.txt`, `tools/failpath-test.sh`). A passing run never reaches this code.
 - **Tests on `ef9e49d`** (big server): 88 tests, 0 failures on JDK 25.0.5 and on JDK 27. The 4 Docker-based MySQL and Postgres tests are skipped (no Docker on the server).
 
 ## File index
@@ -195,6 +197,8 @@ The JVM variants pay for the duplicate indexes too. With the JVM baseline settin
 | `logs/native-build/graalvm-build-attempt4.log` | Big-server GraalVM build log, attempt 4 (the executable used in the final check) |
 | `logs/native-build/big-server-attempt4.csv` | Big-server check of the attempt-4 executable (1 warm-up + 3 runs) |
 | `tools/final-check.sh` | Throwaway script that ran the final check. Not part of the benchmark. |
-| `logs/followup-2026-11-01/` | Evidence for the follow-up of 2026-11-01: native A/B, JVM database probe, SQL-init log excerpts, May-executable check, duplicate-index dry run, automatic updates on both servers, CycloneDX checks on the Mac, big-server native build log, smoke CSV and GC lines |
+| `logs/followup-2026-11-01/` | Evidence for the follow-up of 2026-11-01: native A/B, JVM database probe, SQL-init log excerpts, May-executable check, duplicate-index dry run, automatic updates on both servers, index drop and apt timers, failure-path tests, CycloneDX checks on the Mac, big-server native build log, smoke CSV and GC lines |
 | `tools/startup-probe.sh` | Throwaway diagnostic: starts an executable N times and records the startup time and the SQL script times. Not part of the benchmark. |
 | `tools/duplicate-indexes.sql` | Read-only query that counts duplicate indexes per table. Not part of the benchmark. |
+| `tools/drop-duplicate-indexes.sql` | Drops those duplicates (used once on 2026-11-01, see `index-drop-and-apt-timers.txt`). Not part of the benchmark. |
+| `tools/failpath-test.sh` | Throwaway test of the `benchmark.sh` failure-path helpers with a stand-in app on port 8080. Not part of the benchmark. |
