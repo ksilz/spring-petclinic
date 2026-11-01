@@ -198,10 +198,10 @@ java -Xms256m -Xmx768m -XX:+UseG1GC \
 jcmd <PID> JDK.checkpoint
 
 # 4. Wait for checkpoint completion
-# Output: petclinic-crac/ directory (~500 MB - 1 GB)
+# Output: petclinic-crac/ directory, ~230-400 MB (observed 232.6 MB on JDK 25, 397.4 MB on JDK 27, t3.small, 2026-10-31)
 ```
 
-The checkpoint counts as complete only when `core.img` is final and stable. A temporary `core.img.<random>` file or a still-growing file does not count, so the training process is not terminated mid-write.
+The checkpoint counts as complete only when all of the following hold: `warp: Checkpoint successful!` is logged, the final `core.img` exists, no `core.img.<random>` temp file remains, and the `core.img` size is unchanged across two consecutive 1-second checks. If this does not happen within 120 seconds, training fails (exit 1). Before CRaC training, `benchmark.sh` removes any old `petclinic-crac/` directory.
 
 **GraalVM Training**:
 ```bash
@@ -275,10 +275,10 @@ SWAP_DELTA=$((SWAP_AFTER - SWAP_BEFORE))
 
 **Execution**:
 - 60-second readiness check (HTTP 200 on root)
-- 1-second pause between URLs
+- 3-second pause between URLs (`sleep 3` before each request)
 - 11 URLs × 5 rounds = 55 total requests
-- Total execution: ~55 seconds
-- Any URL other than `/oups` that returns a status other than 200 fails the run (`/oups` must return 500)
+- Total execution: ~165 seconds of request pauses (55 requests x 3 s) plus application startup
+- Any URL other than `/oups` that returns a status other than 200 fails the run (`/oups` must return 500). The guard also applies to training runs. On any `hit_urls` failure (unexpected status, no response, readiness timeout), the application is stopped (TERM, then KILL), port 8080 is awaited, and a stale `petclinic.jsa` (CDS) or `petclinic.aotconf` (Leyden) is removed if present.
 
 ### Process Management
 
@@ -307,7 +307,7 @@ SWAP_DELTA=$((SWAP_AFTER - SWAP_BEFORE))
 | `petclinic.jsa` | 50-100 MB | CDS cache |
 | `petclinic.aot` | 100-200 MB | Leyden AOT cache |
 | `petclinic.aotconf` | 1-5 MB | Leyden configuration (intermediate, deleted after use) |
-| `petclinic-crac/` | 500 MB - 1 GB | CRaC checkpoint directory |
+| `petclinic-crac/` | 230-400 MB | CRaC checkpoint directory |
 | `build/native/nativeCompile/spring-petclinic` | 100-150 MB | GraalVM optimized binary |
 | `build/native/nativeCompile/spring-petclinic-instrumented` | 100-150 MB | GraalVM instrumented binary (for training) |
 | `src/pgo-profiles/main/default.iprof` | 10-50 MB | GraalVM PGO profile |
@@ -701,7 +701,7 @@ DEBUG: Script started with parameters:
 - Standard: Finds Java child process of background shell
 
 **Checkpoint Verification** (CRaC):
-- Waits up to 60 seconds for checkpoint completion
+- Waits up to 120 seconds for checkpoint completion
 - Validates checkpoint directory contains non-log files
 - Checks for "warp: Checkpoint successful!" message in logs
 - Shows detailed error messages with log excerpts if checkpoint fails
@@ -718,6 +718,6 @@ DEBUG: Script started with parameters:
 1. **Leyden** - May cause system hangs on Linux during AOT cache generation
 2. **CRaC** - Linux only, requires CRIU, complex process tracking
 3. **GraalVM** - Memory intensive, long build times, platform-specific flags
-4. **Fixed timings** - 1-second delays between URLs. 3 warm-ups and 7 runs are the defaults. `BENCH_WARMUPS` and `BENCH_RUNS` override them for smoke tests only (minimum 3 runs). Official results use the defaults.
+4. **Fixed timings** - 3-second delays between URLs. 3 warm-ups and 7 runs are the defaults. `BENCH_WARMUPS` and `BENCH_RUNS` override them for smoke tests only (minimum 3 runs). Official results use the defaults.
 5. **No Windows support** - Linux/macOS only
 6. **Swap warnings** - Benchmarks warn if swap usage increases during testing (indicates memory pressure)
