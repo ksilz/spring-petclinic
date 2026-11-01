@@ -157,12 +157,14 @@ CRAC_RESTORE_PARAMS="-Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags"
 # GraalVM parameters (native binary - uses native image GC logging)
 # Note: Native images don't support JVM heap parameters like -Xms/-Xmx
 # Memory is controlled via build-time settings (see compile-and-run.sh)
+# GC output goes to stdout and lands in the app log; extract_gc_counts reads it from there.
+# The native executable ignores -Xlog:gc:file=..., so there is no separate GC log file.
 GRAALVM_PARAMS="-XX:+PrintGC -XX:+VerboseGC -Dspring.profiles.active=postgres"
 
 # ---------------- Command Definitions ---------------------
 if [[ "$LABEL" == "graalvm" ]]; then
-  APP_CMD="./build/native/nativeCompile/spring-petclinic $GRAALVM_PARAMS 2>/tmp/gc_${LABEL}.log"
-  TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented $GRAALVM_PARAMS 2>/tmp/gc_${LABEL}.log"
+  APP_CMD="./build/native/nativeCompile/spring-petclinic $GRAALVM_PARAMS"
+  TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented $GRAALVM_PARAMS"
 elif [[ "$LABEL" == "crac" ]]; then
   # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
   # Use CRaCEngine=warp to avoid requiring elevated privileges
@@ -514,8 +516,12 @@ extract_pid_from_log() {
 }
 
 # Function to extract GC counts from GraalVM Native Image logs
-# GraalVM logs use [X.XXXs] timestamps representing seconds since app startup
-# We can split startup vs benchmark GCs by comparing to the startup time
+# The native executable prints its -XX:+PrintGC / -XX:+VerboseGC output to stdout, so the GC
+# lines sit in the app log next to the Spring log lines. They carry [X.XXXs] process-uptime
+# stamps, so startup vs benchmark GCs split at the uptime when the app reported "Started".
+# Counting rule matches extract_gc_counts for the JVM variants: every GC log line that mentions
+# "Pause". G1 logs a start line and an end line per pause, so the columns count pause log
+# lines (about twice the number of pauses), the same way for every variant.
 extract_gc_counts_graalvm() {
   local app_log="$1"
   local gc_log="$2"
@@ -526,56 +532,47 @@ extract_gc_counts_graalvm() {
     return
   fi
 
-  # Extract startup time from app log (e.g., "Started PetClinicApplication in 5.193 seconds")
-  local startup_time=$(grep -o "Started PetClinicApplication in [0-9.]\+ seconds" "$app_log" 2>/dev/null | grep -o "[0-9.]\+" | head -1)
+  # GC pause lines in either format:
+  #   G1 (--gc=G1): [0.472s][info][gc,start ] GC(1) Pause Young (Concurrent Start) (G1 Evacuation Pause)
+  #   Serial:       [0.196s] GC(0) Pause Full GC (Collect on allocation) 32.50M->5.50M 16.560ms
+  local pause_lines
+  if grep -q "\[info\]\[gc\]" "$gc_log" 2>/dev/null; then
+    pause_lines=$(grep -E '^\[[0-9]+\.[0-9]+s\]\[[a-z]+\]\[gc[^]]*\].*Pause' "$gc_log")
+  else
+    pause_lines=$(grep -E '^\[[0-9]+\.[0-9]+s\] .*(Pause Full GC|Pause Incremental GC)' "$gc_log")
+  fi
+  if [[ -z "$pause_lines" ]]; then
+    echo "0,0"
+    return
+  fi
 
+  # Uptime at startup, e.g. "Started PetClinicApplication in 0.615 seconds (process running
+  # for 0.619)". The GC stamps are process uptime, so prefer the "process running for" value.
+  local startup_time
+  startup_time=$(grep -o "process running for [0-9.]\+" "$app_log" 2>/dev/null | grep -o "[0-9.]\+" | head -1)
+  if [[ -z "$startup_time" ]]; then
+    startup_time=$(grep -o "Started PetClinicApplication in [0-9.]\+ seconds" "$app_log" 2>/dev/null | grep -o "[0-9.]\+" | head -1)
+  fi
   if [[ -z "$startup_time" ]]; then
     # Can't determine startup time, return all as benchmark GCs
-    local total_gcs=0
-    if grep -q "\[info\]\[gc\]" "$gc_log" 2>/dev/null; then
-      total_gcs=$(grep -c "Pause Young\|Pause Full" "$gc_log" 2>/dev/null || echo "0")
-    else
-      total_gcs=$(grep -c "Pause Full GC\|Pause Incremental GC" "$gc_log" 2>/dev/null || echo "0")
-    fi
-    echo "0,${total_gcs}"
+    echo "0,$(printf '%s\n' "$pause_lines" | wc -l | tr -d ' ')"
     return
   fi
 
   local startup_count=0
   local benchmark_count=0
-
-  # Detect format and parse GC events
-  if grep -q "\[info\]\[gc\]" "$gc_log" 2>/dev/null; then
-    # G1 GC format (Linux with --gc=G1)
-    # Example: [2.705s][info][gc] GC(16) Pause Young (Normal) (G1 Evacuation Pause) 2301M->1690M(4840M) 25.144ms
-    while IFS= read -r line; do
-      # Extract timestamp in format [X.XXXs]
-      local gc_time=$(echo "$line" | grep -oE '^\[[0-9]+\.[0-9]+s\]' | grep -oE '[0-9]+\.[0-9]+')
-      if [[ -n "$gc_time" ]]; then
-        # Compare using awk for floating point comparison
-        if awk -v gc="$gc_time" -v startup="$startup_time" 'BEGIN { exit (gc <= startup) ? 0 : 1 }'; then
-          ((startup_count++))
-        else
-          ((benchmark_count++))
-        fi
+  while IFS= read -r line; do
+    # Extract timestamp in format [X.XXXs]
+    local gc_time=$(echo "$line" | grep -oE '^\[[0-9]+\.[0-9]+s\]' | grep -oE '[0-9]+\.[0-9]+')
+    if [[ -n "$gc_time" ]]; then
+      # Compare using awk for floating point comparison
+      if awk -v gc="$gc_time" -v startup="$startup_time" 'BEGIN { exit (gc <= startup) ? 0 : 1 }'; then
+        ((startup_count++))
+      else
+        ((benchmark_count++))
       fi
-    done < <(grep "Pause Young\|Pause Full" "$gc_log")
-  else
-    # Serial GC format (macOS default)
-    # Example: [0.196s] GC(0) Pause Full GC (Collect on allocation) 32.50M->5.50M 16.560ms
-    while IFS= read -r line; do
-      # Extract timestamp in format [X.XXXs]
-      local gc_time=$(echo "$line" | grep -oE '^\[[0-9]+\.[0-9]+s\]' | grep -oE '[0-9]+\.[0-9]+')
-      if [[ -n "$gc_time" ]]; then
-        # Compare using awk for floating point comparison
-        if awk -v gc="$gc_time" -v startup="$startup_time" 'BEGIN { exit (gc <= startup) ? 0 : 1 }'; then
-          ((startup_count++))
-        else
-          ((benchmark_count++))
-        fi
-      fi
-    done < <(grep "Pause Full GC\|Pause Incremental GC" "$gc_log")
-  fi
+    fi
+  done <<<"$pause_lines"
 
   echo "${startup_count},${benchmark_count}"
 }
@@ -587,9 +584,10 @@ extract_gc_counts() {
   local app_log="$2"
   local gc_log="$3"
 
-  # For GraalVM Native Image, use specialized parsing
+  # For GraalVM Native Image, use specialized parsing. Its GC lines are in the app log
+  # (stdout), not in a separate GC log file.
   if [[ "$label" == "graalvm" ]]; then
-    extract_gc_counts_graalvm "$app_log" "$gc_log"
+    extract_gc_counts_graalvm "$app_log" "$app_log"
     return
   fi
 
