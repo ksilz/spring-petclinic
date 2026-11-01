@@ -266,6 +266,21 @@ URLS=(
   "http://localhost:8080/oups"
 )
 
+# Prints the PIDs of all descendants of PID $1, at most 3 levels deep, children first.
+descendant_pids() {
+  local parents="$1" next p level
+  for level in 1 2 3; do
+    next=""
+    for p in $parents; do
+      next="$next $(pgrep -P "$p" 2>/dev/null | tr '\n' ' ')"
+    done
+    next=$(echo $next)
+    [[ -z "$next" ]] && break
+    echo "$next"
+    parents="$next"
+  done
+}
+
 # ---------- failure cleanup used by every failure path in hit_urls ----------
 # Stops the application the same way the callers do after a normal run (SIGTERM, then
 # SIGKILL if still alive), so nothing keeps port 8080, and removes cache files that the
@@ -285,29 +300,28 @@ stop_app_after_failure() {
   if [[ -n "$launcher_pid" ]] && { [[ "$launcher_pid" == "$$" ]] || [[ "$launcher_pid" == "$PPID" ]] || [[ "$launcher_pid" == "1" ]]; }; then
     launcher_pid=""
   fi
-  # Only kill app_pid if it is the launcher or a descendant of it (walk up at most 3 levels),
-  # so a stale or pgrep -f fallback PID that belongs to some other java process is left alone.
-  if [[ -n "$stop_pid" && "$stop_pid" != "$launcher_pid" ]]; then
-    local walk_pid="$stop_pid" is_descendant=false
-    for _ in 1 2 3; do
-      walk_pid=$(ps -o ppid= -p "$walk_pid" 2>/dev/null | tr -d '[:space:]')
-      [[ -z "$walk_pid" ]] && break
-      if [[ -n "$launcher_pid" && "$walk_pid" == "$launcher_pid" ]]; then
-        is_descendant=true
-        break
-      fi
-    done
-    if [[ "$is_descendant" != "true" ]]; then
-      echo "    Skipping kill of PID $stop_pid: it is not the launcher process or one of its descendants"
-      stop_pid=""
-    fi
+  # Collect the launcher's descendants (at most 3 levels) before any signal: once the launcher
+  # is gone, its children belong to init and can no longer be found from it. They are stopped
+  # too, so the app is not left running with port 8080 bound when app_pid is wrong or empty
+  # (killing /usr/bin/time does not stop its child).
+  local descendants=""
+  [[ -n "$launcher_pid" ]] && descendants=$(descendant_pids "$launcher_pid")
+  # Only kill app_pid if it is the launcher or one of those descendants, so a stale or
+  # pgrep -f fallback PID that belongs to some other java process is left alone.
+  if [[ -n "$stop_pid" && "$stop_pid" != "$launcher_pid" && " $descendants " != *" $stop_pid "* ]]; then
+    echo "    Skipping kill of PID $stop_pid: it is not the launcher process or one of its descendants"
+    stop_pid=""
   fi
+  local targets p
+  targets=$(echo $stop_pid $descendants $launcher_pid)
   echo "    Stopping the application after the failure ($reason)..."
-  [[ -n "$stop_pid" ]] && kill -TERM "$stop_pid" 2>/dev/null
-  [[ -n "$launcher_pid" ]] && kill -TERM "$launcher_pid" 2>/dev/null
+  for p in $targets; do
+    kill -TERM "$p" 2>/dev/null
+  done
   sleep 2
-  [[ -n "$stop_pid" ]] && kill -0 "$stop_pid" 2>/dev/null && kill -9 "$stop_pid" 2>/dev/null
-  [[ -n "$launcher_pid" ]] && kill -0 "$launcher_pid" 2>/dev/null && kill -9 "$launcher_pid" 2>/dev/null
+  for p in $targets; do
+    kill -0 "$p" 2>/dev/null && kill -9 "$p" 2>/dev/null
+  done
   [[ -n "$launcher_pid" ]] && wait "$launcher_pid" 2>/dev/null
   wait_for_port_free 30
 
@@ -701,10 +715,20 @@ wait_for_port_free() {
     fi
     if [[ $counter -ge $timeout ]]; then
       echo "    Warning: port 8080 still occupied after ${timeout}s, terminating"
-      local stuck_pid
-      stuck_pid=$(jcmd 2>/dev/null | grep -i "petclinic" | awk '{print $1}' | head -1)
-      [[ -z "$stuck_pid" ]] && stuck_pid=$(pgrep -f "java .*-jar.*spring-petclinic" 2>/dev/null | head -1)
-      [[ -z "$stuck_pid" ]] && stuck_pid=$(ss -tlnp 2>/dev/null | grep ':8080' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
+      # Stop only the process that holds port 8080, and only if it is a benchmark app (JVM jar,
+      # native executable or restored CRaC process). Anything else is left alone; the next
+      # start then fails on the busy port and the run stops with an error.
+      local stuck_pid stuck_cmd
+      stuck_pid=$(ss -tlnp 2>/dev/null | grep ':8080 ' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
+      if [[ -z "$stuck_pid" ]]; then
+        echo "    WARNING: could not find the process that holds port 8080; nothing stopped"
+      else
+        stuck_cmd=$(ps -o args= -p "$stuck_pid" 2>/dev/null)
+        if [[ "$stuck_cmd" != *spring-petclinic* && "$stuck_cmd" != *petclinic-crac* ]]; then
+          echo "    WARNING: port 8080 is held by PID $stuck_pid, which is not a benchmark app; leaving it alone: ${stuck_cmd:0:120}"
+          stuck_pid=""
+        fi
+      fi
       # Safety: refuse to kill self, parent, or init
       if [[ -n "$stuck_pid" ]] && { [[ "$stuck_pid" == "$$" ]] || [[ "$stuck_pid" == "$PPID" ]] || [[ "$stuck_pid" == "1" ]]; }; then
         echo "    WARNING: stuck PID detection returned $stuck_pid (self/parent/init); ignoring"
