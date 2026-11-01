@@ -1,6 +1,6 @@
 # Overview Specification
 
-Updated: 2026-11-01 01:01 Europe/Berlin
+Updated: 2026-11-01 02:26 Europe/Berlin
 
 Spring PetClinic benchmark fork — measures startup speed of five Spring Boot optimization techniques for a Java conference talk.
 
@@ -16,7 +16,7 @@ Spring PetClinic benchmark fork — measures startup speed of five Spring Boot o
 | Spring Data JPA | via Boot 4 | Data persistence |
 | Hibernate | via Boot 4 | ORM with snake_case naming |
 | Thymeleaf | via Boot 4 | Server-side templates |
-| PostgreSQL | 18.3 | Production database (Docker or native) |
+| PostgreSQL | 18.4 (Docker image in `docker-compose.yml`) | Production database (Docker or native) |
 | H2 | via Boot 4 | Default in-memory database for tests |
 | CRaC | Zulu CRaC 25.0.4.1 / 27 | Checkpoint/Restore variant |
 
@@ -68,12 +68,12 @@ MVC web application (vet clinic management). Standard Spring Boot layering: cont
 
 | Action | Command |
 |---|---|
-| Build | `./gradlew build` |
-| Test | `./gradlew test` |
+| Build | `./gradlew build -x checkstyleNohttp` (`checkstyleNohttp` fails with the configuration cache) |
+| Test | `./gradlew test -x checkstyleNohttp` |
 | Run (H2) | `./gradlew bootRun` |
 | Run (postgres) | `SPRING_PROFILES_ACTIVE=postgres ./gradlew bootRun` |
-| Run benchmarks | `./compile-and-run.sh` |
-| Format code | `./gradlew spring-javaformat:apply` |
+| Run benchmarks | `./compile-and-run.sh` (track 25) or `JDK_TRACK=27 ./compile-and-run.sh` (track 27). Defaults: 3 warm-ups, 7 runs. Smoke test: `BENCH_WARMUPS=1 BENCH_RUNS=3 ./compile-and-run.sh`. Official results use the defaults. |
+| Format code | `./gradlew formatMain formatTest` |
 
 ## Benchmark Results
 

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Updated: 2026-05-01 15:29 Europe/Berlin
+Updated: 2026-11-01 02:26 Europe/Berlin
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -20,6 +20,18 @@ Spring PetClinic is a sample Spring Boot application demonstrating best practice
 ## Build and Run Commands
 
 ### Building the Application
+
+Gradle is the maintained build. Add `-x checkstyleNohttp` to Gradle build and test runs, because `checkstyleNohttp` fails with the configuration cache on.
+
+```bash
+# Gradle: build the jar (JDK 25 by default, add -PjavaVersion=27 for JDK 27)
+./gradlew bootJar -x checkstyleNohttp
+
+# Gradle: run the application
+./gradlew bootRun
+```
+
+Maven commands:
 
 ```bash
 # Build and package the application
@@ -41,6 +53,13 @@ java -jar target/*.jar
 ### Running Tests
 
 ```bash
+# Gradle: run all tests
+./gradlew test -x checkstyleNohttp
+```
+
+Maven commands:
+
+```bash
 # Run all tests
 ./mvnw test
 
@@ -58,6 +77,16 @@ java -jar target/*.jar
 ```
 
 ### Code Quality
+
+```bash
+# Gradle: format code (Spring Java Format)
+./gradlew formatMain formatTest
+
+# Gradle: check code formatting
+./gradlew checkFormat
+```
+
+Maven commands:
 
 ```bash
 # Validate code formatting (Spring Java Format)
@@ -83,7 +112,7 @@ org.springframework.samples.petclinic/
 ├── vet/                # Veterinarian domain: entities, controllers, repositories
 ├── system/             # System-wide configuration and utilities
 ├── PetClinicApplication.java      # Main Spring Boot application class
-└── PetClinicRuntimeHints.java     # GraalVM native image configuration
+└── PetClinicRuntimeHints.java     # GraalVM native image hints (resources, reflection, Thymeleaf helpers)
 ```
 
 ### Domain Model
@@ -106,6 +135,7 @@ The application has three main domains organized as separate packages:
 
 3. **System** (`system/`):
    - `CacheConfiguration` - JCache configuration for the "vets" cache
+   - `WebConfiguration` - Session-based language setting and language switch by `?lang=` URL parameter
    - `WelcomeController` - Home page controller
    - `CrashController` - Demonstrates exception handling
 
@@ -142,7 +172,7 @@ Application runs with H2 by default. Console available at `http://localhost:8080
 # Start MySQL with Docker
 docker run -e MYSQL_USER=petclinic -e MYSQL_PASSWORD=petclinic \
   -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=petclinic \
-  -p 3306:3306 mysql:9.6
+  -p 3306:3306 mysql:9.7
 
 # Or use docker-compose
 docker compose up mysql
@@ -156,7 +186,7 @@ docker compose up mysql
 ```bash
 # Start PostgreSQL with Docker
 docker run -e POSTGRES_USER=petclinic -e POSTGRES_PASSWORD=petclinic \
-  -e POSTGRES_DB=petclinic -p 5432:5432 postgres:18.3
+  -e POSTGRES_DB=petclinic -p 5432:5432 postgres:18.4
 
 # Or use docker-compose
 docker compose up postgres
@@ -195,7 +225,8 @@ Note: Tests using Testcontainers are disabled when Docker is not available and i
 - **Line endings:** LF (Unix-style)
 - **Encoding:** UTF-8
 - The build will fail if code doesn't conform to Spring Java Format
-- Run `./gradlew spring-javaformat:apply` to auto-format code before committing (or `./mvnw spring-javaformat:apply` for Maven)
+- Run `./gradlew formatMain formatTest` to auto-format code before committing (or `./mvnw spring-javaformat:apply` for Maven)
+- Run `./gradlew checkFormat` to check the format
 
 ## Contributing Requirements
 
@@ -234,6 +265,12 @@ The benchmarks are orchestrated by two bash scripts:
 - Training run workflows (CDS, Leyden, CRaC, GraalVM PGO)
 - Performance measurement methodology
 - Troubleshooting and best practices
+
+Short facts:
+- `JDK_TRACK=25|27 ./compile-and-run.sh` picks the JDK track. Track 25 is the default and runs all six variants. Track 27 skips GraalVM and writes CSV files with a `_jdk27` suffix.
+- `BENCH_WARMUPS` and `BENCH_RUNS` override the warm-up and run counts (defaults 3 and 7). Use them for smoke tests only. Official results use the defaults.
+- `benchmark.sh` fails the run on any unexpected HTTP status. Only `/oups` returns 500. It stops the app before it exits.
+- Results live in `docs/benchmark-results/`: the May 2026 full run and a 2026-10-31 verification run. The verification run is not the official benchmark.
 
 ### Build System
 
