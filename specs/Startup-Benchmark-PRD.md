@@ -278,7 +278,7 @@ SWAP_DELTA=$((SWAP_AFTER - SWAP_BEFORE))
 - 3-second pause between URLs (`sleep 3` before each request)
 - 11 URLs × 5 rounds = 55 total requests
 - Total execution: ~165 seconds of request pauses (55 requests x 3 s) plus application startup
-- Any URL other than `/oups` that returns a status other than 200 fails the run (`/oups` must return 500). The guard also applies to training runs. On any `hit_urls` failure (unexpected status, no response, readiness timeout), the application is stopped (TERM, then KILL), port 8080 is awaited, and a stale `petclinic.jsa` (CDS) or `petclinic.aotconf` (Leyden) is removed if present.
+- Any URL other than `/oups` that returns a status other than 200 fails the run (`/oups` must return 500). The guard also applies to training runs. `hit_urls` fails on an unexpected status, on no response (000), or on a readiness failure (timeout, or the process exiting early). On any of them the application is stopped (TERM, then KILL), port 8080 is awaited, and for CDS `petclinic.jsa` is removed (also after a warm-up or measured-run failure, so the next run retrains), for Leyden a leftover `petclinic.aotconf` is removed.
 
 ### Process Management
 
@@ -702,7 +702,7 @@ DEBUG: Script started with parameters:
 
 **Checkpoint Verification** (CRaC):
 - Waits up to 120 seconds for checkpoint completion
-- Validates checkpoint directory contains non-log files
+- Validates that the final `core.img` exists and no `core.img.<random>` temp file remains
 - Checks for "warp: Checkpoint successful!" message in logs
 - Shows detailed error messages with log excerpts if checkpoint fails
 

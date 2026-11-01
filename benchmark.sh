@@ -303,10 +303,14 @@ stop_app_after_failure() {
   [[ -n "$launcher_pid" ]] && wait "$launcher_pid" 2>/dev/null
   wait_for_port_free 30
 
-  # Stopping the app can still make a CDS/Leyden training run write its cache from the failed
-  # or broken run. Remove it so the next run rebuilds it instead of benchmarking a bad
-  # archive. CDS skips training when petclinic.jsa exists; the Leyden configuration is
-  # intermediate, so a leftover petclinic.aotconf is removed too.
+  # This runs on ANY hit_urls failure, not only in training runs: also after a failed warm-up
+  # or measured run. Stopping the app can make a CDS/Leyden run write its cache from the
+  # failed or broken run, so do not benchmark a bad archive.
+  # - CDS: petclinic.jsa is removed so the next run retrains it. CDS skips training when the
+  #   archive exists. A retrain is cheap, and compile-and-run.sh deletes the archive before
+  #   every cds run anyway.
+  # - Leyden: only the leftover intermediate petclinic.aotconf is removed, never
+  #   petclinic.aot.
   if [[ "$LABEL" == "cds" && -f petclinic.jsa ]]; then
     rm -f petclinic.jsa
     echo "    Removed petclinic.jsa so the next run rebuilds the archive"
@@ -891,7 +895,7 @@ elif [[ "$LABEL" == "crac" && (! -d petclinic-crac || ! -f petclinic-crac/*.img)
   # would make this training run fail the completeness check. Start from a clean directory.
   if [[ -e petclinic-crac ]]; then
     echo "    Removing old checkpoint directory petclinic-crac before training"
-    rm -rf petclinic-crac
+    rm -rf petclinic-crac || { echo "    ERROR: cannot remove old checkpoint directory petclinic-crac"; exit 1; }
   fi
 
   echo "    Command: $TRAIN_CMD"
