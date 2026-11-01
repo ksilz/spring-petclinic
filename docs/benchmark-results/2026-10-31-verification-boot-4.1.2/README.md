@@ -102,6 +102,34 @@ All were found by this verification run.
 8. **JDK 27 baseline peak memory is higher.** 628 MB median (643 MB max) vs 440 MB on JDK 25, with the same `-Xmx768m`. Other variants are within about 50 MB. Watch this in the real benchmark.
 9. **"Size Extra (MB)" is 0.0 for cds, leyden and crac** in both the old and the new runs. `compile-and-run.sh` measures sizes before `benchmark.sh` creates the archive, cache or checkpoint. Pre-existing.
 
+## Final check on the final commit (957a887, 2026-11-01)
+
+After the main runs, a code review led to small fixes. The review is in `docs/reviews/REVIEW-run-upgrade-benchmarks-jdk25-jdk27.md`. None of the fixes changes the timing or the CSV output of a passing run.
+
+- `f99d6a3` and `9e7695f` register Thymeleaf `#fields` (`org.thymeleaf.spring6.expression.Fields`) for native reflection. This is a safeguard. They also correct the hint comments.
+- `7a8ad70` and `91df2ba` make `benchmark.sh` stop the app on every `hit_urls` failure. They also remove an old `petclinic-crac/` before CRaC training.
+- `1e9631a` and `91df2ba` correct facts in the PRD.
+
+Native build attempt 4 on the big server. The source includes the `Fields` hint from commit `7a8ad70`.
+
+- Instrumented build: 11m 59s, peak RSS 20.00 GB.
+- Optimized build: 7m 28s, peak RSS 10.33 GB.
+- PGO training: all pages return 200, except `/oups` (500).
+- Big-server check (1 warm-up + 3 runs): median 0.298 s. See `logs/native-build/big-server-attempt4.csv`.
+
+Final end-to-end check on the small server, commit 957a887 (1 warm-up + 3 runs). This is verification only.
+
+| Variant | Runs (s) | Median (s) | Notes |
+|---|---|---|---|
+| graalvm (attempt-4 executable) | 0.612 / 0.599 / 0.629 | 0.612 | all pages 200, /oups 500 |
+| crac (JDK 25) | 0.065 / 0.083 / 0.075 | 0.075 | checkpoint image complete after 1 s (core.img 230,055,936 bytes, size stable) |
+
+The GraalVM startup on the small server is still about 2.2x slower than the May build. Finding 5 stays open.
+
+Tests on the final commit 957a887 on the big server: 87 tests, 0 failures, 4 skipped (Docker-based MySQL and Postgres tests). This ran on JDK 25.0.5 and on JDK 27.
+
+Cleanup happened afterwards. On both servers, `~/bench-runs`, the build output, the result CSVs, the CDS, Leyden and CRaC files, and the PGO profile were removed from `~/projects/petclinic-upgrade`. Both checkouts are clean at 957a887. Only the ignored `.gradle/` cache remains on the small server. The old checkouts in `~/projects/spring-petclinic` were not modified.
+
 ## File index
 
 | Path | Content |
@@ -116,3 +144,8 @@ All were found by this verification run.
 | `logs/mem.log` | Memory log of the small server during the run |
 | `logs/chain.log`, `logs/chain-attempt1.log` | Orchestration logs (attempt 1 exited with exit 1 after 1 s) |
 | `tools/` | Throwaway helper scripts used to drive this run: `run-track.sh`, `chain.sh`, `post-chain.sh`, `mem-logger.sh`, `graalvm-build.sh`, `ab.sh`. They are not part of the benchmark. They are stored unchanged. |
+| `final/graalvm.csv`, `final/crac.csv` | Final check on commit 957a887 (1 warm-up + 3 runs, track 25). Verification only. |
+| `logs/final/` | Logs of the final check: `graalvm.log`, `crac.log`, `progress.log`, `chain.log` |
+| `logs/native-build/graalvm-build-attempt4.log` | Big-server GraalVM build log, attempt 4 (the executable used in the final check) |
+| `logs/native-build/big-server-attempt4.csv` | Big-server check of the attempt-4 executable (1 warm-up + 3 runs) |
+| `tools/final-check.sh` | Throwaway script that ran the final check. Not part of the benchmark. |

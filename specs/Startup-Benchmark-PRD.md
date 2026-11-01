@@ -404,6 +404,8 @@ The graalvm "Startup GCs" and "Benchmark GCs" columns are not measured (known sc
 8. The JDK 27 baseline peak memory is 628 MB median (643 MB max) vs 440 MB on JDK 25, with the same `-Xmx768m`. Watch this in the real benchmark.
 9. "Size Extra (MB)" is 0.0 for cds, leyden and crac in the old and the new runs. `compile-and-run.sh` measures sizes before `benchmark.sh` creates the archive, cache or checkpoint. Pre-existing.
 
+After the code review, a final check on commit 957a887 passed. On the small server, the median was 0.612 s for graalvm and 0.075 s for crac (1 warm-up + 3 runs). 87 tests pass on JDK 25 and JDK 27. Details are in the [verification README](../docs/benchmark-results/2026-10-31-verification-boot-4.1.2/README.md).
+
 ---
 
 ## Platform Compatibility
