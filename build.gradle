@@ -4,7 +4,7 @@ plugins {
   id 'org.springframework.boot' version '4.1.2'
   id 'io.spring.dependency-management' version '1.1.7'
   id 'org.graalvm.buildtools.native' version '1.1.2'
-  id 'org.cyclonedx.bom' version '3.2.4'
+  id 'org.cyclonedx.bom' version '3.5.1'
   id 'io.spring.javaformat' version '0.0.47'
   id "io.spring.nohttp" version "0.0.11"
 }
@@ -70,15 +70,6 @@ tasks.named('test') {
   useJUnitPlatform()
 }
 
-// Workaround: CycloneDX Gradle plugin 3.2.4 fails on the nativeCompile path (GraalVM build tools
-// 1.1.2) with "Cannot mutate the artifacts of configuration ':cyclonedxDirectBom'".
-// Verified by decompiling plugin 3.2.4: its apply registers an afterEvaluate hook that lazily
-// configures the direct-BOM task (tasks.named(...).configure { ... project.artifacts.add(
-// "cyclonedxDirectBom", ...) }). On the nativeCompile path the configuration can be consumed
-// as a variant before that lazy action runs. Calling get() during script evaluation realizes the
-// task early, so the action runs right at afterEvaluate, before anything consumes the
-// configuration. Remove once CycloneDX fixes this; check newer plugin versions first.
-tasks.named("cyclonedxDirectBom").get()
 tasks.named("cyclonedxDirectBom").configure {
   dependsOn("compileJava")
   skipConfigs = [".*[Tt]est.*"]
