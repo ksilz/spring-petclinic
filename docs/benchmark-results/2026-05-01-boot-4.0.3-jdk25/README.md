@@ -17,6 +17,10 @@ Spring Boot 4.0.3, Gradle 9.2.1, GraalVM native build tools 0.11.5, CycloneDX Gr
 
 The `Size App (MB)` value of 164.6 for tuning, cds and leyden is inflated. The old checkout's extracted folder holds 225 library JARs (three Spring Boot 4 versions), because `java -Djarmode=tools extract --force` never deletes stale files. A fresh checkout has 93 JARs and 63.8 MB. Startup times are not affected: the app JAR's manifest lists exactly the libraries it loads.
 
+## Caveat: graalvm GC columns
+
+The graalvm "Startup GCs" and "Benchmark GCs" columns (0/0) are not measured data. This is a known `benchmark.sh` issue: the `2>/tmp/gc_graalvm.log` redirect sits inside `APP_CMD` and becomes a program argument.
+
 ## Files
 
 `baseline.csv`, `tuning.csv`, `cds.csv`, `leyden.csv`, `crac.csv`, `graalvm.csv`.

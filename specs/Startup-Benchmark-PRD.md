@@ -398,7 +398,7 @@ The graalvm "Startup GCs" and "Benchmark GCs" columns are not measured (known sc
 2. CRaC training race: `benchmark.sh` treated the checkpoint as finished as soon as any file appeared in `petclinic-crac/`. Zulu CRaC 25.0.4.1 (warp) writes `core.img.<random>` and renames it to `core.img` at the end. TERM sent mid-write baked the shutdown into the image, so every restore exited. Fixed in `8c005d0` and `87cf7b6`.
 3. The GraalVM native image lacked reflection registrations for Thymeleaf `Strings.listJoin`, `Numbers.sequence` and `Temporals.format`. That gave HTTP 500 on 9 of 11 pages, also during PGO training. Fixed in `6b52de8`.
 4. The benchmark accepted HTTP 500 pages as success, because `hit_urls` only aborted on 000. Fixed in `70ce917`: every URL must return 200 except `/oups` (500).
-5. Open: the GraalVM startup on the small server is 0.611 s now vs 0.278 s in May. In a back-to-back A/B run the May executable needed 0.283 s and the new one 0.629 s. The new executable needs 0.295 s on the 8-vCPU big server. The slowdown is real and independent of the reflection bug. Investigate before the real benchmark.
+5. Open: the GraalVM startup on the small server is 0.611 s now vs 0.278 s in May. In a back-to-back A/B run the May executable needed 0.283 s and the new one 0.629 s. The fixed executable needs 0.295 s on the 8-vCPU big server (the invalid attempt-2 executable needed 0.311 s there). The slowdown is real and independent of the reflection bug. Investigate before the real benchmark.
 6. Known, not fixed (pre-existing): the GraalVM "Startup GCs" and "Benchmark GCs" columns are always 0/0, because `benchmark.sh` puts `2>/tmp/gc_graalvm.log` inside `APP_CMD` and `TRAIN_CMD` and expands them unquoted. Publish them as "not measured (known script issue)".
 7. The May 2026 "Size App (MB)" of 164.6 for tuning, cds and leyden is inflated. The old checkout held 225 library JARs, because `java -Djarmode=tools extract --force` never deletes stale files. A fresh checkout has 93 JARs and 63.8 MB. Startup is not affected.
 8. The JDK 27 baseline peak memory is 628 MB median (643 MB max) vs 440 MB on JDK 25, with the same `-Xmx768m`. Watch this in the real benchmark.
@@ -718,6 +718,6 @@ DEBUG: Script started with parameters:
 1. **Leyden** - May cause system hangs on Linux during AOT cache generation
 2. **CRaC** - Linux only, requires CRIU, complex process tracking
 3. **GraalVM** - Memory intensive, long build times, platform-specific flags
-4. **Fixed timings** - 1-second delays between URLs, 3 warm-ups, 7 runs (not configurable via CLI)
+4. **Fixed timings** - 1-second delays between URLs. 3 warm-ups and 7 runs are the defaults. `BENCH_WARMUPS` and `BENCH_RUNS` override them for smoke tests only (minimum 3 runs). Official results use the defaults.
 5. **No Windows support** - Linux/macOS only
 6. **Swap warnings** - Benchmarks warn if swap usage increases during testing (indicates memory pressure)
