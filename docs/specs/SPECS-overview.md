@@ -1,6 +1,6 @@
 # Overview Specification
 
-Updated: 2026-11-01 15:56 Europe/Berlin
+Updated: 2026-11-01 16:48 Europe/Berlin
 
 Spring PetClinic benchmark fork — measures startup speed of five Spring Boot optimization techniques for a Java conference talk.
 
@@ -68,8 +68,8 @@ MVC web application (vet clinic management). Standard Spring Boot layering: cont
 
 | Action | Command |
 |---|---|
-| Build | `./gradlew build -x checkstyleNohttp` (`checkstyleNohttp` fails with the configuration cache) |
-| Test | `./gradlew test -x checkstyleNohttp` |
+| Build | `./gradlew build` (tests, Checkstyle, nohttp, format check; configuration cache on) |
+| Test | `./gradlew test` |
 | Run (H2) | `./gradlew bootRun` |
 | Run (postgres) | `SPRING_PROFILES_ACTIVE=postgres ./gradlew bootRun` |
 | Run benchmarks | `./compile-and-run.sh` (track 25) or `JDK_TRACK=27 ./compile-and-run.sh` (track 27). Defaults: 3 warm-ups, 7 runs. Smoke test: `BENCH_WARMUPS=1 BENCH_RUNS=3 ./compile-and-run.sh`, writes `result_<label>[_jdk27]_smoke.csv`. Official results use the defaults. |

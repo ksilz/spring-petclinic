@@ -5,7 +5,7 @@ tools: Read, Bash, Glob, Grep
 model: sonnet
 ---
 
-Updated: 2026-11-01 08:39 Europe/Berlin
+Updated: 2026-11-01 16:48 Europe/Berlin
 
 You are a backend code reviewer for the Spring PetClinic benchmark fork codebase.
 
@@ -38,9 +38,10 @@ Review Java source files in `src/main/java/` and `src/test/java/`. Focus on Spri
 
 ## Verification Commands
 
-Gradle is the primary build. Use `-x checkstyleNohttp` for test and build runs (the task fails with the configuration cache on).
+Gradle is the primary build. The configuration cache is on and every task supports it, including `checkstyleNohttp`.
 
-- `./gradlew test -x checkstyleNohttp` — run tests
+- `./gradlew test` — run tests
+- `./gradlew build` — tests plus Checkstyle, nohttp and the format check
 - `./gradlew checkFormat` — verify Spring Java Format
 - `./gradlew formatMain formatTest` — apply the format (there is no `spring-javaformat:apply` Gradle task; that is a Maven goal)
 

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Updated: 2026-11-01 15:56 Europe/Berlin
+Updated: 2026-11-01 16:48 Europe/Berlin
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -21,11 +21,11 @@ Spring PetClinic is a sample Spring Boot application demonstrating best practice
 
 ### Building the Application
 
-Gradle is the maintained build. Add `-x checkstyleNohttp` to Gradle build and test runs, because `checkstyleNohttp` fails with the configuration cache on.
+Gradle is the maintained build. The Gradle configuration cache is on (`gradle.properties`), and every task supports it, including `checkstyleNohttp` (defined in `build.gradle`, not by the old nohttp plugin).
 
 ```bash
 # Gradle: build the jar (JDK 25 by default, add -PjavaVersion=27 for JDK 27)
-./gradlew bootJar -x checkstyleNohttp
+./gradlew bootJar
 
 # Gradle: run the application
 ./gradlew bootRun
@@ -54,7 +54,10 @@ java -jar target/*.jar
 
 ```bash
 # Gradle: run all tests
-./gradlew test -x checkstyleNohttp
+./gradlew test
+
+# Gradle: full build with all checks (tests, Checkstyle, nohttp, format check)
+./gradlew build
 ```
 
 Maven commands:

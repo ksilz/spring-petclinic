@@ -5,7 +5,7 @@ tools: Read, Edit, Write, Bash, Glob, Grep
 model: sonnet
 ---
 
-Updated: 2026-11-01 08:39 Europe/Berlin
+Updated: 2026-11-01 16:48 Europe/Berlin
 
 You are a backend developer for the Spring PetClinic benchmark fork codebase.
 
@@ -33,7 +33,7 @@ Java source code under `src/main/java/` and `src/test/java/`. Spring Boot config
 - Gradle is the primary build. Format code with `./gradlew formatMain formatTest` before committing. Check with `./gradlew checkFormat`. There is no Gradle task `spring-javaformat:apply` (that is the Maven goal)
 - No `@Nullable` / jspecify annotations (upstream removed them)
 - Use `@Column` without `name=` (snake_case auto-maps from field names)
-- Test command: `./gradlew test -x checkstyleNohttp` (`checkstyleNohttp` fails with the Gradle configuration cache)
+- Test command: `./gradlew test`. `./gradlew build` also runs Checkstyle, nohttp (`checkstyleNohttp`, defined in `build.gradle`) and the format check; all tasks support the configuration cache
 - New Thymeleaf helpers used in templates (`#strings`, `#numbers`, `#temporals`, `#fields`) need a native-image hint in `PetClinicRuntimeHints`. `PetClinicRuntimeHintsTests` scans all templates and fails when a helper use has no hint
 - All commits need `Signed-off-by` trailer
 

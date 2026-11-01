@@ -1,6 +1,6 @@
 # Back-End Specification
 
-Updated: 2026-11-01 02:26 Europe/Berlin
+Updated: 2026-11-01 16:48 Europe/Berlin
 
 Spring MVC application with JPA persistence. Veterinary clinic domain: owners, pets, visits, vets.
 
@@ -96,7 +96,7 @@ Schemas live in `src/main/resources/db/{h2,mysql,postgres}/schema.sql`.
 ## Do's and Don'ts
 
 - DO run `./gradlew formatMain formatTest` before committing (`./gradlew checkFormat` verifies; `./mvnw spring-javaformat:apply` is the Maven goal)
-- DO add `-x checkstyleNohttp` to Gradle test and build runs (the task fails with the configuration cache)
+- DO keep `checkstyleNohttp` in `build.gradle` compatible with the configuration cache (it replaces the io.spring.nohttp plugin, whose task was not); the build runs it via `check`
 - DO use `@Column` without `name=` for standard fields
 - DON'T use jspecify imports (`@Nullable`, `@NullMarked`)
 - DON'T reference HSQLDB (removed)
