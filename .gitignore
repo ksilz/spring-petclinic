@@ -55,3 +55,5 @@ default.iprof
 /.claude/settings.local.json
 /CLAUDE.local.md
 /*.log
+# Local bpf skill config: per-user, empty so the global ~/.claude/claude.bpf.json applies
+/claude.bpf.json
