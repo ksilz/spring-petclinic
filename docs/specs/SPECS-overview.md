@@ -1,6 +1,6 @@
 # Overview Specification
 
-Updated: 2026-05-01 15:29 Europe/Berlin
+Updated: 2026-11-01 01:01 Europe/Berlin
 
 Spring PetClinic benchmark fork — measures startup speed of five Spring Boot optimization techniques for a Java conference talk.
 
@@ -35,6 +35,20 @@ Spring PetClinic benchmark fork — measures startup speed of five Spring Boot o
 (`result_baseline_jdk27.csv`); track 25 keeps the historic names. SDKMAN identifiers with `+` need SDKMAN 5.24 or newer
 (`sdk selfupdate`).
 
+## Tested Versions
+
+| Item | Track 25 | Track 27 |
+|---|---|---|
+| baseline, tuning, cds, leyden JDK | Temurin 25.0.5+8 (`25.0.5.0+8-tem`) | Temurin 27+35 (`27.0.0.0+35-tem`) |
+| crac JDK | Zulu CRaC 25.0.4.1 (`25.0.4.1-crac+1-zulu`) | Zulu CRaC 27 (`27.0.0.0-crac+35-zulu`) |
+| graalvm | Oracle GraalVM 25.0.5.0.3+1.1 (`25.0.5.0+3-graal`) | n/a (no GraalVM release for JDK 27) |
+| Spring Boot | 4.1.2 | 4.1.2 |
+| Gradle | 9.5.1 | 9.5.1 |
+| GraalVM native build tools | 1.1.2 | 1.1.2 |
+| CycloneDX Gradle plugin | 3.2.4 | 3.2.4 |
+
+Hosts and OS details are in `specs/Startup-Benchmark-PRD.md` (section "Tested Versions").
+
 ## Architecture
 
 MVC web application (vet clinic management). Standard Spring Boot layering: controllers → services (implicit) → repositories → JPA entities.
@@ -60,3 +74,8 @@ MVC web application (vet clinic management). Standard Spring Boot layering: cont
 | Run (postgres) | `SPRING_PROFILES_ACTIVE=postgres ./gradlew bootRun` |
 | Run benchmarks | `./compile-and-run.sh` |
 | Format code | `./gradlew spring-javaformat:apply` |
+
+## Benchmark Results
+
+Archived results are in `docs/benchmark-results/`. The verification run of 2026-10-31 (1 warm-up + 3 runs, Spring Boot 4.1.2, JDK 25 and 27) is described in `docs/benchmark-results/2026-10-31-verification-boot-4.1.2/README.md`. It is not the official benchmark.
+The full May 2026 run (3 warm-ups + 7 runs, Spring Boot 4.0.3, JDK 25.0.3) is in `docs/benchmark-results/2026-05-01-boot-4.0.3-jdk25/`.

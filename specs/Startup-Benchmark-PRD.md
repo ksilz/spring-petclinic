@@ -201,6 +201,8 @@ jcmd <PID> JDK.checkpoint
 # Output: petclinic-crac/ directory (~500 MB - 1 GB)
 ```
 
+The checkpoint counts as complete only when `core.img` is final and stable. A temporary `core.img.<random>` file or a still-growing file does not count, so the training process is not terminated mid-write.
+
 **GraalVM Training**:
 ```bash
 # Run instrumented binary (native binary doesn't use JVM heap params)
@@ -276,6 +278,7 @@ SWAP_DELTA=$((SWAP_AFTER - SWAP_BEFORE))
 - 1-second pause between URLs
 - 11 URLs × 5 rounds = 55 total requests
 - Total execution: ~55 seconds
+- Any URL other than `/oups` that returns a status other than 200 fails the run (`/oups` must return 500)
 
 ### Process Management
 
@@ -330,6 +333,76 @@ A,0.353,155968,4.8,11.8,2025-11-02T10:24:15Z  # Trimmed mean
 - **Startup GCs**: Number of garbage collection pauses during startup
 - **Benchmark GCs**: Number of GC pauses during URL load simulation
 - **Ran at**: ISO 8601 timestamp when the run started
+
+---
+
+## Tested Versions
+
+Versions used in the 2026-10-31 verification run (see below) and in the May 2026 run it is compared with.
+
+| Item | Track 25 | Track 27 | Old run (May 2026) |
+|---|---|---|---|
+| Spring Boot | 4.1.2 | 4.1.2 | 4.0.3 |
+| Gradle | 9.5.1 | 9.5.1 | 9.2.1 |
+| GraalVM native build tools | 1.1.2 | 1.1.2 | 0.11.5 |
+| CycloneDX Gradle plugin | 3.2.4 | 3.2.4 | 3.2.0 |
+| baseline, tuning, cds, leyden JDK | Temurin 25.0.5+8 (`openjdk 25.0.5 2026-10-20 LTS`, build 25.0.5+8-LTS), SDKMAN `25.0.5.0+8-tem` | Temurin 27+35 (`openjdk 27 2026-09-15`, build 27+35), SDKMAN `27.0.0.0+35-tem` | JDK 25.0.3-tem |
+| crac JDK | Zulu CRaC 25.0.4.1 (`Zulu25.36+205-CRaC-CA`, build 25.0.4.1+1-LTS), SDKMAN `25.0.4.1-crac+1-zulu` | Zulu CRaC 27 (`Zulu27.28+101-CRaC-CA`, build 27+35), SDKMAN `27.0.0.0-crac+35-zulu` | CRaC 25.0.2.crac-zulu |
+| graalvm | Oracle GraalVM 25.0.5.0.3+1.1 (build 25.0.5.0.3+1-LTS-jvmci-b01), `native-image 25.0.5.0.3 2026-10-25`, SDKMAN `25.0.5.0+3-graal` | n/a (no GraalVM release for JDK 27) | GraalVM 25.0.3-graal |
+| CRIU | 4.1.1 (CRaC engine: warp) | 4.1.1 (CRaC engine: warp) | unknown |
+| PostgreSQL | 16.13 on the small server (benchmarks); 18.3 on the big server (GraalVM PGO training run only) | same | unknown |
+| Run host | AWS t3.small, 2 vCPU Intel Xeon Platinum 8259CL @ 2.50GHz, 1.9 GB RAM, 2 GB swap | same | same host |
+| Native build host | AWS t3.2xlarge, 8 vCPU Intel Xeon Platinum 8259CL @ 2.50GHz, 31 GB RAM, no swap | n/a | unknown |
+| OS (both hosts) | Ubuntu 24.04.4 LTS, kernel 6.17.0-1013-aws, glibc 2.39 (Ubuntu GLIBC 2.39-0ubuntu8.7) | same | unknown |
+
+The GraalVM native image is built on the big server (build host) and copied to the small server (run host). All other variants are built and run on the small server.
+
+---
+
+## Verification Run 2026-10-31 (not the official benchmark)
+
+This was a smoke test after the upgrade to Spring Boot 4.1.2, JDK 25.0.5 and JDK 27. It is NOT the official benchmark. Each variant had 1 warm-up and 3 measured runs (`BENCH_WARMUPS=1 BENCH_RUNS=3`), and the row `A` is the trimmed mean, which equals the median with 3 runs. The comparison column comes from the May 2026 run (Spring Boot 4.0.3, 3 warm-ups, 7 runs). Both runs used the same host, the small server. Do not quote these numbers as final results.
+
+Full details, logs and CSV files: [`docs/benchmark-results/2026-10-31-verification-boot-4.1.2/README.md`](../docs/benchmark-results/2026-10-31-verification-boot-4.1.2/README.md).
+
+### (a) Old (May 2026, Boot 4.0.3, JDK 25.0.3) vs new track 25 (Boot 4.1.2, JDK 25.0.5)
+
+Startup times in seconds. Old: 7 runs. New: 3 runs (verification run, 1 warm-up + 3 runs).
+
+| Variant | Old median | Old min-max | New median | New min-max | Change (median) | Old mem MB | New mem MB |
+|---|---|---|---|---|---|---|---|
+| baseline | 13.437 | 12.680-14.186 | 14.696 | 14.205-15.111 | +9% | 450 | 440 |
+| tuning | 8.902 | 8.722-9.031 | 9.586 | 9.344-9.798 | +8% | 414 | 410 |
+| cds | 5.596 | 5.322-6.381 | 5.863 | 5.798-5.865 | +5% | 397 | 393 |
+| leyden | 4.204 | 4.138-4.411 | 4.637 | 4.608-5.256 | +10% | 358 | 352 |
+| crac | 0.089 | 0.077-0.237 | 0.082 | 0.075-0.087 | -8% | 376 | 372 |
+| graalvm | 0.278 | 0.270-0.328 | 0.611 | 0.604-0.697 | +120% | 198 | 201 |
+
+### (b) Track 25 (JDK 25.0.5) vs track 27 (JDK 27), five common variants
+
+Both: 1 warm-up + 3 runs (verification run). Startup times in seconds.
+
+| Variant | 25 median | 25 min-max | 27 median | 27 min-max | Change (median) | 25 mem MB | 27 mem MB |
+|---|---|---|---|---|---|---|---|
+| baseline | 14.696 | 14.205-15.111 | 15.981 | 14.218-16.340 | +9% | 440 | 628 |
+| tuning | 9.586 | 9.344-9.798 | 9.516 | 9.292-9.543 | -1% | 410 | 457 |
+| cds | 5.863 | 5.798-5.865 | 5.876 | 5.703-5.956 | +0% | 393 | 367 |
+| leyden | 4.637 | 4.608-5.256 | 4.256 | 4.210-4.316 | -8% | 352 | 356 |
+| crac | 0.082 | 0.075-0.087 | 0.084 | 0.079-0.090 | +2% | 372 | 369 |
+
+The graalvm "Startup GCs" and "Benchmark GCs" columns are not measured (known script issue, see finding 6). The 0/0 values in its CSV are not data.
+
+### Findings
+
+1. The GraalVM native build was broken by CycloneDX Gradle plugin 3.2.4. Fixed in `62e0b4e`.
+2. CRaC training race: `benchmark.sh` treated the checkpoint as finished as soon as any file appeared in `petclinic-crac/`. Zulu CRaC 25.0.4.1 (warp) writes `core.img.<random>` and renames it to `core.img` at the end. TERM sent mid-write baked the shutdown into the image, so every restore exited. Fixed in `8c005d0` and `87cf7b6`.
+3. The GraalVM native image lacked reflection registrations for Thymeleaf `Strings.listJoin`, `Numbers.sequence` and `Temporals.format`. That gave HTTP 500 on 9 of 11 pages, also during PGO training. Fixed in `6b52de8`.
+4. The benchmark accepted HTTP 500 pages as success, because `hit_urls` only aborted on 000. Fixed in `70ce917`: every URL must return 200 except `/oups` (500).
+5. Open: the GraalVM startup on the small server is 0.611 s now vs 0.278 s in May. In a back-to-back A/B run the May executable needed 0.283 s and the new one 0.629 s. The new executable needs 0.295 s on the 8-vCPU big server. The slowdown is real and independent of the reflection bug. Investigate before the real benchmark.
+6. Known, not fixed (pre-existing): the GraalVM "Startup GCs" and "Benchmark GCs" columns are always 0/0, because `benchmark.sh` puts `2>/tmp/gc_graalvm.log` inside `APP_CMD` and `TRAIN_CMD` and expands them unquoted. Publish them as "not measured (known script issue)".
+7. The May 2026 "Size App (MB)" of 164.6 for tuning, cds and leyden is inflated. The old checkout held 225 library JARs, because `java -Djarmode=tools extract --force` never deletes stale files. A fresh checkout has 93 JARs and 63.8 MB. Startup is not affected.
+8. The JDK 27 baseline peak memory is 628 MB median (643 MB max) vs 440 MB on JDK 25, with the same `-Xmx768m`. Watch this in the real benchmark.
+9. "Size Extra (MB)" is 0.0 for cds, leyden and crac in the old and the new runs. `compile-and-run.sh` measures sizes before `benchmark.sh` creates the archive, cache or checkpoint. Pre-existing.
 
 ---
 
