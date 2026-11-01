@@ -541,10 +541,11 @@ extract_gc_counts_graalvm() {
   # GC pause lines in either format:
   #   G1 (--gc=G1): [0.472s][info][gc,start ] GC(1) Pause Young (Concurrent Start) (G1 Evacuation Pause)
   #   Serial:       [0.196s] GC(0) Pause Full GC (Collect on allocation) 32.50M->5.50M 16.560ms
+  # Try the G1 format first and fall back to Serial only when it finds nothing, so a missing
+  # "Using G1" header line can't silently turn the G1 counts into 0/0.
   local pause_lines
-  if grep -q "\[info\]\[gc\]" "$gc_log" 2>/dev/null; then
-    pause_lines=$(grep -E '^\[[0-9]+\.[0-9]+s\]\[[a-z]+\]\[gc[^]]*\].*Pause' "$gc_log")
-  else
+  pause_lines=$(grep -E '^\[[0-9]+\.[0-9]+s\]\[[a-z]+\]\[gc[^]]*\].*Pause' "$gc_log")
+  if [[ -z "$pause_lines" ]]; then
     pause_lines=$(grep -E '^\[[0-9]+\.[0-9]+s\] .*(Pause Full GC|Pause Incremental GC)' "$gc_log")
   fi
   if [[ -z "$pause_lines" ]]; then
