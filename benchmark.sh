@@ -266,19 +266,21 @@ URLS=(
   "http://localhost:8080/oups"
 )
 
-# Prints the PIDs of all descendants of PID $1, at most 3 levels deep, children first.
+# Prints the PIDs of all descendants of PID $1, at most 3 levels deep, children first, on one
+# line separated by single spaces (callers test membership with " $list " == *" $pid "*).
 descendant_pids() {
-  local parents="$1" next p level
-  for level in 1 2 3; do
+  local parents="$1" next p all=""
+  for _ in 1 2 3; do
     next=""
     for p in $parents; do
       next="$next $(pgrep -P "$p" 2>/dev/null | tr '\n' ' ')"
     done
     next=$(echo $next)
     [[ -z "$next" ]] && break
-    echo "$next"
+    all="$all $next"
     parents="$next"
   done
+  echo $all
 }
 
 # ---------- failure cleanup used by every failure path in hit_urls ----------
@@ -304,16 +306,25 @@ stop_app_after_failure() {
   # is gone, its children belong to init and can no longer be found from it. They are stopped
   # too, so the app is not left running with port 8080 bound when app_pid is wrong or empty
   # (killing /usr/bin/time does not stop its child).
+  # Only while the launcher is alive: a dead launcher's PID may already belong to another process.
   local descendants=""
-  [[ -n "$launcher_pid" ]] && descendants=$(descendant_pids "$launcher_pid")
+  if [[ -n "$launcher_pid" ]] && kill -0 "$launcher_pid" 2>/dev/null; then
+    descendants=$(descendant_pids "$launcher_pid")
+  fi
   # Only kill app_pid if it is the launcher or one of those descendants, so a stale or
   # pgrep -f fallback PID that belongs to some other java process is left alone.
   if [[ -n "$stop_pid" && "$stop_pid" != "$launcher_pid" && " $descendants " != *" $stop_pid "* ]]; then
     echo "    Skipping kill of PID $stop_pid: it is not the launcher process or one of its descendants"
     stop_pid=""
   fi
-  local targets p
-  targets=$(echo $stop_pid $descendants $launcher_pid)
+  # Each PID once: app_pid is usually one of the descendants already. Children before the launcher.
+  local targets="$descendants" p
+  if [[ -n "$stop_pid" && " $targets " != *" $stop_pid "* ]]; then
+    targets="$stop_pid $targets"
+  fi
+  if [[ -n "$launcher_pid" && " $targets " != *" $launcher_pid "* ]]; then
+    targets="$targets $launcher_pid"
+  fi
   echo "    Stopping the application after the failure ($reason)..."
   for p in $targets; do
     kill -TERM "$p" 2>/dev/null
@@ -715,19 +726,23 @@ wait_for_port_free() {
     fi
     if [[ $counter -ge $timeout ]]; then
       echo "    Warning: port 8080 still occupied after ${timeout}s, terminating"
-      # Stop only the process that holds port 8080, and only if it is a benchmark app (JVM jar,
-      # native executable or restored CRaC process). Anything else is left alone; the next
-      # start then fails on the busy port and the run stops with an error.
+      # Stop only the process that holds port 8080, and only if it is a benchmark app: a JVM run
+      # with -jar ...spring-petclinic (the restored CRaC process keeps that command line), the
+      # native executable, or a CRaC restore from petclinic-crac. Anything else is left alone;
+      # the next start then fails on the busy port and the run stops with an error.
       local stuck_pid stuck_cmd
       stuck_pid=$(ss -tlnp 2>/dev/null | grep ':8080 ' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
       if [[ -z "$stuck_pid" ]]; then
         echo "    WARNING: could not find the process that holds port 8080; nothing stopped"
       else
         stuck_cmd=$(ps -o args= -p "$stuck_pid" 2>/dev/null)
-        if [[ "$stuck_cmd" != *spring-petclinic* && "$stuck_cmd" != *petclinic-crac* ]]; then
+        case "$stuck_cmd" in
+        *-jar*spring-petclinic* | *nativeCompile/spring-petclinic* | *petclinic-crac*) ;;
+        *)
           echo "    WARNING: port 8080 is held by PID $stuck_pid, which is not a benchmark app; leaving it alone: ${stuck_cmd:0:120}"
           stuck_pid=""
-        fi
+          ;;
+        esac
       fi
       # Safety: refuse to kill self, parent, or init
       if [[ -n "$stuck_pid" ]] && { [[ "$stuck_pid" == "$$" ]] || [[ "$stuck_pid" == "$PPID" ]] || [[ "$stuck_pid" == "1" ]]; }; then
