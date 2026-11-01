@@ -1,0 +1,137 @@
+=== runner: track 25, variant leyden, pin 25.0.5.0+8-tem, BENCH_WARMUPS=1, BENCH_RUNS=3, commit 62e0b4e
+openjdk 25.0.5 2026-10-20 LTS
+OpenJDK Runtime Environment Temurin-25.0.5+8 (build 25.0.5+8-LTS)
+OpenJDK 64-Bit Server VM Temurin-25.0.5+8 (build 25.0.5+8-LTS, mixed mode, sharing)
+Checking for running Java processes before benchmarks...
+  Killing Java processes: 16192
+12926
+
+Current Java:
+openjdk 25.0.5 2026-10-20 LTS
+OpenJDK Runtime Environment Temurin-25.0.5+8 (build 25.0.5+8-LTS)
+OpenJDK 64-Bit Server VM Temurin-25.0.5+8 (build 25.0.5+8-LTS, mixed mode, sharing)
+
+=== Project Leyden (gradle, current Java) ===
+
+
+****************************************************************
+
+ BUILDING APPLICATION
+
+-> SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=25 -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar && \
+    java -Djarmode=tools -jar build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar extract --force
+
+****************************************************************
+
+Starting a Gradle Daemon, 1 incompatible and 3 stopped Daemons could not be reused, use --status for details
+Reusing configuration cache.
+> Task :clean
+> Task :compileJava FROM-CACHE
+> Task :cyclonedxDirectBom FROM-CACHE
+> Task :cyclonedxBom FROM-CACHE
+> Task :collectReachabilityMetadata
+> Task :processResources
+> Task :classes
+> Task :resolveMainClassName
+> Task :processAot FROM-CACHE
+> Task :processAotResources
+> Task :compileAotJava FROM-CACHE
+> Task :aotClasses
+> Task :bootJar
+
+BUILD SUCCESSFUL in 13s
+11 actionable tasks: 6 executed, 5 from cache
+Configuration cache entry reused.
+Build step took 16.0 seconds
+Artifact sizes - App: 63.8 MB, Extra: 0.0 MB
+DEBUG: Script started with parameters:
+  JAR_PATH: spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+  LABEL: leyden
+  AOT_FLAG: -Dspring.aot.enabled=true -XX:AOTCache=petclinic.aot
+  TRAINING_MODE: 
+  SCRIPT_START_TIME: 1793470440
+  PID: 16393
+  PPID: 16190
+  Command: ./benchmark.sh spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar leyden -Dspring.aot.enabled=true -XX:AOTCache=petclinic.aot  63.8 0.0
+DEBUG: End of debug info
+
+DEBUG: Configuration set:
+  WARMUPS: 1
+  RUNS: 3
+  CSV_FILE: result_leyden.csv
+NOTE: non-default run counts (smoke test): WARMUPS=1, RUNS=3
+DEBUG: End of configuration debug
+
+⚠️  WARNING: Leyden AOT cache generation may cause system hangs on Linux.
+   If this happens, set SKIP_LEYDEN_AOT=true to skip AOT generation.
+   Example: SKIP_LEYDEN_AOT=true ./compile-and-run.sh leyden
+
+
+****************************************************************
+
+Running application
+
+-> java -Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_leyden.log:time,uptime,level,tags -Dspring.aot.enabled=true -Dspring.profiles.active=postgres -XX:AOTCache=petclinic.aot -jar spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+
+****************************************************************
+
+Training run Leyden (creates petclinic.aot in two steps)
+    Step 1: Recording AOT configuration...
+    Command: java -Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_leyden.log:time,uptime,level,tags -Dspring.aot.enabled=true -Dspring.profiles.active=postgres -XX:AOTMode=record -XX:AOTConfiguration=petclinic.aotconf -jar spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+    Application started successfully
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Step 2: Creating AOT cache from configuration...
+    Configuration file size: 127M
+    Command: java -Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_leyden.log:time,uptime,level,tags -Dspring.aot.enabled=true -Dspring.profiles.active=postgres -XX:AOTMode=create -XX:AOTConfiguration=petclinic.aotconf -XX:AOTCache=petclinic.aot -jar spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+    AOT cache created successfully
+  Leyden training run complete. Proceeding with benchmark measurements.
+Training run took 202.0 seconds
+Starting 1 warm-up run…
+  Warm-up 1
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing background process 17150
+Starting 3 benchmark runs…
+Swap usage before benchmark: 25 MB
+  Run 1
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 17692
+    Run 1 completed successfully
+    4.608s, 367.1 MB
+    Debug: Run 1 finished, continuing to next run...
+  Run 2
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 18279
+    Run 2 completed successfully
+    5.256s, 352.2 MB
+    Debug: Run 2 finished, continuing to next run...
+  Run 3
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 18821
+    Run 3 completed successfully
+    4.637s, 336.9 MB
+    Debug: Run 3 finished, continuing to next run...
+
+--- Swap Usage ---
+Swap before benchmark: 25 MB
+Swap after benchmark:  25 MB
+Swap delta:            0 MB
+Note: System started with 25 MB swap in use (not caused by this benchmark)
+
+--- Benchmark Results ---
+Run,Startup Time (s),Max Memory (MB),Startup GCs,Benchmark GCs,Ran at,Size App (MB),Size Extra (MB)
+1,4.608,367.1,2,2,2026-10-31T18:20:16Z,,
+2,5.256,352.2,4,0,2026-10-31T18:23:11Z,,
+3,4.637,336.9,2,2,2026-10-31T18:26:06Z,,
+A,4.637,352.2,2,2,2026-10-31T18:29:01Z,63.8,0.0
+
+Done. Result CSVs: result_leyden.csv
