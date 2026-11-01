@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledInNativeImage;
 import org.thymeleaf.expression.Numbers;
 import org.thymeleaf.expression.Strings;
 import org.thymeleaf.expression.Temporals;
@@ -39,6 +40,7 @@ import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.predicate.RuntimeHintsPredicates;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.util.StringUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -47,7 +49,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class PetClinicRuntimeHintsTests {
 
-	private static final Pattern HELPER_CALL = Pattern.compile("#(\\w+)\\.(\\w+)\\s*\\(");
+	/**
+	 * A helper use: {@code #helper.method(} (call) or {@code #helper.property} (getter).
+	 */
+	private static final Pattern HELPER_USE = Pattern.compile("#(\\w+)\\.(\\w+)(\\s*\\()?");
 
 	/**
 	 * Thymeleaf expression utility objects ({@code #name}) and the classes behind them.
@@ -70,7 +75,8 @@ class PetClinicRuntimeHintsTests {
 			Map.entry("temporals", "org.thymeleaf.expression.Temporals"),
 			Map.entry("uris", "org.thymeleaf.expression.Uris"),
 			Map.entry("fields", "org.thymeleaf.spring6.expression.Fields"),
-			Map.entry("mvc", "org.thymeleaf.spring6.expression.Mvc"));
+			Map.entry("mvc", "org.thymeleaf.spring6.expression.Mvc"),
+			Map.entry("themes", "org.thymeleaf.spring6.expression.Themes"));
 
 	private final RuntimeHints hints = new RuntimeHints();
 
@@ -116,48 +122,57 @@ class PetClinicRuntimeHintsTests {
 	}
 
 	/**
-	 * Scans every template for expression utility calls such as
-	 * {@code #strings.listJoin(...)} and checks that each called method is invocable in a
-	 * native image. A new helper call without a hint then fails here instead of as an
-	 * HTTP 500 in the native executable.
+	 * Scans every template for expression utility use such as
+	 * {@code #strings.listJoin(...)} or {@code #execInfo.templateName} and checks that
+	 * the method behind it is invocable in a native image. A new helper use without a
+	 * hint then fails here instead of as an HTTP 500 in the native executable.
 	 */
 	@Test
-	void everyTemplateHelperCallIsInvocable() throws Exception {
+	@DisabledInNativeImage
+	void everyTemplateHelperUseIsInvocable() throws Exception {
 		Resource[] templates = new PathMatchingResourcePatternResolver().getResources("classpath*:templates/**/*.html");
 		assertThat(templates).as("templates on the classpath").isNotEmpty();
-		Set<String> calls = new TreeSet<>();
+		// "helper.method()" for calls, "helper.property" for property access
+		Set<String> uses = new TreeSet<>();
 		for (Resource template : templates) {
-			Matcher matcher = HELPER_CALL.matcher(template.getContentAsString(StandardCharsets.UTF_8));
+			Matcher matcher = HELPER_USE.matcher(template.getContentAsString(StandardCharsets.UTF_8));
 			while (matcher.find()) {
-				calls.add(matcher.group(1) + "." + matcher.group(2));
+				boolean call = matcher.group(3) != null;
+				// Without parentheses only known helpers count, so a CSS selector such as
+				// #navbar.active is not taken for a helper.
+				if (call || HELPER_CLASSES.containsKey(matcher.group(1))) {
+					uses.add(matcher.group(1) + "." + matcher.group(2) + (call ? "()" : ""));
+				}
 			}
 		}
-		assertThat(calls).as("helper calls found in the templates").isNotEmpty();
+		assertThat(uses).as("helper uses found in the templates").isNotEmpty();
 		List<String> problems = new ArrayList<>();
-		for (String call : calls) {
-			String helper = call.substring(0, call.indexOf('.'));
-			String method = call.substring(call.indexOf('.') + 1);
+		for (String use : uses) {
+			String helper = use.substring(0, use.indexOf('.'));
+			String member = use.substring(use.indexOf('.') + 1);
 			String className = HELPER_CLASSES.get(helper);
 			if (className == null) {
-				problems.add("#" + call + ": unknown helper, add it to HELPER_CLASSES");
+				problems.add("#" + use + ": unknown helper, add it to HELPER_CLASSES");
 				continue;
 			}
+			// A call names the method. Property access goes through the getter.
+			Set<String> methodNames = member.endsWith("()") ? Set.of(member.substring(0, member.length() - 2))
+					: Set.of("get" + StringUtils.capitalize(member), "is" + StringUtils.capitalize(member));
 			// The scan cannot tell which overload a template calls, so every public
 			// overload must be invocable.
-			List<Method> overloads = Stream.of(Class.forName(className).getMethods())
-				.filter((candidate) -> candidate.getName().equals(method))
+			List<Method> methods = Stream.of(Class.forName(className).getMethods())
+				.filter((candidate) -> methodNames.contains(candidate.getName()))
 				.toList();
-			if (overloads.isEmpty()) {
-				problems.add("#" + call + ": " + className + " has no public method " + method);
+			if (methods.isEmpty()) {
+				problems.add("#" + use + ": " + className + " has no matching public method");
 			}
-			else if (!overloads.stream()
-				.allMatch((overload) -> RuntimeHintsPredicates.reflection()
-					.onMethodInvocation(overload)
-					.test(this.hints))) {
-				problems.add("#" + call + ": no reflection hint for " + className);
+			else if (!methods.stream()
+				.allMatch(
+						(method) -> RuntimeHintsPredicates.reflection().onMethodInvocation(method).test(this.hints))) {
+				problems.add("#" + use + ": no reflection hint for " + className);
 			}
 		}
-		assertThat(problems).as("template helper calls without a native reflection hint").isEmpty();
+		assertThat(problems).as("template helper uses without a native reflection hint").isEmpty();
 	}
 
 }
