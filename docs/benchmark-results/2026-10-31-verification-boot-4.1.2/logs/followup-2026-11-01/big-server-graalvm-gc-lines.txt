@@ -1,0 +1,8 @@
+[0.005s][info][gc] Using G1
+[0.196s][info][gc,start] GC(0) Pause Young (Normal) (G1 Evacuation Pause)
+[0.203s][info][gc       ] GC(0) Pause Young (Normal) (G1 Evacuation Pause) 125M->85M(212M) 6.571ms
+2026-11-01T07:29:31.199Z  INFO 83001 --- [           main] o.s.s.petclinic.PetClinicApplication     : Started PetClinicApplication in 0.3 seconds (process running for 0.305)
+[7.073s][info][gc,start ] GC(1) Pause Young (Normal) (G1 Evacuation Pause)
+[7.080s][info][gc       ] GC(1) Pause Young (Normal) (G1 Evacuation Pause) 139M->92M(212M) 7.529ms
+[130.730s][info][gc,start ] GC(2) Pause Young (Normal) (G1 Evacuation Pause)
+[130.735s][info][gc       ] GC(2) Pause Young (Normal) (G1 Evacuation Pause) 161M->94M(212M) 4.939ms

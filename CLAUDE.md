@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Updated: 2026-11-01 02:26 Europe/Berlin
+Updated: 2026-11-01 08:39 Europe/Berlin
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -268,8 +268,9 @@ The benchmarks are orchestrated by two bash scripts:
 
 Short facts:
 - `JDK_TRACK=25|27 ./compile-and-run.sh` picks the JDK track. Track 25 is the default and runs all six variants. Track 27 skips GraalVM and writes CSV files with a `_jdk27` suffix.
-- `BENCH_WARMUPS` and `BENCH_RUNS` override the warm-up and run counts (defaults 3 and 7). Use them for smoke tests only. Official results use the defaults.
+- `BENCH_WARMUPS` and `BENCH_RUNS` override the warm-up and run counts (defaults 3 and 7). Use them for smoke tests only: the CSV name then ends in `_smoke` (`result_<label>[_jdk27]_smoke.csv`). Official results use the defaults.
 - `benchmark.sh` fails the run on any unexpected HTTP status. Only `/oups` returns 500. It stops the app before it exits.
+- The `postgres` profile runs `schema.sql` and `data.sql` at every startup, in all variants (the native image too, since upstream `a2c2ef9`). Duplicate indexes in the server database slow this down: remove them before an official run (PRD findings 5 and 10).
 - Results live in `docs/benchmark-results/`: the May 2026 full run and a 2026-10-31 verification run. The verification run is not the official benchmark.
 
 ### Build System

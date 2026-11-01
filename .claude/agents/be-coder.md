@@ -5,7 +5,7 @@ tools: Read, Edit, Write, Bash, Glob, Grep
 model: sonnet
 ---
 
-Updated: 2026-11-01 02:26 Europe/Berlin
+Updated: 2026-11-01 08:39 Europe/Berlin
 
 You are a backend developer for the Spring PetClinic benchmark fork codebase.
 
@@ -34,7 +34,7 @@ Java source code under `src/main/java/` and `src/test/java/`. Spring Boot config
 - No `@Nullable` / jspecify annotations (upstream removed them)
 - Use `@Column` without `name=` (snake_case auto-maps from field names)
 - Test command: `./gradlew test -x checkstyleNohttp` (`checkstyleNohttp` fails with the Gradle configuration cache)
-- New Thymeleaf helpers used in templates (`#strings`, `#numbers`, `#temporals`, `#fields`) need a native-image hint in `PetClinicRuntimeHints`. Add a test in `PetClinicRuntimeHintsTests`
+- New Thymeleaf helpers used in templates (`#strings`, `#numbers`, `#temporals`, `#fields`) need a native-image hint in `PetClinicRuntimeHints`. `PetClinicRuntimeHintsTests` scans all templates and fails when a helper use has no hint
 - All commits need `Signed-off-by` trailer
 
 ## Specifications

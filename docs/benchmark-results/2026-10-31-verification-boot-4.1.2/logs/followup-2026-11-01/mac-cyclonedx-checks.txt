@@ -1,0 +1,26 @@
+# CycloneDX plugin checks on the Mac (2026-11-01, Gradle 9.5.1, scratch worktree and main checkout).
+# No GraalVM needed: the error happened while Gradle calculated the task graph.
+#
+# 1) Plugin 3.2.4 WITHOUT the tasks.named("cyclonedxDirectBom").get() workaround:
+#    ./gradlew -PjavaVersion=25 clean nativeCompile --pgo-instrument --dry-run
+   > Cannot mutate the artifacts of configuration ':cyclonedxDirectBom' after the configuration was consumed as a variant. After a configuration has been observed, it should not be modified.
+BUILD FAILED in 8s
+#
+# 2) Plugin 3.5.1 without the workaround, same command:
+BUILD SUCCESSFUL in 8s
+#
+# 3) ./gradlew bootJar -x checkstyleNohttp, SBOM inside the boot jar (META-INF/sbom/application.cdx.json):
+#    3.5.1: 396172 bytes, specVersion 1.6, components 162, tool cyclonedx-gradle-plugin 3.5.1
+#    3.2.4: 396172 bytes, specVersion 1.6, components 162, tool cyclonedx-gradle-plugin 3.2.4
+#
+# 4) Configuration cache with 3.5.1, two bootJar runs in a row:
+Reusing configuration cache.
+BUILD SUCCESSFUL in 441ms
+Configuration cache entry reused.
+Reusing configuration cache.
+BUILD SUCCESSFUL in 391ms
+Configuration cache entry reused.
+#
+# The real nativeCompile with 3.5.1 ran on the big server: big-server-native-build.log.
+# (The "94 components" in that log are the SBOM native-image embeds in the executable; that is a
+# different SBOM from the 162-component one Spring Boot puts into the jar.)

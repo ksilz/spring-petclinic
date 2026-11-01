@@ -5,7 +5,7 @@ tools: Read, Edit, Write, Bash, Glob, Grep
 model: sonnet
 ---
 
-Updated: 2026-11-01 02:26 Europe/Berlin
+Updated: 2026-11-01 08:39 Europe/Berlin
 
 You are a shell script developer for the Spring PetClinic startup benchmark fork.
 
@@ -18,7 +18,7 @@ Shell scripts in the project root: `benchmark.sh`, `compile-and-run.sh`, `tune-h
 | Script | Purpose |
 |---|---|
 | `compile-and-run.sh` | Main orchestrator — builds all variants and runs benchmarks. JDK 25 track: 6 variants (baseline, tuning, cds, leyden, crac, graalvm). JDK 27 track: 5 variants, no graalvm. |
-| `benchmark.sh` | Measures startup time for a single variant. Writes `result_<label>[_jdk27].csv` |
+| `benchmark.sh` | Measures startup time for a single variant. Writes `result_<label>[_jdk27].csv` (smoke tests: `result_<label>[_jdk27]_smoke.csv`) |
 | `tune-heap-settings.sh` | Explores optimal heap settings |
 | `verify-gc-behavior.sh` | Verifies GC configuration |
 
@@ -40,12 +40,12 @@ SDKMAN pins in `compile-and-run.sh`:
 
 Check these before you change `benchmark.sh`:
 
-- **Run counts:** `WARMUPS=${BENCH_WARMUPS:-3}` (integer >= 0) and `RUNS=${BENCH_RUNS:-7}` (integer >= 3). The `A` row is the trimmed mean (drops min and max). The script prints a smoke-test NOTE when the values are not 3/7. Use overrides for smoke tests only. Official results use the defaults.
+- **Run counts:** `WARMUPS=${BENCH_WARMUPS:-3}` (integer >= 0) and `RUNS=${BENCH_RUNS:-7}` (integer >= 3). The `A` row is the trimmed mean (drops min and max). When the values are not 3/7, the script prints a smoke-test NOTE and writes `result_<label>[_jdk27]_smoke.csv`. Use overrides for smoke tests only. Official results use the defaults.
 - **URL load:** 11 URLs x 5 rounds = 55 requests, `sleep 3` before each. That is about 165 s per run plus startup. Readiness poll on `:8080` waits up to 60 s.
 - **HTTP status guard:** every URL must return 200, except `/oups`, which must return 500. On a bad status, no response (000), or a readiness failure, `hit_urls` calls `stop_app_after_failure` and exits 1. This also applies to training runs. `stop_app_after_failure` sends TERM, then KILL, only to the launcher or its descendants. It waits for port 8080 (`wait_for_port_free 30`). It removes `petclinic.jsa` for cds and `petclinic.aotconf` for leyden.
 - **CRaC:** engine is `-XX:CRaCEngine=warp`. Training removes an old `petclinic-crac/` first and fails fast if it cannot. The checkpoint counts as complete only when all hold: the log shows `warp: Checkpoint successful!`, the final `core.img` exists, no `core.img.*` temp file remains, and the `core.img` size is stable across two 1-s checks. `max_checkpoint_wait=120` s, then exit 1.
-- **CSV:** `result_<label>[_jdk27].csv`. The `_jdk27` suffix applies on track 27 only. Columns: `Run, Startup Time (s), Max Memory (MB), Startup GCs, Benchmark GCs, Ran at, Size App (MB), Size Extra (MB)`.
-- **Known issue (not fixed):** GraalVM GC columns are always 0/0. The `2>/tmp/gc_graalvm.log` redirect sits inside `APP_CMD`.
+- **CSV:** `result_<label>[_jdk27][_smoke].csv`. The `_jdk27` suffix applies on track 27 only, `_smoke` to non-default run counts only. Columns: `Run, Startup Time (s), Max Memory (MB), Startup GCs, Benchmark GCs, Ran at, Size App (MB), Size Extra (MB)`.
+- **GC columns:** count GC log lines that mention "Pause" (G1 writes two per pause). JVM variants split by the wall-clock time of the "Started" line. GraalVM splits by process uptime at "Started" ("process running for X", fallback "Started ... in X seconds"). JVM variants read `/tmp/gc_<label>.log` (`-Xlog:gc*`). GraalVM reads the app log, because the native executable prints GC lines to stdout and ignores `-Xlog:gc:file=...`. Never put shell redirects inside `APP_CMD` or `TRAIN_CMD`: they expand unquoted, so a redirect becomes a plain argument.
 
 ## Standards
 

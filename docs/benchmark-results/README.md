@@ -4,7 +4,7 @@ This folder holds archived benchmark result files (CSV files, logs, helper scrip
 
 Each run has its own folder named `<date>-<description>`. Inside, every variant has one CSV file named after its label (`baseline.csv`, `tuning.csv`, `cds.csv`, `leyden.csv`, `crac.csv`, `graalvm.csv`).
 
-The benchmark scripts write `result_<label>.csv`. These files are not stored under that name here because the repository `.gitignore` ignores `result_*.csv`. They were renamed to `<label>.csv` when copied.
+The benchmark scripts write `result_<label>.csv` (track 27: `result_<label>_jdk27.csv`; smoke tests add `_smoke`). These files are not stored under that name here because the repository `.gitignore` ignores `result_*.csv`. They were renamed to `<label>.csv` when copied.
 
 Runs:
 

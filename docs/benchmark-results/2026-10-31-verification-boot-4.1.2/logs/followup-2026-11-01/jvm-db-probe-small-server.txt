@@ -1,0 +1,11 @@
+# JVM baseline settings (-Xms256m -Xmx768m -XX:+UseG1GC, AOT off), Temurin 25.0.5, jar built from 1a70bac,
+# small server, 2026-11-01 ~07:01 UTC. "bloated" = database petclinic (~590 duplicate indexes per table),
+# "clean" = scratch database petclinic_probe created fresh by the app's own schema.sql/data.sql.
+# DEBUG logging for org.springframework.jdbc.datasource.init gives the script times.
+PROBE jvm-clean-prime run=1 startup=15.507 sql_scripts=2 schema=106ms data=136ms
+PROBE jvm-bloated-1 run=1 startup=19.713 sql_scripts=2 schema=39ms data=3470ms
+PROBE jvm-clean-1 run=1 startup=14.657 sql_scripts=2 schema=33ms data=86ms
+PROBE jvm-bloated-2 run=1 startup=14.558 sql_scripts=2 schema=35ms data=559ms
+PROBE jvm-clean-2 run=1 startup=15.042 sql_scripts=2 schema=40ms data=109ms
+PROBE jvm-bloated-3 run=1 startup=14.841 sql_scripts=2 schema=42ms data=495ms
+PROBE jvm-clean-3 run=1 startup=14.277 sql_scripts=2 schema=28ms data=94ms

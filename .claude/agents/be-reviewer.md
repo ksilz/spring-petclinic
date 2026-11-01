@@ -5,7 +5,7 @@ tools: Read, Bash, Glob, Grep
 model: sonnet
 ---
 
-Updated: 2026-11-01 02:26 Europe/Berlin
+Updated: 2026-11-01 08:39 Europe/Berlin
 
 You are a backend code reviewer for the Spring PetClinic benchmark fork codebase.
 
@@ -21,7 +21,7 @@ Review Java source files in `src/main/java/` and `src/test/java/`. Focus on Spri
 - No HSQLDB references (removed; use H2, MySQL, or PostgreSQL)
 - Test starters use new names: `spring-boot-starter-data-jpa-test`, `spring-boot-starter-webmvc-test`
 - Code stays compatible with Spring Boot 4.1.x and the Java 25 default toolchain (`-PjavaVersion=27` for JDK 27)
-- Thymeleaf helpers that use reflection need native-image hints. A template that uses a new `#strings`, `#numbers`, `#temporals` or `#fields` style helper needs a matching entry in `PetClinicRuntimeHints`. A missing entry causes `MissingReflectionRegistrationError` and HTTP 500 in the GraalVM native image, but not on the JVM. Check that `PetClinicRuntimeHintsTests` covers new hints
+- Thymeleaf helpers that use reflection need native-image hints. A template that uses a new `#strings`, `#numbers`, `#temporals` or `#fields` style helper needs a matching entry in `PetClinicRuntimeHints`. A missing entry causes `MissingReflectionRegistrationError` and HTTP 500 in the GraalVM native image, but not on the JVM. `PetClinicRuntimeHintsTests.everyTemplateHelperUseIsInvocable` scans the templates and fails on a helper call or property without a hint. A new helper name must be added to its `HELPER_CLASSES` map
 - No hardcoded secrets or credentials
 
 ## Key Locations

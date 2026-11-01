@@ -1,0 +1,51 @@
+=== new-bloated-1-1.log
+2026-11-01T07:33:30.393Z com.zaxxer.hikari.HikariDataSource: HikariPool-1 - Starting...
+2026-11-01T07:33:30.411Z com.zaxxer.hikari.HikariDataSource: HikariPool-1 - Start completed.
+2026-11-01T07:33:30.411Z o.s.jdbc.datasource.init.ScriptUtils: Executing SQL script from URL [resource:/db/postgres/schema.sql]
+2026-11-01T07:33:30.416Z o.s.jdbc.datasource.init.ScriptUtils: Executed SQL script from URL [resource:/db/postgres/schema.sql] in 5 ms.
+2026-11-01T07:33:30.416Z o.s.jdbc.datasource.init.ScriptUtils: Executing SQL script from URL [resource:/db/postgres/data.sql]
+2026-11-01T07:33:30.705Z o.s.jdbc.datasource.init.ScriptUtils: Executed SQL script from URL [resource:/db/postgres/data.sql] in 289 ms.
+2026-11-01T07:33:30.710Z org.hibernate.orm.jpa: HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-11-01T07:33:30.945Z o.s.s.petclinic.PetClinicApplication: Started PetClinicApplication in 0.641 seconds (process running for 0.646)
+=== new-clean-1-1.log
+2026-11-01T07:33:33.279Z com.zaxxer.hikari.HikariDataSource: HikariPool-1 - Starting...
+2026-11-01T07:33:33.299Z com.zaxxer.hikari.HikariDataSource: HikariPool-1 - Start completed.
+2026-11-01T07:33:33.299Z o.s.jdbc.datasource.init.ScriptUtils: Executing SQL script from URL [resource:/db/postgres/schema.sql]
+2026-11-01T07:33:33.304Z o.s.jdbc.datasource.init.ScriptUtils: Executed SQL script from URL [resource:/db/postgres/schema.sql] in 5 ms.
+2026-11-01T07:33:33.304Z o.s.jdbc.datasource.init.ScriptUtils: Executing SQL script from URL [resource:/db/postgres/data.sql]
+2026-11-01T07:33:33.318Z o.s.jdbc.datasource.init.ScriptUtils: Executed SQL script from URL [resource:/db/postgres/data.sql] in 14 ms.
+2026-11-01T07:33:33.323Z org.hibernate.orm.jpa: HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-11-01T07:33:33.541Z o.s.s.petclinic.PetClinicApplication: Started PetClinicApplication in 0.345 seconds (process running for 0.35)
+=== new-noinit-1-1.log
+2026-11-01T07:33:35.848Z org.hibernate.orm.jpa: HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-11-01T07:33:35.869Z com.zaxxer.hikari.HikariDataSource: HikariPool-1 - Starting...
+2026-11-01T07:33:35.886Z com.zaxxer.hikari.HikariDataSource: HikariPool-1 - Start completed.
+2026-11-01T07:33:36.082Z o.s.s.petclinic.PetClinicApplication: Started PetClinicApplication in 0.323 seconds (process running for 0.328)
+=== may-2-1.log
+2026-11-01T07:33:50.057Z org.hibernate.orm.jpa: HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-11-01T07:33:50.077Z com.zaxxer.hikari.HikariDataSource: HikariPool-1 - Starting...
+2026-11-01T07:33:50.093Z com.zaxxer.hikari.HikariDataSource: HikariPool-1 - Start completed.
+2026-11-01T07:33:50.249Z o.s.s.petclinic.PetClinicApplication: Started PetClinicApplication in 0.285 seconds (process running for 0.291)
+=== may-debug-2.log
+2026-11-01T06:47:54.598Z org.hibernate.orm.jpa: HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-11-01T06:47:54.628Z com.zaxxer.hikari.HikariDataSource: HikariPool-1 - Starting...
+2026-11-01T06:47:54.650Z com.zaxxer.hikari.HikariDataSource: HikariPool-1 - Start completed.
+2026-11-01T06:47:54.924Z o.s.s.petclinic.PetClinicApplication: Started PetClinicApplication in 0.464 seconds (process running for 0.471)
+=== jvm-bloated-2-1.log
+2026-11-01T07:01:43.609Z com.zaxxer.hikari.HikariDataSource: HikariPool-1 - Starting...
+2026-11-01T07:01:44.437Z com.zaxxer.hikari.HikariDataSource: HikariPool-1 - Start completed.
+2026-11-01T07:01:44.442Z o.s.jdbc.datasource.init.ScriptUtils: Executing SQL script from URL [jar:nested:/home/ubuntu/investigate/app.jar/!BOOT-INF/classes/!/db/postgres/schema.sql]
+2026-11-01T07:01:44.480Z o.s.jdbc.datasource.init.ScriptUtils: Executed SQL script from URL [jar:nested:/home/ubuntu/investigate/app.jar/!BOOT-INF/classes/!/db/postgres/schema.sql] in 35 ms.
+2026-11-01T07:01:44.492Z o.s.jdbc.datasource.init.ScriptUtils: Executing SQL script from URL [jar:nested:/home/ubuntu/investigate/app.jar/!BOOT-INF/classes/!/db/postgres/data.sql]
+2026-11-01T07:01:45.052Z o.s.jdbc.datasource.init.ScriptUtils: Executed SQL script from URL [jar:nested:/home/ubuntu/investigate/app.jar/!BOOT-INF/classes/!/db/postgres/data.sql] in 559 ms.
+2026-11-01T07:01:45.351Z org.hibernate.orm.jpa: HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-11-01T07:01:51.812Z o.s.s.petclinic.PetClinicApplication: Started PetClinicApplication in 14.558 seconds (process running for 15.863)
+=== jvm-clean-2-1.log
+2026-11-01T07:02:02.297Z com.zaxxer.hikari.HikariDataSource: HikariPool-1 - Starting...
+2026-11-01T07:02:03.707Z com.zaxxer.hikari.HikariDataSource: HikariPool-1 - Start completed.
+2026-11-01T07:02:03.712Z o.s.jdbc.datasource.init.ScriptUtils: Executing SQL script from URL [jar:nested:/home/ubuntu/investigate/app.jar/!BOOT-INF/classes/!/db/postgres/schema.sql]
+2026-11-01T07:02:03.756Z o.s.jdbc.datasource.init.ScriptUtils: Executed SQL script from URL [jar:nested:/home/ubuntu/investigate/app.jar/!BOOT-INF/classes/!/db/postgres/schema.sql] in 40 ms.
+2026-11-01T07:02:03.773Z o.s.jdbc.datasource.init.ScriptUtils: Executing SQL script from URL [jar:nested:/home/ubuntu/investigate/app.jar/!BOOT-INF/classes/!/db/postgres/data.sql]
+2026-11-01T07:02:03.883Z o.s.jdbc.datasource.init.ScriptUtils: Executed SQL script from URL [jar:nested:/home/ubuntu/investigate/app.jar/!BOOT-INF/classes/!/db/postgres/data.sql] in 109 ms.
+2026-11-01T07:02:04.184Z org.hibernate.orm.jpa: HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-11-01T07:02:10.406Z o.s.s.petclinic.PetClinicApplication: Started PetClinicApplication in 15.042 seconds (process running for 16.329)

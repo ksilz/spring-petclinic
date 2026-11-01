@@ -311,28 +311,32 @@ SWAP_DELTA=$((SWAP_AFTER - SWAP_BEFORE))
 | `build/native/nativeCompile/spring-petclinic` | 100-150 MB | GraalVM optimized binary |
 | `build/native/nativeCompile/spring-petclinic-instrumented` | 100-150 MB | GraalVM instrumented binary (for training) |
 | `src/pgo-profiles/main/default.iprof` | 10-50 MB | GraalVM PGO profile |
-| `/tmp/gc_*.log` | 1-10 MB | GC logs per variant |
+| `/tmp/gc_*.log` | 1-10 MB | GC logs per JVM variant (the GraalVM GC lines go to the app log) |
 | `/tmp/app_*.log` | 1-10 MB | Application logs per phase |
 
 ### Benchmark Results
 
-**CSV Format** (`result_{label}.csv`):
+**CSV file names**:
+- Track 25: `result_<label>.csv`. Track 27: `result_<label>_jdk27.csv`.
+- Smoke test (`BENCH_WARMUPS`/`BENCH_RUNS` other than 3/7): `_smoke` is added, e.g. `result_<label>_smoke.csv` or `result_<label>_jdk27_smoke.csv`. A smoke test never overwrites an official result.
+
+**CSV Format** (example from the May 2026 baseline run, shortened):
 ```csv
-Run,Startup Time (s),Max Memory (KB),Startup GCs,Benchmark GCs,Ran at
-1,0.352,156432,5,12,2025-11-02T10:15:23Z
-2,0.341,154288,4,11,2025-11-02T10:16:45Z
+Run,Startup Time (s),Max Memory (MB),Startup GCs,Benchmark GCs,Ran at,Size App (MB),Size Extra (MB)
+1,12.68,442.0,34,6,2026-05-01T20:30:28Z,,
 ...
-7,0.361,157088,5,13,2025-11-02T10:24:12Z
-A,0.353,155968,4.8,11.8,2025-11-02T10:24:15Z  # Trimmed mean
+7,13.493,450.3,34,8,2026-05-01T20:49:02Z,,
+A,13.3166,448.36,34,6.2,2026-05-01T20:52:08Z,66.5,0.0
 ```
 
 **Columns**:
-- **Run**: Run number (1-7) or "A" for average
-- **Startup Time (s)**: Seconds from process start to "Started PetClinicApplication"
-- **Max Memory (KB)**: Peak memory footprint in kilobytes
-- **Startup GCs**: Number of garbage collection pauses during startup
-- **Benchmark GCs**: Number of GC pauses during URL load simulation
+- **Run**: Run number (1 to `RUNS`) or "A" for the trimmed mean (drops min and max)
+- **Startup Time (s)**: Seconds Spring Boot reports in "Started PetClinicApplication in X seconds" (CRaC: "restored JVM running for X ms")
+- **Max Memory (MB)**: Peak memory from `/usr/bin/time` (Linux: maximum resident set size; macOS: peak memory footprint)
+- **Startup GCs**: GC pause log lines before "Started". G1 writes a start and an end line per pause, so this is about twice the number of pauses. All variants use this rule. GraalVM reads its GC lines from the app log, because the native executable prints them to stdout.
+- **Benchmark GCs**: GC pause log lines after "Started", during the URL load simulation (same rule)
 - **Ran at**: ISO 8601 timestamp when the run started
+- **Size App (MB)** / **Size Extra (MB)**: Artifact sizes, only in the A row
 
 ---
 
@@ -356,6 +360,8 @@ Versions used in the 2026-10-31 verification run (see below) and in the May 2026
 | OS (both hosts) | Ubuntu 24.04.4 LTS, kernel 6.17.0-1013-aws, glibc 2.39 (Ubuntu GLIBC 2.39-0ubuntu8.7) | same | unknown |
 
 The GraalVM native image is built on the big server (build host) and copied to the small server (run host). All other variants are built and run on the small server.
+
+After this run, the CycloneDX Gradle plugin went to 3.5.1 (`53d0ad6`). 3.5.1 builds the native image without the 3.2.4 workaround and embeds the same SBOM.
 
 ---
 
@@ -390,21 +396,30 @@ Both: 1 warm-up + 3 runs (verification run). Startup times in seconds.
 | leyden | 4.637 | 4.608-5.256 | 4.256 | 4.210-4.316 | -8% | 352 | 356 |
 | crac | 0.082 | 0.075-0.087 | 0.084 | 0.079-0.090 | +2% | 372 | 369 |
 
-The graalvm "Startup GCs" and "Benchmark GCs" columns are not measured (known script issue, see finding 6). The 0/0 values in its CSV are not data.
+The graalvm "Startup GCs" and "Benchmark GCs" columns were not measured in this run (script issue, fixed afterwards, see finding 6). The 0/0 values in its CSV are not data.
 
 ### Findings
 
-1. The GraalVM native build was broken by CycloneDX Gradle plugin 3.2.4. Fixed in `62e0b4e`.
+1. The GraalVM native build was broken by CycloneDX Gradle plugin 3.2.4. Fixed in `62e0b4e` with a workaround. Since `53d0ad6` the plugin is 3.5.1, which needs no workaround.
 2. CRaC training race: `benchmark.sh` treated the checkpoint as finished as soon as any file appeared in `petclinic-crac/`. Zulu CRaC 25.0.4.1 (warp) writes `core.img.<random>` and renames it to `core.img` at the end. TERM sent mid-write baked the shutdown into the image, so every restore exited. Fixed in `8c005d0` and `87cf7b6`.
 3. The GraalVM native image lacked reflection registrations for Thymeleaf `Strings.listJoin`, `Numbers.sequence` and `Temporals.format`. That gave HTTP 500 on 9 of 11 pages, also during PGO training. Fixed in `6b52de8`.
 4. The benchmark accepted HTTP 500 pages as success, because `hit_urls` only aborted on 000. Fixed in `70ce917`: every URL must return 200 except `/oups` (500).
-5. Open: the GraalVM startup on the small server is 0.611 s now vs 0.278 s in May. In a back-to-back A/B run the May executable needed 0.283 s and the new one 0.629 s. The fixed executable needs 0.295 s on the 8-vCPU big server (the invalid attempt-2 executable needed 0.311 s there). The slowdown is real and independent of the reflection bug. Investigate before the real benchmark.
-6. Known, not fixed (pre-existing): the GraalVM "Startup GCs" and "Benchmark GCs" columns are always 0/0, because `benchmark.sh` puts `2>/tmp/gc_graalvm.log` inside `APP_CMD` and `TRAIN_CMD` and expands them unquoted. Publish them as "not measured (known script issue)".
+5. Explained on 2026-11-01: the GraalVM startup on the small server is 0.611 s now vs 0.278 s in May (A/B: 0.629 s vs 0.283 s), but 0.295 s on the big server. Cause:
+   - The new executable runs `schema.sql` and `data.sql` at startup, like every JVM variant always did (`spring.sql.init.mode=always`). The May executable never ran them: before upstream commit `a2c2ef9` (resource hints for `db/*/*`, merged with the upgrade) the scripts were not in the native image.
+   - `data.sql` is slow on the small server, because its `petclinic` database carries 4,137 duplicate indexes (591 copies each on five tables, 1,182 on `pets`; the big server: 74 per table). The old `schema.sql` created an unnamed copy of every index on each startup. The new `schema.sql` uses named `CREATE INDEX IF NOT EXISTS`, but the old copies stay. On a clean database the same `data.sql` takes 14-15 ms. The big server's fast startup is consistent with its fewer copies (`data.sql` was not timed there).
+   - Measured on the small server (5 interleaved rounds, medians): new executable 0.648 s on the `petclinic` database (`data.sql` 281-457 ms), 0.357 s on a clean database (`data.sql` 14-15 ms), 0.323 s without SQL init; May executable 0.292 s. So about 0.29 s is database state, about 0.03 s is the scripts themselves, about 0.03 s (+10%) is the rest of the upgrade.
+   - The May 2026 graalvm result skipped the SQL scripts, so it is not comparable with the other variants.
+   - Details: [verification README, "Follow-up 2026-11-01"](../docs/benchmark-results/2026-10-31-verification-boot-4.1.2/README.md#follow-up-2026-11-01).
+6. Pre-existing, fixed on 2026-11-01 (`de3b237`, `b78735e`): the GraalVM "Startup GCs" and "Benchmark GCs" columns were always 0/0. `benchmark.sh` put `2>/tmp/gc_graalvm.log` inside `APP_CMD`, so the shell passed it to the executable as a plain argument. The redirect would not have helped anyway: the native executable prints its GC lines to stdout and ignores `-Xlog:gc:file=...`. `benchmark.sh` now reads them from the app log and counts them like the JVM variants. The 0/0 values in the May 2026 and in this run's CSVs are not data.
 7. The May 2026 "Size App (MB)" of 164.6 for tuning, cds and leyden is inflated. The old checkout held 225 library JARs, because `java -Djarmode=tools extract --force` never deletes stale files. A fresh checkout has 93 JARs and 63.8 MB. Startup is not affected.
 8. The JDK 27 baseline peak memory is 628 MB median (643 MB max) vs 440 MB on JDK 25, with the same `-Xmx768m`. Watch this in the real benchmark.
 9. "Size Extra (MB)" is 0.0 for cds, leyden and crac in the old and the new runs. `compile-and-run.sh` measures sizes before `benchmark.sh` creates the archive, cache or checkpoint. Pre-existing.
+10. Found on 2026-11-01: the duplicate indexes (finding 5) slow down every JVM variant too. On the JVM baseline, `data.sql` took 495-559 ms on the `petclinic` database vs 86-109 ms on a clean one, about 0.4 s per startup (about 9% of leyden). Remove them before the official run (needs the user's go-ahead). `docs/benchmark-results/2026-10-31-verification-boot-4.1.2/tools/duplicate-indexes.sql` lists them.
+11. Found on 2026-11-01: `unattended-upgrade` ran on both servers in the morning (small server 06:41-06:52 UTC, big server about 06:24-06:31 UTC). On the small server it upgraded PostgreSQL 16.13 to 16.15 and restarted it twice; a start at 06:48 failed with "Connection to localhost:5432 refused". On the big server PostgreSQL 18.3 was restarted 10 times. Both got glibc 2.39-0ubuntu8.9, a newer OpenSSL and a new kernel, with a reboot pending. Keep official runs out of that window or pause the apt timers, and record the versions again: the "Tested Versions" table no longer matches the servers.
 
 After the code review, a final check on commit 957a887 passed. On the small server, the median was 0.612 s for graalvm and 0.075 s for crac (1 warm-up + 3 runs). 87 tests pass on JDK 25 and JDK 27. Details are in the [verification README](../docs/benchmark-results/2026-10-31-verification-boot-4.1.2/README.md).
+
+A follow-up on 2026-11-01 explained finding 5, fixed finding 6, upgraded CycloneDX to 3.5.1 and added a test that scans the templates for helpers without a native hint. On `ef9e49d`, 88 tests ran on JDK 25 and on JDK 27: 0 failures, 4 skipped (Docker-based tests, no Docker on the server).
 
 ---
 
@@ -543,7 +558,7 @@ WARMUPS=3     # Number of warm-up runs
 RUNS=7        # Number of benchmark runs
 ```
 
-Both can be overridden with the environment variables `BENCH_WARMUPS` (integer >= 0) and `BENCH_RUNS` (integer >= 3, because the A row is a trimmed mean that drops min and max). The overrides are intended for smoke tests only; official results use the defaults (3 warm-ups, 7 runs). Example: `BENCH_WARMUPS=1 BENCH_RUNS=3 ./compile-and-run.sh baseline`
+Both can be overridden with the environment variables `BENCH_WARMUPS` (integer >= 0) and `BENCH_RUNS` (integer >= 3, because the A row is a trimmed mean that drops min and max). The overrides are intended for smoke tests only; official results use the defaults (3 warm-ups, 7 runs). Example: `BENCH_WARMUPS=1 BENCH_RUNS=3 ./compile-and-run.sh baseline`. A smoke test writes `result_<label>[_jdk27]_smoke.csv` instead of the official file name.
 
 ---
 
@@ -579,13 +594,14 @@ cat /tmp/app_training.log    # Training runs
 cat /tmp/app_warmup.log       # Warm-up runs
 cat /tmp/app_benchmark.log    # Benchmark runs
 
-# GC logs (per variant)
+# GC logs (per JVM variant)
 cat /tmp/gc_baseline.log
 cat /tmp/gc_tuning.log
 cat /tmp/gc_cds.log
 cat /tmp/gc_leyden.log
 cat /tmp/gc_crac.log
-cat /tmp/gc_graalvm.log
+# GraalVM: the native executable prints GC lines to stdout, so they are in the app log
+grep "\[gc" /tmp/app_benchmark.log
 
 # Time command output
 cat /tmp/time_out.log
@@ -720,6 +736,6 @@ DEBUG: Script started with parameters:
 1. **Leyden** - May cause system hangs on Linux during AOT cache generation
 2. **CRaC** - Linux only, requires CRIU, complex process tracking
 3. **GraalVM** - Memory intensive, long build times, platform-specific flags
-4. **Fixed timings** - 3-second delays between URLs. 3 warm-ups and 7 runs are the defaults. `BENCH_WARMUPS` and `BENCH_RUNS` override them for smoke tests only (minimum 3 runs). Official results use the defaults.
+4. **Fixed timings** - 3-second delays between URLs. 3 warm-ups and 7 runs are the defaults. `BENCH_WARMUPS` and `BENCH_RUNS` override them for smoke tests only (minimum 3 runs), and the CSV name then ends in `_smoke`. Official results use the defaults.
 5. **No Windows support** - Linux/macOS only
 6. **Swap warnings** - Benchmarks warn if swap usage increases during testing (indicates memory pressure)

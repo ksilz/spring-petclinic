@@ -1,0 +1,28 @@
+# Native A/B on the small server, 2026-11-01 07:33 UTC, tools/startup-probe.sh, one warm-up start first (not listed).
+# Every arm: -XX:+PrintGC -XX:+VerboseGC -Dspring.profiles.active=postgres
+#            --logging.level.org.springframework.jdbc.datasource.init=DEBUG
+# new-bloated: new executable (sha256 aff4bcd71bf14bef..., built on the big server from 1a70bac), database petclinic
+# new-clean:   same executable, plus --spring.datasource.url=jdbc:postgresql://localhost/petclinic_probe (fresh scratch database)
+# new-noinit:  same executable, database petclinic, plus --spring.sql.init.mode=never
+# may:         May 2026 executable (sha256 e461232c609d..., old checkout, run read-only), database petclinic
+ 07:33:27 up 15:57,  2 users,  load average: 0.14, 0.03, 0.09
+PROBE new-bloated-1 run=1 startup=0.641 sql_scripts=2 schema=5ms data=289ms 
+PROBE new-clean-1 run=1 startup=0.345 sql_scripts=2 schema=5ms data=14ms 
+PROBE new-noinit-1 run=1 startup=0.323 sql_scripts=0 
+PROBE may-1 run=1 startup=0.723 sql_scripts=0 
+PROBE new-bloated-2 run=1 startup=0.648 sql_scripts=2 schema=9ms data=295ms 
+PROBE new-clean-2 run=1 startup=0.384 sql_scripts=2 schema=5ms data=14ms 
+PROBE new-noinit-2 run=1 startup=0.319 sql_scripts=0 
+PROBE may-2 run=1 startup=0.285 sql_scripts=0 
+PROBE new-bloated-3 run=1 startup=0.629 sql_scripts=2 schema=5ms data=281ms 
+PROBE new-clean-3 run=1 startup=0.355 sql_scripts=2 schema=5ms data=14ms 
+PROBE new-noinit-3 run=1 startup=0.323 sql_scripts=0 
+PROBE may-3 run=1 startup=0.292 sql_scripts=0 
+PROBE new-bloated-4 run=1 startup=0.966 sql_scripts=2 schema=9ms data=457ms 
+PROBE new-clean-4 run=1 startup=0.357 sql_scripts=2 schema=5ms data=15ms 
+PROBE new-noinit-4 run=1 startup=0.338 sql_scripts=0 
+PROBE may-4 run=1 startup=0.332 sql_scripts=0 
+PROBE new-bloated-5 run=1 startup=0.663 sql_scripts=2 schema=4ms data=316ms 
+PROBE new-clean-5 run=1 startup=0.357 sql_scripts=2 schema=4ms data=15ms 
+PROBE new-noinit-5 run=1 startup=0.321 sql_scripts=0 
+PROBE may-5 run=1 startup=0.287 sql_scripts=0 

@@ -1,6 +1,6 @@
 # Overview Specification
 
-Updated: 2026-11-01 02:26 Europe/Berlin
+Updated: 2026-11-01 08:39 Europe/Berlin
 
 Spring PetClinic benchmark fork — measures startup speed of five Spring Boot optimization techniques for a Java conference talk.
 
@@ -45,7 +45,7 @@ Spring PetClinic benchmark fork — measures startup speed of five Spring Boot o
 | Spring Boot | 4.1.2 | 4.1.2 |
 | Gradle | 9.5.1 | 9.5.1 |
 | GraalVM native build tools | 1.1.2 | 1.1.2 |
-| CycloneDX Gradle plugin | 3.2.4 | 3.2.4 |
+| CycloneDX Gradle plugin | 3.5.1 | 3.5.1 |
 
 Hosts and OS details are in `specs/Startup-Benchmark-PRD.md` (section "Tested Versions").
 
@@ -72,10 +72,11 @@ MVC web application (vet clinic management). Standard Spring Boot layering: cont
 | Test | `./gradlew test -x checkstyleNohttp` |
 | Run (H2) | `./gradlew bootRun` |
 | Run (postgres) | `SPRING_PROFILES_ACTIVE=postgres ./gradlew bootRun` |
-| Run benchmarks | `./compile-and-run.sh` (track 25) or `JDK_TRACK=27 ./compile-and-run.sh` (track 27). Defaults: 3 warm-ups, 7 runs. Smoke test: `BENCH_WARMUPS=1 BENCH_RUNS=3 ./compile-and-run.sh`. Official results use the defaults. |
+| Run benchmarks | `./compile-and-run.sh` (track 25) or `JDK_TRACK=27 ./compile-and-run.sh` (track 27). Defaults: 3 warm-ups, 7 runs. Smoke test: `BENCH_WARMUPS=1 BENCH_RUNS=3 ./compile-and-run.sh`, writes `result_<label>[_jdk27]_smoke.csv`. Official results use the defaults. |
 | Format code | `./gradlew formatMain formatTest` |
 
 ## Benchmark Results
 
 Archived results are in `docs/benchmark-results/`. The verification run of 2026-10-31 (1 warm-up + 3 runs, Spring Boot 4.1.2, JDK 25 and 27) is described in `docs/benchmark-results/2026-10-31-verification-boot-4.1.2/README.md`. It is not the official benchmark.
+Before the official run, remove the duplicate indexes from the `petclinic` database on the servers (PRD findings 5 and 10). They add about 0.3 s to the native and about 0.4 s to the JVM startup on the small server.
 The full May 2026 run (3 warm-ups + 7 runs, Spring Boot 4.0.3, JDK 25.0.3) is in `docs/benchmark-results/2026-05-01-boot-4.0.3-jdk25/`.

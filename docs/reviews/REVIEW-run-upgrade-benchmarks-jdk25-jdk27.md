@@ -60,6 +60,16 @@ Clean pass. No issues found.
 - Found during fix planning, pre-existing, not changed: `benchmark.sh:133, 237, 866` — `[[ ! -f petclinic-crac/*.img ]]` never globs, so the CRaC branch always retrains and never reuses a checkpoint. Harmless under `compile-and-run.sh`, which deletes the directory anyway.
 - Found during plan review, pre-existing, not changed: the readiness fast-fail in `hit_urls` checks `${app_pid:-${pid:-}}`; in the measured-run loop `pid` can be a stale warm-up PID if `app_pid` were ever empty.
 
+### Follow-up 2026-11-01
+
+Done after the review, on the user's request:
+- `build.gradle:78`: CycloneDX 3.5.1, workaround removed (`53d0ad6`). The full PGO native build passed.
+- `PetClinicRuntimeHintsTests.java:44`: the template scan test is in (`9c4f779`, `ef9e49d`).
+- `benchmark.sh:200`: smoke tests write `result_<label>[_jdk27]_smoke.csv` (`12d26ec`).
+- Also fixed: the pre-existing GraalVM GC columns at 0/0 (`de3b237`, `b78735e`).
+
+A shell and a Java reviewer checked these commits: no critical findings. Their code warnings were fixed in `b78735e` (GC format detection) and `ef9e49d` (`@DisabledInNativeImage`). `ef9e49d` also takes two of their suggestions (helper property access, `#themes`). Their documentation warnings were fixed in the docs commit that follows. Still open: `benchmark.sh:337` and `benchmark.sh:261` above.
+
 ## Project Context Validation
 
 - No PRD file matches `PRD*.md`; project context came from `CLAUDE.md` and `specs/Startup-Benchmark-PRD.md`.
