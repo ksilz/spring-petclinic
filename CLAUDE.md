@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Updated: 2026-11-01 08:59 Europe/Berlin
+Updated: 2026-11-01 15:56 Europe/Berlin
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -271,7 +271,7 @@ Short facts:
 - `BENCH_WARMUPS` and `BENCH_RUNS` override the warm-up and run counts (defaults 3 and 7). Use them for smoke tests only: the CSV name then ends in `_smoke` (`result_<label>[_jdk27]_smoke.csv`). Official results use the defaults.
 - `benchmark.sh` fails the run on any unexpected HTTP status. Only `/oups` returns 500. It stops the app before it exits.
 - The `postgres` profile runs `schema.sql` and `data.sql` at every startup, in all variants (the native image too, since upstream `a2c2ef9`). The old `schema.sql` added a copy of every index at each startup; duplicates slow this down. Check for them before an official run with `docs/benchmark-results/2026-10-31-verification-boot-4.1.2/tools/duplicate-indexes.sql` (PRD findings 5 and 10).
-- Results live in `docs/benchmark-results/`: the May 2026 full run and a 2026-10-31 verification run. The verification run is not the official benchmark.
+- Results live in `docs/benchmark-results/`: the May 2026 full run, a 2026-10-31 verification run (not official) and the official run of 2026-11-01 with the German report `benchmark-bericht.html`. Its generator is `tools/make_report.py` in that folder.
 
 ### Build System
 

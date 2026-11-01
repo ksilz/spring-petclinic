@@ -342,7 +342,7 @@ A,13.3166,448.36,34,6.2,2026-05-01T20:52:08Z,66.5,0.0
 
 ## Tested Versions
 
-Versions used in the 2026-10-31 verification run (see below) and in the May 2026 run it is compared with.
+Versions used in the 2026-10-31 verification run (see below) and in the May 2026 run it is compared with. The official run of 2026-11-01 used the same JDKs, GraalVM, Spring Boot and Gradle, but CycloneDX 3.5.1 and the hosts after their 2026-11-01 updates and reboot: PostgreSQL 16.15 on the small server, kernel 7.0.0-1014-aws, glibc 2.39-0ubuntu8.9 (details: `docs/benchmark-results/2026-11-01-boot-4.1.2-jdk25-jdk27/versions-*.txt`).
 
 | Item | Track 25 | Track 27 | Old run (May 2026) |
 |---|---|---|---|
@@ -364,6 +364,26 @@ The GraalVM native image is built on the big server (build host) and copied to t
 After this run, the CycloneDX Gradle plugin went to 3.5.1 (`53d0ad6`). 3.5.1 builds the native image without the 3.2.4 workaround and embeds the same SBOM.
 
 ---
+
+## Official Run 2026-11-01
+
+The full benchmark for the W-JAX 2026 talk: Spring Boot 4.1.2, JDK 25 and JDK 27, default run counts (3 warm-ups + 7 measured runs), small server; GraalVM native executable built with PGO on the big server. All 11 variants passed. German report with all results, charts and the numbers for Keynote: [`docs/benchmark-results/2026-11-01-boot-4.1.2-jdk25-jdk27/benchmark-bericht.html`](../docs/benchmark-results/2026-11-01-boot-4.1.2-jdk25-jdk27/benchmark-bericht.html); raw data and method notes in the folder's [README](../docs/benchmark-results/2026-11-01-boot-4.1.2-jdk25-jdk27/README.md).
+
+Row A (trimmed mean) per variant:
+
+| Variant | JDK 25 startup | JDK 27 startup | JDK 25 memory | JDK 27 memory | JDK 25 GCs startup / benchmark | JDK 27 GCs startup / benchmark |
+|---|---|---|---|---|---|---|
+| Baseline | 13.756 s | 13.991 s | 442 MB | 469 MB | 34 / 5 | 34 / 2.4 |
+| Tuning | 9.240 s | 9.588 s | 411 MB | 481 MB | 28 / 2 | 26.4 / 1.2 |
+| Tuning + CDS | 5.629 s | 5.935 s | 399 MB | 371 MB | 4 / 2 | 4.4 / 1.6 |
+| Tuning + Leyden | 4.331 s | 4.088 s | 370 MB | 346 MB | 3 / 1 | 2.8 / 1.2 |
+| CRaC | 0.077 s | 0.091 s | 387 MB | 375 MB | 0 / 0 | 0 / 0 |
+| GraalVM | 0.354 s | n/a | 200 MB | n/a | 8 / 8 | n/a |
+
+Notes:
+- Tuning + CDS on JDK 27 was measured twice (first attempt A 6.022 s, rerun A 5.935 s); it scatters more than the other variants on this host. The table shows the rerun.
+- GraalVM now runs `schema.sql` and `data.sql` at startup like the JVM variants (finding 5 below), and its GC columns are measured (finding 6), so it differs from the May 2026 slides (0.287 s, 0 / 0).
+- Preparations: duplicate database indexes removed (findings 5 and 10), apt timers disabled on both servers, servers rebooted (finding 11). The apt timers stay disabled until the user re-enables them.
 
 ## Verification Run 2026-10-31 (not the official benchmark)
 

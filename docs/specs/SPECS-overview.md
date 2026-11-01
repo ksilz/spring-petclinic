@@ -1,6 +1,6 @@
 # Overview Specification
 
-Updated: 2026-11-01 08:59 Europe/Berlin
+Updated: 2026-11-01 15:56 Europe/Berlin
 
 Spring PetClinic benchmark fork — measures startup speed of five Spring Boot optimization techniques for a Java conference talk.
 
@@ -47,7 +47,7 @@ Spring PetClinic benchmark fork — measures startup speed of five Spring Boot o
 | GraalVM native build tools | 1.1.2 | 1.1.2 |
 | CycloneDX Gradle plugin | 3.5.1 | 3.5.1 |
 
-Hosts and OS details are in `specs/Startup-Benchmark-PRD.md` (section "Tested Versions").
+Hosts and OS details are in `specs/Startup-Benchmark-PRD.md` (section "Tested Versions"). The official run of 2026-11-01 ran on PostgreSQL 16.15, kernel 7.0.0-1014-aws and glibc 2.39-0ubuntu8.9.
 
 ## Architecture
 
@@ -77,6 +77,6 @@ MVC web application (vet clinic management). Standard Spring Boot layering: cont
 
 ## Benchmark Results
 
-Archived results are in `docs/benchmark-results/`. The verification run of 2026-10-31 (1 warm-up + 3 runs, Spring Boot 4.1.2, JDK 25 and 27) is described in `docs/benchmark-results/2026-10-31-verification-boot-4.1.2/README.md`. It is not the official benchmark.
+Archived results are in `docs/benchmark-results/`. The official run of 2026-11-01 (3 warm-ups + 7 runs, Spring Boot 4.1.2, JDK 25 and 27) is in `docs/benchmark-results/2026-11-01-boot-4.1.2-jdk25-jdk27/`, with the German report `benchmark-bericht.html` and a summary in the PRD section "Official Run 2026-11-01". The verification run of 2026-10-31 (1 warm-up + 3 runs, Spring Boot 4.1.2, JDK 25 and 27) is described in `docs/benchmark-results/2026-10-31-verification-boot-4.1.2/README.md`. It is not the official benchmark.
 Duplicate indexes in the `petclinic` database added about 0.3 s to the native and about 0.4 s to the JVM startup on the small server. They were removed on 2026-11-01 (PRD findings 5 and 10). Check for them again before an official run.
 The full May 2026 run (3 warm-ups + 7 runs, Spring Boot 4.0.3, JDK 25.0.3) is in `docs/benchmark-results/2026-05-01-boot-4.0.3-jdk25/`.

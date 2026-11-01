@@ -1,0 +1,174 @@
+=== runner: track 27, variant cds, pin 27.0.0.0+35-tem, BENCH_WARMUPS=3, BENCH_RUNS=7, commit 58f09f3
+openjdk 27 2026-09-15
+OpenJDK Runtime Environment Temurin-27+35 (build 27+35)
+OpenJDK 64-Bit Server VM Temurin-27+35 (build 27+35, mixed mode, sharing)
+Checking for running Java processes before benchmarks...
+  Killing Java processes: 52048
+45827
+
+Current Java:
+openjdk 27 2026-09-15
+OpenJDK Runtime Environment Temurin-27+35 (build 27+35)
+OpenJDK 64-Bit Server VM Temurin-27+35 (build 27+35, mixed mode, sharing)
+
+=== Class Data Sharing (gradle, current Java) ===
+
+
+****************************************************************
+
+ BUILDING APPLICATION
+
+-> SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=27 -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar && \
+    java -Djarmode=tools -jar build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar extract --force
+
+****************************************************************
+
+Starting a Gradle Daemon, 2 incompatible and 2 stopped Daemons could not be reused, use --status for details
+Reusing configuration cache.
+> Task :clean
+> Task :compileJava FROM-CACHE
+> Task :collectReachabilityMetadata
+> Task :cyclonedxDirectBom FROM-CACHE
+> Task :cyclonedxBom FROM-CACHE
+> Task :processResources
+> Task :classes
+> Task :resolveMainClassName
+> Task :processAot FROM-CACHE
+> Task :processAotResources
+> Task :compileAotJava FROM-CACHE
+> Task :aotClasses
+> Task :bootJar
+
+BUILD SUCCESSFUL in 12s
+11 actionable tasks: 6 executed, 5 from cache
+Configuration cache entry reused.
+Build step took 15.0 seconds
+Deleting existing CDS cache: petclinic.jsa
+
+Artifact sizes - App: 63.8 MB, Extra: 0.0 MB
+DEBUG: Script started with parameters:
+  JAR_PATH: spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+  LABEL: cds
+  AOT_FLAG: -Dspring.aot.enabled=true -XX:SharedArchiveFile=petclinic.jsa
+  TRAINING_MODE: 
+  SCRIPT_START_TIME: 1793536587
+  PID: 52379
+  PPID: 52046
+  Command: ./benchmark.sh spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar cds -Dspring.aot.enabled=true -XX:SharedArchiveFile=petclinic.jsa  63.8 0.0
+DEBUG: End of debug info
+
+DEBUG: Configuration set:
+  WARMUPS: 3
+  RUNS: 7
+  CSV_FILE: result_cds_jdk27.csv
+DEBUG: End of configuration debug
+
+
+****************************************************************
+
+Running application
+
+-> java -Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_cds.log:time,uptime,level,tags -Dspring.profiles.active=postgres -Dspring.aot.enabled=true -XX:SharedArchiveFile=petclinic.jsa -jar spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+
+****************************************************************
+
+Training run CDS (creates petclinic.jsa)
+    Command: java -Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_cds.log:time,uptime,level,tags -Dspring.aot.enabled=true -Dspring.profiles.active=postgres -XX:ArchiveClassesAtExit=petclinic.jsa -jar spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+Training run took 188.0 seconds
+  CDS training run complete. Proceeding with benchmark measurements.
+Starting 3 warm-up runs…
+  Warm-up 1
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing background process 52828
+  Warm-up 2
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing background process 53214
+  Warm-up 3
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing background process 53659
+Starting 7 benchmark runs…
+Swap usage before benchmark: 31 MB
+  Run 1
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 54055
+    Run 1 completed successfully
+    5.655s, 350.7 MB
+    Debug: Run 1 finished, continuing to next run...
+  Run 2
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 54582
+    Run 2 completed successfully
+    5.461s, 364.5 MB
+    Debug: Run 2 finished, continuing to next run...
+  Run 3
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 55031
+    Run 3 completed successfully
+    5.501s, 333.7 MB
+    Debug: Run 3 finished, continuing to next run...
+  Run 4
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 55540
+    Run 4 completed successfully
+    5.52s, 381.4 MB
+    Debug: Run 4 finished, continuing to next run...
+  Run 5
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 55995
+    Run 5 completed successfully
+    6.883s, 351.6 MB
+    Debug: Run 5 finished, continuing to next run...
+  Run 6
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 56509
+    Run 6 completed successfully
+    6.55s, 373.9 MB
+    Debug: Run 6 finished, continuing to next run...
+  Run 7
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 56965
+    Run 7 completed successfully
+    7.577s, 369.6 MB
+    Debug: Run 7 finished, continuing to next run...
+
+--- Swap Usage ---
+Swap before benchmark: 31 MB
+Swap after benchmark:  31 MB
+Swap delta:            0 MB
+Note: System started with 31 MB swap in use (not caused by this benchmark)
+
+--- Benchmark Results ---
+Run,Startup Time (s),Max Memory (MB),Startup GCs,Benchmark GCs,Ran at,Size App (MB),Size Extra (MB)
+1,5.655,350.7,6,2,2026-11-01T12:48:20Z,,
+2,5.461,364.5,4,2,2026-11-01T12:51:16Z,,
+3,5.501,333.7,4,2,2026-11-01T12:54:11Z,,
+4,5.52,381.4,4,2,2026-11-01T12:57:07Z,,
+5,6.883,351.6,6,0,2026-11-01T13:00:03Z,,
+6,6.55,373.9,4,2,2026-11-01T13:03:00Z,,
+7,7.577,369.6,4,2,2026-11-01T13:05:56Z,,
+A,6.0218,362.06,4.4,2,2026-11-01T13:08:54Z,63.8,105.0
+
+Done. Result CSVs: result_cds_jdk27.csv

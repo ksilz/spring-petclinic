@@ -1,0 +1,146 @@
+=== runner: track 25, variant graalvm, pin native-binary, BENCH_WARMUPS=3, BENCH_RUNS=7, commit 58f09f3
+openjdk 25.0.3 2026-04-21 LTS
+OpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)
+OpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)
+spring-petclinic: OK
+default.iprof: OK
+=== runner: sizes app=185.4 MB extra=41.1 MB
+DEBUG: Script started with parameters:
+  JAR_PATH: build/native/nativeCompile/spring-petclinic
+  LABEL: graalvm
+  AOT_FLAG: -Dspring.aot.enabled=true
+  TRAINING_MODE: 
+  SCRIPT_START_TIME: 1793531144
+  PID: 33753
+  PPID: 33707
+  Command: ./benchmark.sh build/native/nativeCompile/spring-petclinic graalvm -Dspring.aot.enabled=true  185.4 41.1
+DEBUG: End of debug info
+
+DEBUG: Configuration set:
+  WARMUPS: 3
+  RUNS: 7
+  CSV_FILE: result_graalvm.csv
+DEBUG: End of configuration debug
+
+
+****************************************************************
+
+Running application
+
+-> ./build/native/nativeCompile/spring-petclinic -XX:+PrintGC -XX:+VerboseGC -Dspring.profiles.active=postgres
+
+****************************************************************
+
+Found existing native spring-petclinic processes: 33756
+  Skipping native process cleanup during GraalVM benchmark (training already cleaned up)
+Starting 3 warm-up runs…
+  Warm-up 1
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 33761
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 33761
+  Warm-up 2
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 34225
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 34225
+  Warm-up 3
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 34684
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 34684
+Starting 7 benchmark runs…
+Swap usage before benchmark: 2 MB
+  Run 1
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 35107
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 35107
+    Run 1 completed successfully
+    0.368s, 199.9 MB
+    Debug: Run 1 finished, continuing to next run...
+  Run 2
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 35568
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 35568
+    Run 2 completed successfully
+    0.343s, 199.6 MB
+    Debug: Run 2 finished, continuing to next run...
+  Run 3
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 36083
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 36083
+    Run 3 completed successfully
+    0.357s, 200.9 MB
+    Debug: Run 3 finished, continuing to next run...
+  Run 4
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 36544
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 36544
+    Run 4 completed successfully
+    0.346s, 200.6 MB
+    Debug: Run 4 finished, continuing to next run...
+  Run 5
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 36997
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 36997
+    Run 5 completed successfully
+    0.34s, 200.7 MB
+    Debug: Run 5 finished, continuing to next run...
+  Run 6
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 37515
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 37515
+    Run 6 completed successfully
+    0.368s, 200.1 MB
+    Debug: Run 6 finished, continuing to next run...
+  Run 7
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 37969
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 37969
+    Run 7 completed successfully
+    0.355s, 200.1 MB
+    Debug: Run 7 finished, continuing to next run...
+
+--- Swap Usage ---
+Swap before benchmark: 2 MB
+Swap after benchmark:  2 MB
+Swap delta:            0 MB
+Note: System started with 2 MB swap in use (not caused by this benchmark)
+
+--- Benchmark Results ---
+Run,Startup Time (s),Max Memory (MB),Startup GCs,Benchmark GCs,Ran at,Size App (MB),Size Extra (MB)
+1,0.368,199.9,8,8,2026-11-01T11:14:10Z,,
+2,0.343,199.6,8,8,2026-11-01T11:16:58Z,,
+3,0.357,200.9,8,8,2026-11-01T11:19:46Z,,
+4,0.346,200.6,8,8,2026-11-01T11:22:34Z,,
+5,0.34,200.7,8,8,2026-11-01T11:25:23Z,,
+6,0.368,200.1,8,8,2026-11-01T11:28:11Z,,
+7,0.355,200.1,8,8,2026-11-01T11:30:59Z,,
+A,0.3538,200.28,8,8,2026-11-01T11:33:47Z,185.4,41.1

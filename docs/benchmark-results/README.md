@@ -10,3 +10,4 @@ Runs:
 
 - `2026-05-01-boot-4.0.3-jdk25/` - full run (3 warm-ups + 7 runs) on Spring Boot 4.0.3 and JDK 25.0.3.
 - `2026-10-31-verification-boot-4.1.2/` - verification run (1 warm-up + 3 runs) on Spring Boot 4.1.2, JDK 25.0.5 and JDK 27. Not the official benchmark.
+- `2026-11-01-boot-4.1.2-jdk25-jdk27/` - **official run** (3 warm-ups + 7 runs) on Spring Boot 4.1.2, JDK 25.0.5 and JDK 27, with the German report `benchmark-bericht.html`.

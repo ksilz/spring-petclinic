@@ -1,0 +1,5 @@
+Reading AOTConfiguration petclinic.aotconf and writing AOTCache petclinic.aot
+[4.269s][warning][aot] Skipping org/springframework/core/ReactiveAdapterRegistry$ReactorAdapter: Unlinked class not supported by AOTClassLinking
+[4.270s][warning][aot] Skipping org/springframework/boot/logging/log4j2/Log4J2LoggingSystem: Unlinked class not supported by AOTClassLinking
+[4.270s][warning][aot] Skipping org/springframework/web/servlet/view/freemarker/FreeMarkerView: Unlinked class not supported by AOTClassLinking
+AOTCache creation is complete: petclinic.aot 140197888 bytes
