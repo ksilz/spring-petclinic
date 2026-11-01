@@ -497,10 +497,13 @@ done
 if [[ ${#executed_stages[@]} -gt 0 ]]; then
   csv_files=""
   for stage in "${executed_stages[@]}"; do
-    # Only count CSVs that were modified in the last 5 minutes (i.e., from this run)
-    if [[ -f "result_${stage}${CSV_SUFFIX}.csv" && $(find "result_${stage}${CSV_SUFFIX}.csv" -mmin -5) ]]; then
-      csv_files="$csv_files result_${stage}${CSV_SUFFIX}.csv"
-    fi
+    # Only count CSVs that were modified in the last 5 minutes (i.e., from this run).
+    # Smoke tests (BENCH_WARMUPS/BENCH_RUNS other than 3/7) write result_<label>[_jdk27]_smoke.csv.
+    for csv in "result_${stage}${CSV_SUFFIX}.csv" "result_${stage}${CSV_SUFFIX}_smoke.csv"; do
+      if [[ -f "$csv" && $(find "$csv" -mmin -5) ]]; then
+        csv_files="$csv_files $csv"
+      fi
+    done
   done
   if [[ -n "$csv_files" ]]; then
     echo "Done. Result CSVs:$csv_files"

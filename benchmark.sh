@@ -198,7 +198,6 @@ CSV_SUFFIX=""
 if [[ "$JDK_TRACK" != "25" ]]; then
   CSV_SUFFIX="_jdk${JDK_TRACK}"
 fi
-CSV_FILE="result_${LABEL}${CSV_SUFFIX}.csv"
 WARMUPS="${BENCH_WARMUPS:-3}"
 RUNS="${BENCH_RUNS:-7}"
 if ! [[ "$WARMUPS" =~ ^[0-9]+$ ]]; then
@@ -211,14 +210,21 @@ if ! [[ "$RUNS" =~ ^[0-9]+$ ]] || (( 10#$RUNS < 3 )); then
 fi
 WARMUPS=$((10#$WARMUPS))
 RUNS=$((10#$RUNS))
+# Smoke tests (non-default run counts) write their own CSV, so they never overwrite an
+# official result and can't be mistaken for one.
+SMOKE_SUFFIX=""
+if [[ "$WARMUPS" -ne 3 || "$RUNS" -ne 7 ]]; then
+  SMOKE_SUFFIX="_smoke"
+fi
+CSV_FILE="result_${LABEL}${CSV_SUFFIX}${SMOKE_SUFFIX}.csv"
 
 # Debug information for configuration
 echo "DEBUG: Configuration set:"
 echo "  WARMUPS: $WARMUPS"
 echo "  RUNS: $RUNS"
 echo "  CSV_FILE: $CSV_FILE"
-if [[ "$WARMUPS" -ne 3 || "$RUNS" -ne 7 ]]; then
-  echo "NOTE: non-default run counts (smoke test): WARMUPS=$WARMUPS, RUNS=$RUNS"
+if [[ -n "$SMOKE_SUFFIX" ]]; then
+  echo "NOTE: non-default run counts (smoke test): WARMUPS=$WARMUPS, RUNS=$RUNS. Writing $CSV_FILE."
 fi
 echo "DEBUG: End of configuration debug"
 echo
