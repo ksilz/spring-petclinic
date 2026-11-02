@@ -199,6 +199,7 @@ footer { color: var(--muted); font-size: 14px; border-top: 1px solid var(--grid)
     <div class="toc-title">Inhalt</div>
     <ol>
       <li><a href="#ueberblick">Startzeit auf einen Blick</a></li>
+      <li id="toc-proc" hidden><a href="#prozessstart">Startzeit ab Prozessstart</a></li>
       <li><a href="#speicher">Speicherverbrauch</a></li>
       <li><a href="#gc">Garbage Collections</a></li>
       <li><a href="#groessen">Größen und Build</a></li>
@@ -244,12 +245,15 @@ const DATA = /*__DATA__*/null;
   };
   const METRICS = {
     startup: { label: "Startzeit", unit: "s", get: r => r.A.startup, fmt: fmtStartup, full: fmtStartupFull, lowerIsBetter: true },
+    startupProc: { label: "Startzeit ab Prozessstart", unit: "s", get: r => r.A.startupProc, fmt: fmtStartup, full: fmtStartupFull, lowerIsBetter: true },
     mem: { label: "Maximaler Speicherverbrauch", unit: "MB", get: r => r.A.mem, fmt: fmtMem, full: v => fmt(v, 1), lowerIsBetter: true },
     gcStart: { label: "Garbage Collections beim Start", unit: "", get: r => r.A.gcStart, fmt: fmtGc, full: v => fmt(v, 1), lowerIsBetter: true },
     gcBench: { label: "Garbage Collections im Benchmark", unit: "", get: r => r.A.gcBench, fmt: fmtGc, full: v => fmt(v, 1), lowerIsBetter: true },
   };
   const res = (track, v) => (D.tracks[track] && D.tracks[track].results[v]) || null;
-  const val = (track, v, m) => { const r = res(track, v); return r ? METRICS[m].get(r) : null; };
+  const val = (track, v, m) => { const r = res(track, v); const x = r ? METRICS[m].get(r) : null; return x === undefined ? null : x; };
+  // Startup time from process start: only in CSVs written by benchmark.sh since 2026-11-02
+  const hasProc = Object.values(D.tracks).some(t => Object.values(t.results).some(r => r.A && r.A.startupProc != null));
 
   // ---------- tiny DOM helpers ----------
   const el = (tag, attrs = {}, ...kids) => {
@@ -435,6 +439,14 @@ const DATA = /*__DATA__*/null;
       "Sechs Wege, Spring PetClinic zu starten, auf einer logarithmischen Zeitachse: jeder Teilstrich ist ein Faktor. Faktor = Baseline auf JDK 25 geteilt durch die Startzeit der Variante auf JDK 25.",
       [[null, { rows: metricRows("startup"), log: true, unit: "s", fmtVal: fmtStartupFull, aria: "Startzeit je Variante, logarithmische Achse",
         third: { label: "Faktor", value: r => (r.a && base25) ? (base25 / r.a < 10 ? fmt(base25 / r.a, 1) : fmt(base25 / r.a, 0)) + "×" : null } }]]));
+    if (hasProc) {
+      const baseP = val("25", "baseline", "startupProc");
+      app.append(ladderSection("prozessstart", "Startzeit ab Prozessstart",
+        "Wie oben, aber ab dem Start des Prozesses gezählt, also mit dem Start der JVM und allem vor Spring Boot (bei Leyden und CDS zum Beispiel das Laden des Caches). Spring Boot meldet diese Zeit in derselben Zeile („process running for …“). Bei CRaC ist der Wert derselbe wie oben. Faktor = Baseline auf JDK 25 geteilt durch die Variante auf JDK 25.",
+        [[null, { rows: metricRows("startupProc"), log: true, unit: "s", fmtVal: fmtStartupFull, aria: "Startzeit ab Prozessstart je Variante, logarithmische Achse",
+          third: { label: "Faktor", value: r => (r.a && baseP) ? (baseP / r.a < 10 ? fmt(baseP / r.a, 1) : fmt(baseP / r.a, 0)) + "×" : null } }]]));
+      document.getElementById("toc-proc").hidden = false;
+    }
   }
 
   // 2. Memory, garbage collections (linear from 0, change JDK 27 vs 25)
@@ -499,14 +511,18 @@ const DATA = /*__DATA__*/null;
         const st = r.stats;
         const sum = `A ${fmtStartupFull(r.A.startup)} s, Median ${fmtStartupFull(st.median)} s, Spanne ${fmtStartupFull(st.min)} bis ${fmtStartupFull(st.max)} s, ${r.runs.length} Läufe`;
         const body = el("div", { class: "body" }, el("div", { class: "tablewrap" }, el("table", {},
-          el("thead", {}, el("tr", {}, el("th", {}, "Lauf"), el("th", { class: "num" }, "Startzeit (s)"), el("th", { class: "num" }, "Speicher (MB)"),
+          el("thead", {}, el("tr", {}, el("th", {}, "Lauf"), el("th", { class: "num" }, "Startzeit (s)"),
+            hasProc ? el("th", { class: "num" }, "Ab Prozessstart (s)") : null, el("th", { class: "num" }, "Speicher (MB)"),
             el("th", { class: "num" }, "GCs Startup"), el("th", { class: "num" }, "GCs Benchmark"), el("th", { class: "num" }, "Zeitpunkt (UTC)"))),
           el("tbody", {},
-            r.runs.map(x => el("tr", {}, el("td", {}, String(x.run)), el("td", { class: "num" }, fmtStartupFull(x.startup)), el("td", { class: "num" }, fmt(x.mem, 1)),
+            r.runs.map(x => el("tr", {}, el("td", {}, String(x.run)), el("td", { class: "num" }, fmtStartupFull(x.startup)),
+              hasProc ? el("td", { class: "num" }, fmtStartupFull(x.startupProc)) : null, el("td", { class: "num" }, fmt(x.mem, 1)),
               el("td", { class: "num" }, fmtGc(x.gcStart)), el("td", { class: "num" }, fmtGc(x.gcBench)), el("td", { class: "num" }, x.ranAt.replace("T", " ").replace("Z", "")))),
-            el("tr", {}, el("th", { scope: "row" }, "A"), el("td", { class: "num" }, el("b", {}, fmtStartupFull(r.A.startup))), el("td", { class: "num" }, el("b", {}, fmt(r.A.mem, 1))),
+            el("tr", {}, el("th", { scope: "row" }, "A"), el("td", { class: "num" }, el("b", {}, fmtStartupFull(r.A.startup))),
+              hasProc ? el("td", { class: "num" }, el("b", {}, fmtStartupFull(r.A.startupProc))) : null, el("td", { class: "num" }, el("b", {}, fmt(r.A.mem, 1))),
               el("td", { class: "num" }, el("b", {}, fmt(r.A.gcStart, 1))), el("td", { class: "num" }, el("b", {}, fmt(r.A.gcBench, 1))), el("td", {}, "")),
-            el("tr", {}, el("th", { scope: "row" }, "Median"), el("td", { class: "num" }, fmtStartupFull(st.median)), el("td", { class: "num" }, fmt(st.memMedian, 1)), el("td", {}, ""), el("td", {}, ""), el("td", {}, ""))))));
+            el("tr", {}, el("th", { scope: "row" }, "Median"), el("td", { class: "num" }, fmtStartupFull(st.median)),
+              hasProc ? el("td", {}, "") : null, el("td", { class: "num" }, fmt(st.memMedian, 1)), el("td", {}, ""), el("td", {}, ""), el("td", {}, ""))))));
         sec.append(el("details", {}, el("summary", {}, v.name, el("span", { class: "sum" }, sum)), body));
       }
     }
@@ -552,8 +568,11 @@ const DATA = /*__DATA__*/null;
       el("h2", {}, "Zahlen für Keynote"),
       el("p", { class: "intro" }, "Die Werte in der Reihenfolge und Rundung der Folien, im Zahlenformat, das der Schalter wählt. Ein Klick auf eine Zahl kopiert sie genau so. „Diagrammdaten kopieren“ kopiert die ganze Tabelle mit Tabulatoren, passend zum Einfügen in den Diagrammdaten-Editor von Keynote. Alle Werte sind Zeile A, das getrimmte Mittel ohne den kleinsten und den größten Wert."),
       decimalSwitch());
-    for (const [mk, title, unitNote] of [["startup", "Startzeit", "in Sekunden"], ["mem", "Maximaler Speicherverbrauch", "in MB"],
-      ["gcStart", "Garbage Collections: Startup", "Anzahl GC-Pausen"], ["gcBench", "Garbage Collections: Benchmark", "Anzahl GC-Pausen"]]) {
+    const sheets = [["startup", "Startzeit", "in Sekunden"]]
+      .concat(hasProc ? [["startupProc", "Startzeit ab Prozessstart", "in Sekunden"]] : [])
+      .concat([["mem", "Maximaler Speicherverbrauch", "in MB"],
+        ["gcStart", "Garbage Collections: Startup", "Anzahl GC-Pausen"], ["gcBench", "Garbage Collections: Benchmark", "Anzahl GC-Pausen"]]);
+    for (const [mk, title, unitNote] of sheets) {
       const m = METRICS[mk];
       const tsv = () => ["\t" + VARIANTS.map(v => v.name).join("\t")]
         .concat(TRACKS.map(t => SERIES[t].label + "\t" + VARIANTS.map(v => { const x = val(t, v.key, mk); return x == null ? "" : toCopy(m.fmt(x)); }).join("\t")))

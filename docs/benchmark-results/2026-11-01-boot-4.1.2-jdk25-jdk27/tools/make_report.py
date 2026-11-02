@@ -36,27 +36,34 @@ def num(s):
         return None
 
 
-# benchmark.sh counts GC log lines that contain "Pause". G1 (JVM and native image) writes two of
-# them per pause, a start line and an end line, so the report divides by 2 to show pauses.
+# Before 2026-11-02, benchmark.sh counted GC log lines that contain "Pause" (columns "Startup GCs" /
+# "Benchmark GCs"). G1 (JVM and native image) writes two of them per pause, a start line and an end
+# line, so the report divides those by 2. Since 2026-11-02 the CSV counts pauses directly (columns
+# "Startup GC Pauses" / "Benchmark GC Pauses") and adds column 9, the startup time from process start.
 GC_LINES_PER_PAUSE = 2
-
-
-def pauses(s):
-    v = num(s)
-    return None if v is None else v / GC_LINES_PER_PAUSE
 
 
 def read_csv(path):
     rows = list(csv.reader(open(path)))
-    body = rows[1:]
+    header, body = rows[0], rows[1:]
+    divisor = 1 if "Pauses" in header[3] else GC_LINES_PER_PAUSE
+
+    def pauses(s):
+        v = num(s)
+        return None if v is None else v / divisor
+
+    def proc(r):
+        return num(r[8]) if len(r) > 8 else None
+
     runs, a = [], None
     for r in body:
         if r[0] == "A":
             a = {"startup": num(r[1]), "mem": num(r[2]), "gcStart": pauses(r[3]), "gcBench": pauses(r[4]),
-                 "sizeApp": num(r[6]) if len(r) > 6 else None, "sizeExtra": num(r[7]) if len(r) > 7 else None}
+                 "sizeApp": num(r[6]) if len(r) > 6 else None, "sizeExtra": num(r[7]) if len(r) > 7 else None,
+                 "startupProc": proc(r)}
         else:
             runs.append({"run": int(r[0]), "startup": num(r[1]), "mem": num(r[2]), "gcStart": pauses(r[3]),
-                         "gcBench": pauses(r[4]), "ranAt": r[5]})
+                         "gcBench": pauses(r[4]), "ranAt": r[5], "startupProc": proc(r)})
     st = [x["startup"] for x in runs if x["startup"] is not None]
     mem = [x["mem"] for x in runs if x["mem"] is not None]
     stats = {"median": statistics.median(st), "min": min(st), "max": max(st), "memMedian": statistics.median(mem)}
