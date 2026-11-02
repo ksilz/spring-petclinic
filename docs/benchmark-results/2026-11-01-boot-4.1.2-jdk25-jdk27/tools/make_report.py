@@ -36,17 +36,27 @@ def num(s):
         return None
 
 
+# benchmark.sh counts GC log lines that contain "Pause". G1 (JVM and native image) writes two of
+# them per pause, a start line and an end line, so the report divides by 2 to show pauses.
+GC_LINES_PER_PAUSE = 2
+
+
+def pauses(s):
+    v = num(s)
+    return None if v is None else v / GC_LINES_PER_PAUSE
+
+
 def read_csv(path):
     rows = list(csv.reader(open(path)))
     body = rows[1:]
     runs, a = [], None
     for r in body:
         if r[0] == "A":
-            a = {"startup": num(r[1]), "mem": num(r[2]), "gcStart": num(r[3]), "gcBench": num(r[4]),
+            a = {"startup": num(r[1]), "mem": num(r[2]), "gcStart": pauses(r[3]), "gcBench": pauses(r[4]),
                  "sizeApp": num(r[6]) if len(r) > 6 else None, "sizeExtra": num(r[7]) if len(r) > 7 else None}
         else:
-            runs.append({"run": int(r[0]), "startup": num(r[1]), "mem": num(r[2]), "gcStart": num(r[3]),
-                         "gcBench": num(r[4]), "ranAt": r[5]})
+            runs.append({"run": int(r[0]), "startup": num(r[1]), "mem": num(r[2]), "gcStart": pauses(r[3]),
+                         "gcBench": pauses(r[4]), "ranAt": r[5]})
     st = [x["startup"] for x in runs if x["startup"] is not None]
     mem = [x["mem"] for x in runs if x["mem"] is not None]
     stats = {"median": statistics.median(st), "min": min(st), "max": max(st), "memMedian": statistics.median(mem)}
@@ -168,10 +178,11 @@ def build_data(args):
         build = parse_build(res / "graalvm-build.log")
         steal = steal_stats(res / "mem.log")
         run_notes = [
-            "<b>Messqualität:</b> Der Messserver ist eine AWS-t3-Instanz mit geteilter CPU. Kurze CPU-Steal-Spitzen trafen "
-            "einzelne Messläufe; Zeile A lässt den schnellsten und den langsamsten Lauf weg. Tuning + CDS auf JDK 27 streute stark "
-            "und wurde neu gemessen: erster Lauf A 6,02 s (Median 5,66 s), Neumessung A 5,93 s (Median 6,00 s). Dieser Bericht "
-            "zeigt die Neumessung; der erste Lauf liegt im Repository unter <code>jdk27/first-attempt/</code>.",
+            "<b>Messqualität:</b> Der Messserver ist eine AWS-t3-Instanz mit geteilter CPU. Einzelne Läufe sind deutlich langsamer "
+            "als die übrigen. Bei drei davon zeigt das Protokoll eine CPU-Steal-Spitze, bei den anderen nicht (es misst nur "
+            "alle 15 Sekunden). Zeile A lässt den schnellsten und den langsamsten Lauf weg. Tuning + CDS auf JDK 27 streute stark "
+            "und wurde neu gemessen: erster Versuch A 6,02 s (Median 5,66 s), Neumessung A 5,93 s (Median 6,00 s). Dieser Bericht "
+            "zeigt die Neumessung; der erste Versuch liegt im Repository unter <code>jdk27/first-attempt/</code>.",
         ]
         run_date = args.run_date
         method = {"warmups": 3, "runs": 7}
@@ -236,8 +247,11 @@ def build_data(args):
         "<b>Leyden auf JDK 27:</b> cacht weiterhin keinen Maschinencode. Neu gegenüber JDK 25 ist das Objekt-Caching mit jedem Garbage Collector.",
     ]
     if not preview:
-        jdk_notes.append("<b>Speicher der Baseline auf JDK 27:</b> Der Verifikationslauf vom 31. Oktober (3 Messläufe) zeigte 628 MB. "
-                         "Mit 7 Messläufen sind es 469 MB; der Ausreißer hat sich nicht bestätigt.")
+        jdk_notes.append("<b>Speicher auf JDK 27:</b> Baseline und Tuning haben zwei Niveaus. Baseline: 5 Läufe mit 427 bis 434 MB, "
+                         "2 Läufe mit 619 und 620 MB (der Verifikationslauf vom 31. Oktober hatte 2 von 3 Läufen so hoch). "
+                         "Tuning: 4 Läufe mit 447 bis 458 MB, 3 Läufe mit 525 bis 536 MB. Die hohen Läufe hatten im Schnitt etwas "
+                         "weniger GC-Pausen. Zeile A enthält bei Baseline einen hohen Wert (469 MB), bei Tuning zwei (481 MB); der Median "
+                         "liegt bei 433 und 458 MB. Auf JDK 25 gibt es diese Spaltung nicht.")
     method_text = [
         ["Anwendung", "Spring PetClinic (Fork), Spring Boot 4.1.2, Gradle 9.5.1, PostgreSQL-Profil mit Datenbank auf demselben Server."],
         ["Varianten", "Baseline: <code>java -jar</code> ohne Spring AOT. Tuning: entpacktes JAR mit Spring AOT. Tuning + CDS: zusätzlich "
@@ -246,22 +260,32 @@ def build_data(args):
         ["Ablauf je Variante", f"Build, bei CDS, Leyden und CRaC ein Trainingslauf, dann {method['warmups']} "
                                f"{'Aufwärmlauf' if method['warmups'] == 1 else 'Aufwärmläufe'} und "
                                f"{method['runs']} Messläufe. Jeder Lauf startet die Anwendung neu."],
-        ["Last je Lauf", "Nach dem Start 5 Runden über 11 Seiten, also 55 Anfragen mit je 3 Sekunden Pause davor. Jede Seite muss "
-                         "HTTP 200 liefern, nur <code>/oups</code> (absichtlicher Fehler) HTTP 500, sonst bricht der Lauf ab."],
-        ["Startzeit", "Die Zeit, die Spring Boot selbst meldet („Started PetClinicApplication in … seconds“). Bei CRaC: "
-                      "„restored JVM running for … ms“ nach dem Wiederherstellen."],
+        ["Last je Lauf", "Nach dem Start 5 Runden über 11 Aufrufe (10 verschiedene Seiten), also 55 Anfragen mit je 3 Sekunden Pause "
+                         "davor. Jede Seite muss HTTP 200 liefern, nur <code>/oups</code> (absichtlicher Fehler) HTTP 500, sonst bricht der Lauf ab."],
+        ["Startzeit", "Die Zeit, die die Anwendung selbst meldet, wie im Mai. JVM-Varianten und GraalVM: „Started PetClinicApplication "
+                      "in … seconds“. Diese Uhr läuft erst ab dem Start von Spring Boot; der Start der JVM davor fehlt. Im letzten Lauf waren "
+                      "das 0,4 bis 1,4 s (am meisten bei Baseline), bei GraalVM 6 ms. CRaC: „restored JVM running for … ms“, gezählt ab dem "
+                      "Start des Prozesses, also mit dem Wiederherstellen."],
         ["Speicher", "Maximale Resident Set Size des Prozesses über den ganzen Lauf, gemessen mit <code>/usr/bin/time -v</code>."],
-        ["Garbage Collections", "Zeilen im GC-Log, die „Pause“ enthalten, getrennt vor und nach dem Start. G1 schreibt je Pause eine "
-                                "Start- und eine Endzeile; die Zahl ist also etwa doppelt so groß wie die Zahl der Pausen. Gleiche Regel für alle Varianten."],
-        ["Kennzahl A", "Getrimmtes Mittel: Der schnellste und der langsamste Lauf fallen weg, der Rest wird gemittelt. Diese Zahl steht auf den Folien."],
+        ["Garbage Collections", "Anzahl der GC-Pausen, getrennt vor und nach dem Start. Jede Pause zählt: Young Collections und die zwei "
+                                "kurzen Pausen jeder Markierungsrunde von G1 (Remark, Cleanup). Gleiche Regel für alle Varianten. Bei den "
+                                "JVM-Varianten trennt das Skript vor und nach dem Start nur auf die Sekunde genau: Eine Pause kurz vor dem Start "
+                                "zählt manchmal zum Benchmark, und eine Pause über eine Sekundengrenze zählt halb zu jeder Seite. Die Summe "
+                                "stimmt. GraalVM trennt auf die Millisekunde genau."],
+        ["Kennzahl A", "Getrimmtes Mittel je Kennzahl: Der kleinste und der größte Wert fallen weg, der Rest wird gemittelt. Bei der "
+                       "Startzeit sind das der schnellste und der langsamste Lauf; Speicher und GC-Pausen werden jeweils für sich getrimmt. "
+                       "Diese Zahl steht auf den Folien."],
         ["JVM-Einstellungen", "<code>-Xms256m -Xmx768m -XX:+UseG1GC</code>, Profil <code>postgres</code>. CRaC übernimmt die Einstellungen "
-                              "aus dem Checkpoint. GraalVM: G1, Einstellungen zur Build-Zeit."],
-        ["Server", "Alle Messungen auf einem AWS t3.small (2 vCPU, 1,9 GB RAM, 2 GB Swap), wie im Mai. Das Native Image entsteht auf "
+                              "aus dem Checkpoint. GraalVM: G1 mit höchstens 128 MB Heap, zur Build-Zeit festgelegt; dazu kommen rund 83 MB "
+                              "Objekte, die beim Build entstanden und in der Anwendung liegen."],
+        ["Server", "Alle Messungen auf einem AWS t3.small (2 vCPU, 2 GB RAM, 2 GB Swap), wie im Mai. Das Native Image entsteht auf "
                    "einem t3.2xlarge (8 vCPU, 32 GB RAM) und wird kopiert."],
-        ["Störungen", "Server vorher neu gestartet, automatische Updates pausiert, keine anderen Anwendungen. Der Gradle-Daemon "
-                      "aus dem Build läuft während der Messung im Leerlauf weiter (wie im Mai, so arbeitet compile-and-run.sh). "
-                      + (f"CPU-Steal im Lauf: im Mittel {de(steal['avg'], 2)} %, höchstens {steal['max']} % ({steal['n']} Stichproben)."
-                         if steal else "")],
+        ["Störungen", "Server vorher neu gestartet, automatische Updates pausiert, keine anderen Anwendungen. Bei Baseline, Tuning, "
+                      "CDS und Leyden läuft der Gradle-Daemon aus dem Build während der Messung im Leerlauf weiter (wie im Mai, so "
+                      "arbeitet compile-and-run.sh). CRaC baut ohne Daemon, GraalVM baut nicht auf dem Messserver. "
+                      + (f"CPU-Steal im Lauf: im Mittel {de(steal['avg'], 2)} %, höchstens {steal['max']} % ({steal['n']} Stichproben). "
+                         if steal else "")
+                      + ("" if preview else "Swap: auf JDK 25 höchstens 3 MB belegt, auf JDK 27 bis zu 84 MB.")],
     ]
     versions = [
         ["Spring Boot", "4.1.2", "4.1.2"],
@@ -271,11 +295,11 @@ def build_data(args):
         ["GraalVM", "Oracle GraalVM 25.0.5.0.3, native-image 25.0.5.0.3 (<code>25.0.5.0+3-graal</code>)", "n/a"],
         ["GraalVM Native Build Tools", "1.1.2", "–"],
         ["Gradle", "9.5.1", "9.5.1"],
-        ["CRIU", "4.1.1, CRaC-Engine warp", "4.1.1, CRaC-Engine warp"],
+        ["CRaC-Engine", "warp (braucht kein CRIU)", "warp (braucht kein CRIU)"],
         ["PostgreSQL", "16.15 auf dem Messserver", "16.15 auf dem Messserver"],
         ["Betriebssystem", "Ubuntu 24.04.4 LTS, Kernel 7.0.0-1014-aws, glibc 2.39-0ubuntu8.9", "wie JDK 25"],
-        ["Messserver", "AWS t3.small, 2 vCPU Intel Xeon Platinum 8259CL @ 2,50 GHz, 1,9 GB RAM, 2 GB Swap", "wie JDK 25"],
-        ["Build-Server (Native Image)", "AWS t3.2xlarge, 8 vCPU, 31 GB RAM, kein Swap", "–"],
+        ["Messserver", "AWS t3.small, 2 vCPU Intel Xeon Platinum 8259CL @ 2,50 GHz, 2 GB RAM (1,9 GB nutzbar), 2 GB Swap", "wie JDK 25"],
+        ["Build-Server (Native Image)", "AWS t3.2xlarge, 8 vCPU, 32 GB RAM (31 GB nutzbar), kein Swap", "–"],
     ]
     rss = build.get("rss")
     build_rows = [
@@ -288,10 +312,12 @@ def build_data(args):
     ]
     notes = [
         "Alle Werte auf den Folien sind Zeile A (getrimmtes Mittel). Median, Spanne und jeder einzelne Lauf stehen unter „Einzelmessungen“.",
-        "GraalVM startet langsamer als auf den alten Folien, weil das Native Image jetzt wie alle JVM-Varianten <code>schema.sql</code> "
-        "und <code>data.sql</code> beim Start ausführt. Vorher fehlten die Skripte im Native Image (behoben im Upstream-Commit <code>a2c2ef9</code>).",
+        "GraalVM startet langsamer als auf den alten Folien (0,354 s statt 0,287 s). Etwa die Hälfte davon kommt daher, dass das "
+        "Native Image jetzt wie alle JVM-Varianten <code>schema.sql</code> und <code>data.sql</code> beim Start ausführt; vorher "
+        "fehlten die Skripte im Native Image (behoben im Upstream-Commit <code>a2c2ef9</code>). Den Rest kostet das Upgrade "
+        "(Spring Boot 4.1.2, Hibernate 7.4, GraalVM 25.0.5), ähnlich wie bei den JVM-Varianten.",
         "GraalVM-GCs werden seit dem 1. November gezählt; die 0 auf den alten Folien war ein Fehler im Messskript. Das Native Image "
-        "schreibt sein GC-Log auf die Standardausgabe, das Skript las vorher eine leere Datei.",
+        "schreibt sein GC-Log auf die Standardausgabe, das Skript suchte es vorher in einer Datei, die nie entstand.",
         "Die Größen von CDS-Archiv, Leyden-Cache und CRaC-Checkpoint stehen seit dem 1. November auch im CSV (vorher immer 0,0).",
         "Vor dem Lauf wurden 4.137 doppelte Indizes aus der Datenbank des Messservers entfernt, die die alte <code>schema.sql</code> angelegt hatte.",
         "Die Speicherwerte sind Resident Set Size, nicht Heap. CRaC zeigt den Speicher des wiederhergestellten Prozesses.",

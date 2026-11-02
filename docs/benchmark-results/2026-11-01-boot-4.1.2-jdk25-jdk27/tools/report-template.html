@@ -442,7 +442,7 @@ const DATA = /*__DATA__*/null;
     "Maximale Resident Set Size des Prozesses über den ganzen Lauf, in MB. Rechts die Änderung von JDK 27 gegenüber JDK 25.",
     [[null, { rows: metricRows("mem"), unit: "MB", fmtVal: v => fmt(v, 0), aria: "Maximaler Speicherverbrauch je Variante", third: delta }]]));
   app.append(ladderSection("gc", "Garbage Collections",
-    "GC-Pausen-Logzeilen vor dem Start und während der Seitenlast. G1 schreibt je Pause zwei Zeilen.",
+    "Anzahl der GC-Pausen vor dem Start und während der Seitenlast.",
     [["Beim Start", { rows: metricRows("gcStart"), unit: "", fmtVal: fmtGc, aria: "Garbage Collections beim Start", third: delta }],
      ["Im Benchmark", { rows: metricRows("gcBench"), unit: "", fmtVal: fmtGc, aria: "Garbage Collections im Benchmark", third: delta }]]));
 
@@ -490,7 +490,7 @@ const DATA = /*__DATA__*/null;
   // 6. Single runs
   {
     const sec = el("section", { id: "einzeln" }, el("h2", {}, "Einzelmessungen"),
-      el("p", { class: "intro" }, `Jeder Messlauf einzeln, nach ${D.method.warmups} ${D.method.warmups === 1 ? "Aufwärmlauf" : "Aufwärmläufen"}. A ist das getrimmte Mittel ohne schnellsten und langsamsten Lauf; diese Zahl steht auf den Folien.`));
+      el("p", { class: "intro" }, `Jeder Messlauf einzeln, nach ${D.method.warmups} ${D.method.warmups === 1 ? "Aufwärmlauf" : "Aufwärmläufen"}. A ist das getrimmte Mittel: Je Spalte fallen der kleinste und der größte Wert weg. Diese Zahl steht auf den Folien.`));
     for (const t of TRACKS) {
       sec.append(el("h3", {}, el("span", { class: "key", style: `display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;background:${SERIES[t].color}` }), SERIES[t].label));
       for (const v of VARIANTS) {
@@ -503,7 +503,7 @@ const DATA = /*__DATA__*/null;
             el("th", { class: "num" }, "GCs Startup"), el("th", { class: "num" }, "GCs Benchmark"), el("th", { class: "num" }, "Zeitpunkt (UTC)"))),
           el("tbody", {},
             r.runs.map(x => el("tr", {}, el("td", {}, String(x.run)), el("td", { class: "num" }, fmtStartupFull(x.startup)), el("td", { class: "num" }, fmt(x.mem, 1)),
-              el("td", { class: "num" }, fmt(x.gcStart, 0)), el("td", { class: "num" }, fmt(x.gcBench, 0)), el("td", { class: "num" }, x.ranAt.replace("T", " ").replace("Z", "")))),
+              el("td", { class: "num" }, fmtGc(x.gcStart)), el("td", { class: "num" }, fmtGc(x.gcBench)), el("td", { class: "num" }, x.ranAt.replace("T", " ").replace("Z", "")))),
             el("tr", {}, el("th", { scope: "row" }, "A"), el("td", { class: "num" }, el("b", {}, fmtStartupFull(r.A.startup))), el("td", { class: "num" }, el("b", {}, fmt(r.A.mem, 1))),
               el("td", { class: "num" }, el("b", {}, fmt(r.A.gcStart, 1))), el("td", { class: "num" }, el("b", {}, fmt(r.A.gcBench, 1))), el("td", {}, "")),
             el("tr", {}, el("th", { scope: "row" }, "Median"), el("td", { class: "num" }, fmtStartupFull(st.median)), el("td", { class: "num" }, fmt(st.memMedian, 1)), el("td", {}, ""), el("td", {}, ""), el("td", {}, ""))))));
@@ -550,10 +550,10 @@ const DATA = /*__DATA__*/null;
   {
     const sec = el("section", { id: "keynote", class: "sheet" },
       el("h2", {}, "Zahlen für Keynote"),
-      el("p", { class: "intro" }, "Die Werte in der Reihenfolge und Rundung der Folien, im Zahlenformat, das der Schalter wählt. Ein Klick auf eine Zahl kopiert sie genau so. „Diagrammdaten kopieren“ kopiert die ganze Tabelle mit Tabulatoren, passend zum Einfügen in den Diagrammdaten-Editor von Keynote. Alle Werte sind Zeile A, das getrimmte Mittel ohne schnellsten und langsamsten Lauf."),
+      el("p", { class: "intro" }, "Die Werte in der Reihenfolge und Rundung der Folien, im Zahlenformat, das der Schalter wählt. Ein Klick auf eine Zahl kopiert sie genau so. „Diagrammdaten kopieren“ kopiert die ganze Tabelle mit Tabulatoren, passend zum Einfügen in den Diagrammdaten-Editor von Keynote. Alle Werte sind Zeile A, das getrimmte Mittel ohne den kleinsten und den größten Wert."),
       decimalSwitch());
     for (const [mk, title, unitNote] of [["startup", "Startzeit", "in Sekunden"], ["mem", "Maximaler Speicherverbrauch", "in MB"],
-      ["gcStart", "Garbage Collections: Startup", "Anzahl GC-Pausen-Logzeilen"], ["gcBench", "Garbage Collections: Benchmark", "Anzahl GC-Pausen-Logzeilen"]]) {
+      ["gcStart", "Garbage Collections: Startup", "Anzahl GC-Pausen"], ["gcBench", "Garbage Collections: Benchmark", "Anzahl GC-Pausen"]]) {
       const m = METRICS[mk];
       const tsv = () => ["\t" + VARIANTS.map(v => v.name).join("\t")]
         .concat(TRACKS.map(t => SERIES[t].label + "\t" + VARIANTS.map(v => { const x = val(t, v.key, mk); return x == null ? "" : toCopy(m.fmt(x)); }).join("\t")))
