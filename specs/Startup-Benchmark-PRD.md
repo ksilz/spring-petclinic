@@ -246,15 +246,16 @@ SWAP_BEFORE=$(get_swap_used)
 # Linux: "Maximum resident set size (kbytes)"
 # macOS: "peak memory footprint" (bytes → KB)
 
-# Extract GC counts from /tmp/gc_${LABEL}.log
-# - Startup GCs: pauses before "Started PetClinicApplication"
-# - Benchmark GCs: pauses after startup
+# Extract GC pause counts from /tmp/gc_${LABEL}.log (GraalVM: from the app log)
+# - Startup GC Pauses: pauses that ended before "Started PetClinicApplication" (millisecond precision)
+# - Benchmark GC Pauses: pauses after startup
+# Keep the run's app, GC and time logs in run-logs/<label>[_jdk27][_smoke]/run-<n>-*.log
 
 # Check swap usage after benchmark
 SWAP_AFTER=$(get_swap_used)
 SWAP_DELTA=$((SWAP_AFTER - SWAP_BEFORE))
 
-# Write to CSV: Run,Startup Time,Memory,Startup GCs,Benchmark GCs,Timestamp
+# Write to CSV: Run,Startup Time,Memory,Startup GC Pauses,Benchmark GC Pauses,Ran at,,,Startup From Process Start
 ```
 
 #### 4. Statistical Analysis
@@ -320,23 +321,34 @@ SWAP_DELTA=$((SWAP_AFTER - SWAP_BEFORE))
 - Track 25: `result_<label>.csv`. Track 27: `result_<label>_jdk27.csv`.
 - Smoke test (`BENCH_WARMUPS`/`BENCH_RUNS` other than 3/7): `_smoke` is added, e.g. `result_<label>_smoke.csv` or `result_<label>_jdk27_smoke.csv`. A smoke test never overwrites an official result.
 
-**CSV Format** (example from the May 2026 baseline run, shortened):
+**CSV Format** since 2026-11-02 (9 columns, GC columns count pauses). Shape, values illustrative:
+```csv
+Run,Startup Time (s),Max Memory (MB),Startup GC Pauses,Benchmark GC Pauses,Ran at,Size App (MB),Size Extra (MB),Startup From Process Start (s)
+1,13.447,450.6,17,2,2026-11-01T08:53:27Z,,,14.656
+...
+A,13.756,441.86,17,2.5,2026-11-01T08:56:33Z,63.9,0.0,14.9
+```
+
+Older CSVs (May 2026 and the runs of 2026-10-31 and 2026-11-01) have 8 columns. Their columns 4 and 5 are named `Startup GCs` / `Benchmark GCs` and count GC log lines that contain "Pause", two per G1 pause, split at whole-second precision (finding 12). Example from the May 2026 baseline run, shortened:
 ```csv
 Run,Startup Time (s),Max Memory (MB),Startup GCs,Benchmark GCs,Ran at,Size App (MB),Size Extra (MB)
 1,12.68,442.0,34,6,2026-05-01T20:30:28Z,,
 ...
-7,13.493,450.3,34,8,2026-05-01T20:49:02Z,,
 A,13.3166,448.36,34,6.2,2026-05-01T20:52:08Z,66.5,0.0
 ```
+`make_report.py` reads both formats: it divides the old line counts by 2.
 
 **Columns**:
-- **Run**: Run number (1 to `RUNS`) or "A" for the trimmed mean (drops min and max)
-- **Startup Time (s)**: Seconds Spring Boot reports in "Started PetClinicApplication in X seconds" (CRaC: "restored JVM running for X ms")
+- **Run**: Run number (1 to `RUNS`) or "A" for the trimmed mean (per column: drops that column's min and max)
+- **Startup Time (s)**: Seconds Spring Boot reports in "Started PetClinicApplication in X seconds" (CRaC: "restored JVM running for X ms"). For the JVM variants this counts from `SpringApplication.run()`, so JVM boot is not included (finding 13).
 - **Max Memory (MB)**: Peak memory from `/usr/bin/time` (Linux: maximum resident set size; macOS: peak memory footprint)
-- **Startup GCs**: GC pause log lines before "Started". G1 writes a start and an end line per pause, so this is twice the number of pauses; the German report and the result tables divide by 2 and show pauses. All variants use this rule. GraalVM reads its GC lines from the app log, because the native executable prints them to stdout. JVM variants split at whole-second precision (finding 12).
-- **Benchmark GCs**: GC pause log lines after "Started", during the URL load simulation (same rule)
+- **Startup GC Pauses**: GC pauses that ended no later than the "Started" line (CRaC: "Spring-managed lifecycle restart completed"). One count per pause: only G1's end line (`[gc] GC(n) Pause ...`) counts, so Remark and Cleanup pauses of a concurrent marking cycle count too. JVM variants compare the millisecond wall-clock timestamps of the GC log and the app log (both host local time). GraalVM reads its GC lines from the app log, because the native executable prints them to stdout, and splits at the process uptime of "Started" ("process running for X"). N/A when the GC log or the startup line is missing.
+- **Benchmark GC Pauses**: GC pauses after "Started", during the URL load simulation (same rule)
 - **Ran at**: ISO 8601 timestamp when the run started
 - **Size App (MB)** / **Size Extra (MB)**: Artifact sizes, only in the A row
+- **Startup From Process Start (s)**: the "(process running for Y)" value on Spring's "Started" line, which includes JVM boot and everything before `main` (for example loading the CDS archive or the Leyden AOT cache). CRaC: the same value as column 2, because "restored JVM running for" already counts from the start of the restored process.
+
+**Per-run logs**: `benchmark.sh` copies each measured run's app log, GC log (not for GraalVM) and `/usr/bin/time` output to `run-logs/<label>[_jdk27][_smoke]/run-<n>-app.log`, `-gc.log` and `-time.log` (git-ignored). The folder is recreated at the start of the measured runs.
 
 ---
 
@@ -437,8 +449,8 @@ The graalvm "Startup GCs" and "Benchmark GCs" columns were not measured in this 
 9. "Size Extra (MB)" is 0.0 for cds, leyden and crac in the old and the new runs. `compile-and-run.sh` measures sizes before `benchmark.sh` creates the archive, cache or checkpoint. Pre-existing, fixed in `58f09f3`: `benchmark.sh` measures the artifact itself before it writes the A row.
 10. Found on 2026-11-01: the duplicate indexes (finding 5) slow down every JVM variant too. On the JVM baseline, `data.sql` took 495-559 ms on the `petclinic` database vs 86-109 ms on a clean one, about 0.4 s per startup (about 9% of leyden). Removed on 2026-11-01 on both servers (`tools/drop-duplicate-indexes.sql` in that results folder): 4,152 to 15 indexes on the small server, 533 to 15 on the big server, rows unchanged. The old checkouts in `~/projects/spring-petclinic` still have the old `schema.sql` and would add the copies again.
 11. Found on 2026-11-01: `unattended-upgrade` ran on both servers in the morning (small server 06:41-06:52 UTC, big server about 06:24-06:31 UTC). On the small server it upgraded PostgreSQL 16.13 to 16.15 and restarted it twice; a start at 06:48 failed with "Connection to localhost:5432 refused". On the big server PostgreSQL 18.3 was restarted 10 times. Both got glibc 2.39-0ubuntu8.9, a newer OpenSSL and a new kernel, with a reboot pending. The apt timers were disabled on both servers on 2026-11-01 (`systemctl disable --now apt-daily.timer apt-daily-upgrade.timer`), so they stay off after the reboot. They were re-enabled after the official run on 2026-11-01; pause them again before the next run. Record the versions again: the "Tested Versions" table no longer matches the servers.
-12. Found on 2026-11-02 (audit of the official run), pre-existing: for the JVM variants, `extract_gc_counts` in `benchmark.sh` compares the GC log lines with the startup line at whole-second precision (`${ts%.*}`, then `-lt`). A pause in the same second as startup counts as benchmark, and a pause whose start and end lines fall in different seconds counts one line on each side. The total per run is right. Example: JDK 27 Baseline run 7 has 34 / 4 lines in the CSV (17 / 2 pauses); the exact split is 18 / 1 pauses. This likely explains why Leyden flips between 2/2, 3/1 and 4/0 lines while its total stays at 4. Only the last run's logs are kept, so runs 1-6 can't be corrected. GraalVM splits at millisecond precision (process uptime). Not fixed: changing it changes the benchmark method.
-13. Found on 2026-11-02, pre-existing and the same in May: the startup time does not start at the same point for every variant. JVM variants and GraalVM use Spring's "Started PetClinicApplication in X seconds", which starts counting when Spring Boot starts, so JVM boot is not included. In the last runs, "process running for" was 0.4-1.4 s higher (Baseline most, CDS least), and 6 ms higher for GraalVM. CRaC's "restored JVM running for X ms" counts from process start. Not changed: changing it changes the benchmark method.
+12. Found on 2026-11-02 (audit of the official run), pre-existing: for the JVM variants, `extract_gc_counts` in `benchmark.sh` compares the GC log lines with the startup line at whole-second precision (`${ts%.*}`, then `-lt`). A pause in the same second as startup counts as benchmark, and a pause whose start and end lines fall in different seconds counts one line on each side. The total per run is right. Example: JDK 27 Baseline run 7 has 34 / 4 lines in the CSV (17 / 2 pauses); the exact split is 18 / 1 pauses. This likely explains why Leyden flips between 2/2, 3/1 and 4/0 lines while its total stays at 4. Only the last run's logs are kept, so runs 1-6 can't be corrected. GraalVM splits at millisecond precision (process uptime). Fixed on 2026-11-02 with the user's approval: `benchmark.sh` now counts one per pause (end lines only) and splits at millisecond precision; the CSV columns are renamed `Startup GC Pauses` / `Benchmark GC Pauses`.
+13. Found on 2026-11-02, pre-existing and the same in May: the startup time does not start at the same point for every variant. JVM variants and GraalVM use Spring's "Started PetClinicApplication in X seconds", which starts counting when Spring Boot starts, so JVM boot is not included. In the last runs, "process running for" was 0.4-1.4 s higher (Baseline most, CDS least), and 6 ms higher for GraalVM. CRaC's "restored JVM running for X ms" counts from process start. Since 2026-11-02 (user's approval) the CSV also records column 9, the startup time from process start; column 2 stays Spring's value, as on the slides.
 
 After the code review, a final check on commit 957a887 passed. On the small server, the median was 0.612 s for graalvm and 0.075 s for crac (1 warm-up + 3 runs). 87 tests pass on JDK 25 and JDK 27. Details are in the [verification README](../docs/benchmark-results/2026-10-31-verification-boot-4.1.2/README.md).
 
