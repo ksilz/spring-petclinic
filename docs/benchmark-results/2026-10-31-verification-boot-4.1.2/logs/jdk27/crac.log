@@ -1,0 +1,206 @@
+=== runner: track 27, variant crac, pin 27.0.0.0-crac+35-zulu, BENCH_WARMUPS=1, BENCH_RUNS=3, commit 87cf7b6
+openjdk 27 2026-09-15
+OpenJDK Runtime Environment Zulu27.28+101-CRaC-CA (build 27+35)
+OpenJDK 64-Bit Server VM Zulu27.28+101-CRaC-CA (build 27+35, mixed mode, sharing)
+Checking for running Java processes before benchmarks...
+  Killing Java processes: 33604
+36918
+
+Current Java:
+openjdk 27 2026-09-15
+OpenJDK Runtime Environment Zulu27.28+101-CRaC-CA (build 27+35)
+OpenJDK 64-Bit Server VM Zulu27.28+101-CRaC-CA (build 27+35, mixed mode, sharing)
+
+=== CRaC (gradle, current Java) ===
+
+
+****************************************************************
+
+ BUILDING APPLICATION
+
+-> SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=27 --no-daemon -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar -Pcrac=true
+
+****************************************************************
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Calculating task graph as configuration cache cannot be reused because JVM has changed.
+> Task :clean
+> Task :collectReachabilityMetadata
+> Task :compileJava
+> Task :cyclonedxDirectBom FROM-CACHE
+> Task :cyclonedxBom FROM-CACHE
+> Task :processResources
+> Task :classes
+> Task :resolveMainClassName
+
+> Task :processAot
+
+
+              |\      _,,,--,,_
+             /,`.-'`'   ._  \-;;,_
+  _______ __|,4-  ) )_   .;.(__`'-'__     ___ __    _ ___ _______
+ |       | '---''(_/._)-'(_\_)   |   |   |   |  |  | |   |       |
+ |    _  |    ___|_     _|       |   |   |   |   |_| |   |       | __ _ _
+ |   |_| |   |___  |   | |       |   |   |   |       |   |       | \ \ \ \
+ |    ___|    ___| |   | |      _|   |___|   |  _    |   |      _|  \ \ \ \
+ |   |   |   |___  |   | |     |_|       |   | | |   |   |     |_    ) ) ) )
+ |___|   |_______| |___| |_______|_______|___|_|  |__|___|_______|  / / / /
+ ==================================================================/_/_/_/
+
+:: Built with Spring Boot :: 4.1.2
+
+
+2026-10-31T19:41:42.648Z  INFO 37226 --- [           main] o.s.s.petclinic.PetClinicApplication     : Starting PetClinicApplication using Java 27 with PID 37226 (/home/ubuntu/projects/petclinic-upgrade/build/classes/java/main started by ubuntu in /home/ubuntu/projects/petclinic-upgrade)
+2026-10-31T19:41:42.659Z  INFO 37226 --- [           main] o.s.s.petclinic.PetClinicApplication     : The following 1 profile is active: "postgres"
+2026-10-31T19:41:45.335Z  INFO 37226 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-31T19:41:45.463Z  INFO 37226 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 112 ms. Found 3 JPA repository interfaces.
+2026-10-31T19:41:48.787Z  INFO 37226 --- [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: AotMetamodel]
+2026-10-31T19:41:48.946Z  INFO 37226 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final
+2026-10-31T19:41:49.786Z  INFO 37226 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-31T19:41:49.837Z  INFO 37226 --- [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [undefined/unknown]
+	Database driver: undefined/unknown
+	Database dialect: SpringDataJpaAotDialect
+	Database version: 0.0
+	Default catalog/schema: unknown/unknown
+	Autocommit mode: undefined/unknown
+	Isolation level: <unknown>
+	JDBC fetch size: undefined/unknown
+	Pool: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-31T19:41:51.638Z  INFO 37226 --- [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-31T19:41:53.112Z  INFO 37226 --- [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+
+> Task :processAotResources
+
+> Task :compileAotJava
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+> Task :aotClasses
+> Task :bootJar
+
+[Incubating] Problems report is available at: file:///home/ubuntu/projects/petclinic-upgrade/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 55s
+11 actionable tasks: 9 executed, 2 from cache
+Configuration cache entry stored.
+Build step took 56.0 seconds
+Deleting existing CRaC checkpoint: petclinic-crac/
+
+Artifact sizes - App: 63.9 MB, Extra: 0.0 MB
+DEBUG: Script started with parameters:
+  JAR_PATH: build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar
+  LABEL: crac
+  AOT_FLAG: -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac
+  TRAINING_MODE: 
+  SCRIPT_START_TIME: 1793475723
+  PID: 37356
+  PPID: 36916
+  Command: ./benchmark.sh build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar crac -Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac  63.9 0.0
+DEBUG: End of debug info
+
+DEBUG: Configuration set:
+  WARMUPS: 1
+  RUNS: 3
+  CSV_FILE: result_crac_jdk27.csv
+NOTE: non-default run counts (smoke test): WARMUPS=1, RUNS=3
+DEBUG: End of configuration debug
+
+
+****************************************************************
+
+Running application
+
+-> java -Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_crac.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true -XX:CRaCCheckpointTo=petclinic-crac -XX:CRaCEngine=warp -jar build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar
+
+****************************************************************
+
+  CRaC (creates checkpoint)
+Checking CRaC system requirements...
+✅ CRIU found: Version: 4.1.1
+✅ Not running with root privileges (using CRaCEngine=warp for non-privileged operation)
+✅ User has CAP_SYS_ADMIN capability
+CRaC system requirements check complete.
+    Command: java -Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_crac.log:time,uptime,level,tags -Dspring.aot.enabled=false -Dspring.profiles.active=postgres -Dspring.datasource.hikari.allow-pool-suspension=true -XX:CRaCCheckpointTo=petclinic-crac -XX:CRaCEngine=warp -jar build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar
+    Waiting for application to start...
+    Found application PID from log: 37377
+    Application started successfully
+    Waiting for application to be ready...
+    Still waiting for application readiness... (5 seconds elapsed, status: 000)
+    Still waiting for application readiness... (10 seconds elapsed, status: 000)
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Taking CRaC checkpoint...
+    Using jcmd to initiate checkpoint on process 37377
+    Checkpoint command executed successfully
+    Waiting for checkpoint to complete...
+./benchmark.sh: line 1244: 37377 Killed                  $TRAIN_CMD > "$LOG_FILE" 2>&1
+    Warning: Application process 37377 has terminated during checkpoint
+    Checkpoint image complete after 1s (core.img 397389824 bytes, size stable)
+    Checkpoint directory created successfully: total 379M
+-rw------- 1 ubuntu ubuntu 379M Oct 31 19:45 core.img
+-rw-rw-r-- 1 ubuntu ubuntu    4 Oct 31 19:45 engine
+    Checkpoint directory contents:
+      total 379M
+      -rw------- 1 ubuntu ubuntu 379M Oct 31 19:45 core.img
+      -rw-rw-r-- 1 ubuntu ubuntu    4 Oct 31 19:45 engine
+    Non-log files found: 2
+    ✅ Checkpoint success confirmed in application log
+    Terminating application process...
+    Application process 37377 has already terminated
+Training run took 189.0 seconds
+  CRaC training run complete. Proceeding with benchmark measurements.
+Starting 1 warm-up run…
+  Warm-up 1
+    Found CRaC app PID after startup: 38071
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 38071
+Starting 3 benchmark runs…
+Swap usage before benchmark: 52 MB
+  Run 1
+    Found CRaC app PID after startup: 38721
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 38721
+    Run 1 completed successfully
+    0.090s, 369.0 MB
+    Debug: Run 1 finished, continuing to next run...
+  Run 2
+    Found CRaC app PID after startup: 39383
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 39383
+    Run 2 completed successfully
+    0.079s, 368.8 MB
+    Debug: Run 2 finished, continuing to next run...
+  Run 3
+    Found CRaC app PID after startup: 40050
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 40050
+    Run 3 completed successfully
+    0.084s, 368.9 MB
+    Debug: Run 3 finished, continuing to next run...
+
+--- Swap Usage ---
+Swap before benchmark: 52 MB
+Swap after benchmark:  52 MB
+Swap delta:            0 MB
+Note: System started with 52 MB swap in use (not caused by this benchmark)
+
+--- Benchmark Results ---
+Run,Startup Time (s),Max Memory (MB),Startup GCs,Benchmark GCs,Ran at,Size App (MB),Size Extra (MB)
+1,0.090,369.0,0,0,2026-10-31T19:48:06Z,,
+2,0.079,368.8,0,0,2026-10-31T19:51:00Z,,
+3,0.084,368.9,0,0,2026-10-31T19:53:55Z,,
+A,0.084,368.9,0,0,2026-10-31T19:56:49Z,63.9,0.0
+
+Done. Result CSVs: result_crac_jdk27.csv

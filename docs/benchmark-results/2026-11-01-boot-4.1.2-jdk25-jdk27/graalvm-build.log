@@ -1,0 +1,385 @@
+
+[1;32mUsing java version 25.0.5.0+3-graal in this shell.[0m
+java 25.0.5.0.3 2026-10-25 LTS
+Java(TM) SE Runtime Environment Oracle GraalVM 25.0.5.0.3+1.1 (build 25.0.5.0.3+1-LTS-jvmci-b01)
+Java HotSpot(TM) 64-Bit Server VM Oracle GraalVM 25.0.5.0.3+1.1 (build 25.0.5.0.3+1-LTS-jvmci-b01, mixed mode, sharing)
+GRAALVM_BUILD_START 2026-11-01T08:24:55Z
+Checking for running Java processes before benchmarks...
+  Killing Java processes: 2135
+
+Current Java:
+java 25.0.5.0.3 2026-10-25 LTS
+Java(TM) SE Runtime Environment Oracle GraalVM 25.0.5.0.3+1.1 (build 25.0.5.0.3+1-LTS-jvmci-b01)
+Java HotSpot(TM) 64-Bit Server VM Oracle GraalVM 25.0.5.0.3+1.1 (build 25.0.5.0.3+1-LTS-jvmci-b01, mixed mode, sharing)
+
+=== GraalVM Native Image (gradle, current Java) ===
+GraalVM memory allocation: -Xmx24g
+
+
+****************************************************************
+
+ BUILDING APPLICATION
+
+-> SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=25 -Dorg.gradle.jvmargs="-Xmx24g" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args='--gc=G1' --build-args='-R:MaxHeapSize=128m' --build-args='-J-Xmx25374m' --build-args='--parallelism=8' --jvm-args-native="-Xmx128m"
+
+****************************************************************
+
+Starting a Gradle Daemon, 3 stopped Daemons could not be reused, use --status for details
+Calculating task graph as no cached configuration is available for tasks: clean nativeCompile --pgo-instrument --build-args=--gc=G1 --build-args=-R:MaxHeapSize=128m --build-args=-J-Xmx25374m --build-args=--parallelism=8 --jvm-args-native=-Xmx128m
+> Task :clean
+> Task :compileJava FROM-CACHE
+> Task :cyclonedxDirectBom FROM-CACHE
+> Task :cyclonedxBom FROM-CACHE
+> Task :processResources
+> Task :classes
+> Task :resolveMainClassName
+> Task :jar
+> Task :processAot FROM-CACHE
+> Task :processAotResources
+> Task :compileAotJava FROM-CACHE
+> Task :aotClasses
+> Task :generateResourcesConfigFile FROM-CACHE
+
+> Task :nativeCompile
+[native-image-plugin] GraalVM Toolchain detection is disabled
+[native-image-plugin] GraalVM location read from environment variable: JAVA_HOME
+[native-image-plugin] Native Image executable path: /home/ubuntu/.sdkman/candidates/java/25.0.5.0+3-graal/lib/svm/bin/native-image
+Warning: The option '-H:ServiceLoaderFeatureExcludeServices=org.hibernate.bytecode.spi.BytecodeProvider' is experimental and must be enabled via '-H:+UnlockExperimentalVMOptions' in the future.
+Warning: Please re-evaluate whether any experimental option is required, and either remove or unlock it. The build output lists all active experimental options, including where they come from and possible alternatives. If you think an experimental option should be considered as stable, please file an issue.
+Warning: Option 'DynamicProxyConfigurationResources' is deprecated and might be removed in a future release: This can be caused by a proxy-config.json file in your META-INF directory. Consider including proxy configuration in the reflection section of reachability-metadata.md instead.. Please refer to the GraalVM release notes.
+========================================================================================================================
+GraalVM Native Image: Generating 'spring-petclinic-instrumented' (executable)...
+========================================================================================================================
+For detailed information and explanations on the build output, visit:
+https://github.com/oracle/graal/blob/master/docs/reference-manual/native-image/BuildOutput.md
+------------------------------------------------------------------------------------------------------------------------
+[1/8] Initializing...                                                                                   (16.4s @ 0.38GB)
+ Java version: 25.0.5.0.3+1-LTS, vendor version: Oracle GraalVM 25.0.5.0.3+1.1
+ Graal compiler: optimization level: 2, target machine: x86-64-v3, PGO: sampling+instrument
+ C compiler: gcc (linux, x86_64, 13.3.0)
+ Garbage collector: G1 GC (max heap size: 134.22MB)
+ 4 user-specific feature(s):
+ - com.oracle.svm.thirdparty.gson.GsonFeature
+ - org.eclipse.angus.activation.nativeimage.AngusActivationFeature
+ - org.springframework.aot.nativex.feature.PreComputeFieldFeature
+ - org.springframework.data.core.TypedPropertyPathFeature
+------------------------------------------------------------------------------------------------------------------------
+ 1 experimental option(s) unlocked:
+ - '-H:ServiceLoaderFeatureExcludeServices' (origin(s): 'META-INF/native-image/org.springframework/spring-orm/native-image.properties' in 'file:///home/ubuntu/.gradle/caches/modules-2/files-2.1/org.springframework/spring-orm/7.0.10/dd4a7a40394e896558e1a31ca283b5f0bf2f9288/spring-orm-7.0.10.jar')
+------------------------------------------------------------------------------------------------------------------------
+Build resources:
+ - 23.65GB of memory (71.1% of system memory, set via '-Xmx25374m')
+ - 8 thread(s) (100.0% of 8 available processor(s), set via '--parallelism=8')
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+[2/8] Performing analysis...  [*****]                                                                  (113.9s @ 4.43GB)
+   44,026 types,  63,484 fields, and 235,043 methods found reachable
+   15,775 types,  10,563 fields, and  41,802 methods registered for reflection
+       68 types,      71 fields, and      58 methods registered for JNI access
+        0 downcalls and 0 upcalls registered for foreign access
+       10 native libraries: dl, g1gc-cr, m, pthread, rt, stdc++, z
+[3/8] Building universe...                                                                              (24.3s @ 5.09GB)
+[4/8] Parsing methods...      [****]                                                                    (15.2s @ 5.78GB)
+[5/8] Inlining methods...     [**]                                                                       (1.6s @ 5.79GB)
+[6/8] Compiling methods...    [*******************]                                                   (372.1s @ 10.19GB)
+[7/8] Laying out methods...   [*******]                                                                (49.9s @ 12.74GB)
+[8/8] Creating image...       [*********]                                                              (89.2s @ 13.65GB)
+ 259.64MB (44.34%) for code area:   144,489 compilation units
+ 302.05MB (51.59%) for image heap:8,196,424 objects and 925 resources
+  23.82MB ( 4.07%) for other data
+ 585.51MB in total image size, 572.92MB in total file size
+------------------------------------------------------------------------------------------------------------------------
+Top 10 origins of code area:                                Top 10 object types in image heap:
+  53.49MB hibernate-core-7.4.13.Final.jar                     63.19MB c.o.s.e.p.f.c.CallingContextForest$SlimNode
+  37.12MB java.base                                           48.80MB byte[] for code metadata
+  24.90MB svm.jar (Native Image)                              26.20MB byte[] for java.lang.String
+  16.13MB h2-2.4.240.jar                                      19.32MB c.o.s.e.p.f.CommonInstrumentationData$IfPayload
+   9.68MB tomcat-embed-core-11.0.27.jar                       17.22MB c.o.s.e.p.f.CommonInstrumentat~$MethodEntryPayload
+   8.18MB java.xml                                            15.43MB java.lang.String
+   7.63MB spring-data-jpa-4.1.2.jar                           15.35MB int[]
+   7.43MB java.desktop                                        15.29MB byte[] for embedded resources
+   6.89MB jackson-databind-3.1.7.jar                           9.28MB c.o.s.e.p.f.c.CallingContextForest$SlimNode[]
+   6.66MB mysql-connector-j-9.7.0.jar                          8.76MB c.o.s.e.profiling.framework.ProfilingMethod
+  79.33MB for 205 more packages                               63.20MB for 7259 more object types
+                            Use '--emit build-report' to create a report with more details.
+------------------------------------------------------------------------------------------------------------------------
+Security report:
+ - Binary includes Java deserialization.
+ - CycloneDX SBOM with 94 component(s) is embedded in binary (5.28kB). 754 type(s) could not be associated to a component.
+ - Advanced obfuscation not enabled; enable with '-H:AdvancedObfuscation=""' (experimental support).
+------------------------------------------------------------------------------------------------------------------------
+Recommendations:
+ FUTR: Use '--future-defaults=all' to prepare for future releases.
+ AWT:  Use the tracing agent to collect metadata for AWT.
+ CPU:  Enable more CPU features with '-march=native' for improved performance.
+ QBM:  Use the quick build mode ('-Ob') to speed up builds during development.
+------------------------------------------------------------------------------------------------------------------------
+                      80.2s (11.2% of total time) in 4103 GCs | Peak RSS: 19.45GB | CPU load: 6.43
+------------------------------------------------------------------------------------------------------------------------
+Build artifacts:
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libawt.so (jdk_library)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libawt_headless.so (jdk_library)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libawt_xawt.so (jdk_library)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libfontmanager.so (jdk_library)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libjava.so (jdk_library_shim)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libjavajpeg.so (jdk_library)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libjvm.so (jdk_library_shim)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/liblcms.so (jdk_library)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libmanagement_ext.so (jdk_library)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/spring-petclinic-instrumented (executable)
+========================================================================================================================
+Finished generating 'spring-petclinic-instrumented' in 11m 52s.
+[native-image-plugin] Native Image written to: /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile
+
+BUILD SUCCESSFUL in 12m 19s
+12 actionable tasks: 6 executed, 6 from cache
+Configuration cache entry stored.
+Build step took 741.0 seconds
+DEBUG: Script started with parameters:
+  JAR_PATH: build/native/nativeCompile/spring-petclinic-instrumented
+  LABEL: graalvm
+  AOT_FLAG: -Dspring.aot.enabled=true
+  TRAINING_MODE: training
+  SCRIPT_START_TIME: 1793522237
+  PID: 3590
+  PPID: 2133
+  Command: ./benchmark.sh build/native/nativeCompile/spring-petclinic-instrumented graalvm -Dspring.aot.enabled=true training  
+DEBUG: End of debug info
+
+DEBUG: Configuration set:
+  WARMUPS: 1
+  RUNS: 3
+  CSV_FILE: result_graalvm_smoke.csv
+NOTE: non-default run counts (smoke test): WARMUPS=1, RUNS=3. Writing result_graalvm_smoke.csv.
+DEBUG: End of configuration debug
+
+
+****************************************************************
+
+Running application
+
+-> ./build/native/nativeCompile/spring-petclinic-instrumented -XX:+PrintGC -XX:+VerboseGC -Dspring.profiles.active=postgres
+
+****************************************************************
+
+Found existing native spring-petclinic processes: 3593
+  Skipping native process cleanup during GraalVM training
+  GraalVM (instrumented binary)
+    Creating profiling directory src/pgo-profiles/main/
+    Command: ./build/native/nativeCompile/spring-petclinic-instrumented -XX:+PrintGC -XX:+VerboseGC -Dspring.profiles.active=postgres
+    GraalVM process PID: 3599
+    Looking for GraalVM application process...
+    Warning: Could not find specific GraalVM app process, will use background process 3599
+    Waiting for application to start...
+    Application started successfully
+    Hitting URLs for profiling data generation...
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Terminating GraalVM process...
+    Killing background process 3599
+    GraalVM training run completed at Sun Nov  1 08:40:16 UTC 2026
+Training run took 179.0 seconds
+  GraalVM training run complete. Returning control to compile-and-run.sh for rebuild.
+Moved default.iprof to src/pgo-profiles/main/
+Rebuilding optimized native image...
+-> SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=25 -Dorg.gradle.jvmargs="-Xmx24g" --build-cache --parallel clean nativeCompile --build-args='--gc=G1' --build-args='-R:MaxHeapSize=128m' --build-args='-J-Xmx25374m' --build-args='--parallelism=8' --jvm-args-native="-Xmx128m"
+
+Calculating task graph as no cached configuration is available for tasks: clean nativeCompile --build-args=--gc=G1 --build-args=-R:MaxHeapSize=128m --build-args=-J-Xmx25374m --build-args=--parallelism=8 --jvm-args-native=-Xmx128m
+> Task :clean
+> Task :compileJava FROM-CACHE
+> Task :cyclonedxDirectBom FROM-CACHE
+> Task :cyclonedxBom FROM-CACHE
+> Task :processResources
+> Task :classes
+> Task :resolveMainClassName
+> Task :processAot FROM-CACHE
+> Task :jar
+> Task :processAotResources
+> Task :compileAotJava FROM-CACHE
+> Task :aotClasses
+> Task :generateResourcesConfigFile FROM-CACHE
+
+> Task :nativeCompile
+[native-image-plugin] GraalVM Toolchain detection is disabled
+[native-image-plugin] GraalVM location read from environment variable: JAVA_HOME
+[native-image-plugin] Native Image executable path: /home/ubuntu/.sdkman/candidates/java/25.0.5.0+3-graal/lib/svm/bin/native-image
+Warning: The option '-H:ServiceLoaderFeatureExcludeServices=org.hibernate.bytecode.spi.BytecodeProvider' is experimental and must be enabled via '-H:+UnlockExperimentalVMOptions' in the future.
+Warning: Please re-evaluate whether any experimental option is required, and either remove or unlock it. The build output lists all active experimental options, including where they come from and possible alternatives. If you think an experimental option should be considered as stable, please file an issue.
+Warning: Option 'DynamicProxyConfigurationResources' is deprecated and might be removed in a future release: This can be caused by a proxy-config.json file in your META-INF directory. Consider including proxy configuration in the reflection section of reachability-metadata.md instead.. Please refer to the GraalVM release notes.
+========================================================================================================================
+GraalVM Native Image: Generating 'spring-petclinic' (executable)...
+========================================================================================================================
+For detailed information and explanations on the build output, visit:
+https://github.com/oracle/graal/blob/master/docs/reference-manual/native-image/BuildOutput.md
+------------------------------------------------------------------------------------------------------------------------
+[1/8] Initializing...                                                                                   (12.1s @ 0.37GB)
+ Java version: 25.0.5.0.3+1-LTS, vendor version: Oracle GraalVM 25.0.5.0.3+1.1
+ Graal compiler: optimization level: 3, target machine: x86-64-v3, PGO: user-provided
+ C compiler: gcc (linux, x86_64, 13.3.0)
+ Garbage collector: G1 GC (max heap size: 134.22MB)
+ 4 user-specific feature(s):
+ - com.oracle.svm.thirdparty.gson.GsonFeature
+ - org.eclipse.angus.activation.nativeimage.AngusActivationFeature
+ - org.springframework.aot.nativex.feature.PreComputeFieldFeature
+ - org.springframework.data.core.TypedPropertyPathFeature
+------------------------------------------------------------------------------------------------------------------------
+ 1 experimental option(s) unlocked:
+ - '-H:ServiceLoaderFeatureExcludeServices' (origin(s): 'META-INF/native-image/org.springframework/spring-orm/native-image.properties' in 'file:///home/ubuntu/.gradle/caches/modules-2/files-2.1/org.springframework/spring-orm/7.0.10/dd4a7a40394e896558e1a31ca283b5f0bf2f9288/spring-orm-7.0.10.jar')
+------------------------------------------------------------------------------------------------------------------------
+Build resources:
+ - 23.65GB of memory (71.1% of system memory, set via '-Xmx25374m')
+ - 8 thread(s) (100.0% of 8 available processor(s), set via '--parallelism=8')
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+[2/8] Performing analysis...  [******]                                                                 (118.8s @ 5.03GB)
+   43,787 types,  63,226 fields, and 234,185 methods found reachable
+   15,697 types,  10,519 fields, and  41,689 methods registered for reflection
+       68 types,      71 fields, and      58 methods registered for JNI access
+        0 downcalls and 0 upcalls registered for foreign access
+        9 native libraries: dl, g1gc-cr, m, pthread, rt, stdc++, z
+[3/8] Building universe...                                                                              (22.8s @ 5.61GB)
+[4/8] Parsing methods...      [****]                                                                    (14.9s @ 6.15GB)
+[5/8] Inlining methods...     [****]                                                                     (7.2s @ 6.65GB)
+[6/8] Compiling methods...    [**************]                                                         (206.7s @ 7.66GB)
+[7/8] Laying out methods...   [******]                                                                  (33.4s @ 6.95GB)
+[8/8] Creating image...       [****]                                                                    (18.4s @ 7.63GB)
+  97.13MB (46.64%) for code area:   158,156 compilation units
+  86.17MB (41.38%) for image heap:  850,593 objects and 925 resources
+  24.94MB (11.98%) for other data
+ 208.24MB in total image size, 194.38MB in total file size
+------------------------------------------------------------------------------------------------------------------------
+Top 10 origins of code area:                                Top 10 object types in image heap:
+  16.62MB hibernate-core-7.4.13.Final.jar                     22.94MB byte[] for code metadata
+  14.53MB java.base                                           15.29MB byte[] for embedded resources
+  14.13MB svm.jar (Native Image)                              12.83MB byte[] for java.lang.String
+   4.20MB tomcat-embed-core-11.0.27.jar                        6.17MB java.lang.String
+   4.03MB h2-2.4.240.jar                                       6.01MB java.lang.Class
+   2.68MB java.xml                                             4.55MB com.oracle.svm.core.hub.DynamicHubCompanion
+   2.39MB spring-core-7.0.10.jar                               3.72MB byte[] for reflection metadata
+   2.20MB spring-boot-4.1.2.jar                                3.63MB heap alignment
+   2.20MB mysql-connector-j-9.7.0.jar                          1.27MB c.o.svm.core.hub.DynamicHub$ReflectionMetadata
+   2.09MB spring-data-jpa-4.1.2.jar                            1.11MB byte[] for general heap data
+  29.41MB for 206 more packages                                8.64MB for 7200 more object types
+                            Use '--emit build-report' to create a report with more details.
+------------------------------------------------------------------------------------------------------------------------
+Security report:
+ - Binary includes Java deserialization.
+ - CycloneDX SBOM with 94 component(s) is embedded in binary (5.31kB). 747 type(s) could not be associated to a component.
+ - Advanced obfuscation not enabled; enable with '-H:AdvancedObfuscation=""' (experimental support).
+------------------------------------------------------------------------------------------------------------------------
+Recommendations:
+ FUTR: Use '--future-defaults=all' to prepare for future releases.
+ AWT:  Use the tracing agent to collect metadata for AWT.
+ CPU:  Enable more CPU features with '-march=native' for improved performance.
+ QBM:  Use the quick build mode ('-Ob') to speed up builds during development.
+------------------------------------------------------------------------------------------------------------------------
+                      50.9s (11.5% of total time) in 2619 GCs | Peak RSS: 9.16GB | CPU load: 6.74
+------------------------------------------------------------------------------------------------------------------------
+Build artifacts:
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libawt.so (jdk_library)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libawt_headless.so (jdk_library)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libawt_xawt.so (jdk_library)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libfontmanager.so (jdk_library)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libjava.so (jdk_library_shim)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libjavajpeg.so (jdk_library)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libjvm.so (jdk_library_shim)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/liblcms.so (jdk_library)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/libmanagement_ext.so (jdk_library)
+ /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/spring-petclinic (executable)
+========================================================================================================================
+Finished generating 'spring-petclinic' in 7m 22s.
+[native-image-plugin] Native Image written to: /home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile
+
+BUILD SUCCESSFUL in 7m 28s
+12 actionable tasks: 6 executed, 6 from cache
+Configuration cache entry stored.
+GraalVM rebuild took 448.0 seconds
+Artifact sizes - App: 185.4 MB, Extra: 41.1 MB
+DEBUG: Script started with parameters:
+  JAR_PATH: build/native/nativeCompile/spring-petclinic
+  LABEL: graalvm
+  AOT_FLAG: -Dspring.aot.enabled=true
+  TRAINING_MODE: 
+  SCRIPT_START_TIME: 1793522864
+  PID: 4918
+  PPID: 2133
+  Command: ./benchmark.sh build/native/nativeCompile/spring-petclinic graalvm -Dspring.aot.enabled=true  185.4 41.1
+DEBUG: End of debug info
+
+DEBUG: Configuration set:
+  WARMUPS: 1
+  RUNS: 3
+  CSV_FILE: result_graalvm_smoke.csv
+NOTE: non-default run counts (smoke test): WARMUPS=1, RUNS=3. Writing result_graalvm_smoke.csv.
+DEBUG: End of configuration debug
+
+
+****************************************************************
+
+Running application
+
+-> ./build/native/nativeCompile/spring-petclinic -XX:+PrintGC -XX:+VerboseGC -Dspring.profiles.active=postgres
+
+****************************************************************
+
+Found existing native spring-petclinic processes: 4921
+  Skipping native process cleanup during GraalVM benchmark (training already cleaned up)
+Starting 1 warm-up run…
+  Warm-up 1
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 4926
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 4926
+Starting 3 benchmark runs…
+Swap usage before benchmark: 0 MB
+  Run 1
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 5358
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 5358
+    Run 1 completed successfully
+    0.276s, 202.4 MB
+    Debug: Run 1 finished, continuing to next run...
+  Run 2
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 5826
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 5826
+    Run 2 completed successfully
+    0.271s, 202.7 MB
+    Debug: Run 2 finished, continuing to next run...
+  Run 3
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 6236
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 6236
+    Run 3 completed successfully
+    0.277s, 202.5 MB
+    Debug: Run 3 finished, continuing to next run...
+
+--- Swap Usage ---
+Swap before benchmark: 0 MB
+Swap after benchmark:  0 MB
+Swap delta:            0 MB
+OK: No swap space was used during the benchmark.
+
+--- Benchmark Results ---
+Run,Startup Time (s),Max Memory (MB),Startup GCs,Benchmark GCs,Ran at,Size App (MB),Size Extra (MB)
+1,0.276,202.4,2,4,2026-11-01T08:50:32Z,,
+2,0.271,202.7,2,4,2026-11-01T08:53:20Z,,
+3,0.277,202.5,2,4,2026-11-01T08:56:08Z,,
+A,0.276,202.5,2,4,2026-11-01T08:58:56Z,185.4,41.1
+
+Done. Result CSVs: result_graalvm_smoke.csv
+GRAALVM_BUILD_EXIT 0 2026-11-01T08:58:56Z

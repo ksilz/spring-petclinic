@@ -157,12 +157,14 @@ CRAC_RESTORE_PARAMS="-Xlog:gc*:file=/tmp/gc_${LABEL}.log:time,uptime,level,tags"
 # GraalVM parameters (native binary - uses native image GC logging)
 # Note: Native images don't support JVM heap parameters like -Xms/-Xmx
 # Memory is controlled via build-time settings (see compile-and-run.sh)
+# GC output goes to stdout and lands in the app log; extract_gc_counts reads it from there.
+# The native executable ignores -Xlog:gc:file=..., so there is no separate GC log file.
 GRAALVM_PARAMS="-XX:+PrintGC -XX:+VerboseGC -Dspring.profiles.active=postgres"
 
 # ---------------- Command Definitions ---------------------
 if [[ "$LABEL" == "graalvm" ]]; then
-  APP_CMD="./build/native/nativeCompile/spring-petclinic $GRAALVM_PARAMS 2>/tmp/gc_${LABEL}.log"
-  TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented $GRAALVM_PARAMS 2>/tmp/gc_${LABEL}.log"
+  APP_CMD="./build/native/nativeCompile/spring-petclinic $GRAALVM_PARAMS"
+  TRAIN_CMD="./build/native/nativeCompile/spring-petclinic-instrumented $GRAALVM_PARAMS"
 elif [[ "$LABEL" == "crac" ]]; then
   # For CRaC, use different commands for training (checkpoint creation) and benchmark (restore)
   # Use CRaCEngine=warp to avoid requiring elevated privileges
@@ -183,15 +185,47 @@ else
   APP_CMD="java $BASE_JVM_PARAMS ${AOT_FLAG} -jar $JAR_PATH"
   TRAIN_CMD="java $BASE_JVM_PARAMS ${AOT_FLAG} -jar $JAR_PATH"
 fi
-CSV_FILE="result_${LABEL}.csv"
-WARMUPS=3
-RUNS=7
+# JDK track (set by compile-and-run.sh): 25 keeps the historic file names, other tracks get a suffix.
+JDK_TRACK="${JDK_TRACK:-25}"
+case "$JDK_TRACK" in
+25 | 27) ;;
+*)
+  echo "JDK_TRACK must be 25 or 27 (got '$JDK_TRACK')" >&2
+  exit 1
+  ;;
+esac
+CSV_SUFFIX=""
+if [[ "$JDK_TRACK" != "25" ]]; then
+  CSV_SUFFIX="_jdk${JDK_TRACK}"
+fi
+WARMUPS="${BENCH_WARMUPS:-3}"
+RUNS="${BENCH_RUNS:-7}"
+if ! [[ "$WARMUPS" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: BENCH_WARMUPS must be a non-negative integer (got '$WARMUPS')" >&2
+  exit 1
+fi
+if ! [[ "$RUNS" =~ ^[0-9]+$ ]] || (( 10#$RUNS < 3 )); then
+  echo "ERROR: BENCH_RUNS must be an integer >= 3 (got '$RUNS')" >&2
+  exit 1
+fi
+WARMUPS=$((10#$WARMUPS))
+RUNS=$((10#$RUNS))
+# Smoke tests (non-default run counts) write their own CSV, so they never overwrite an
+# official result and can't be mistaken for one.
+SMOKE_SUFFIX=""
+if [[ "$WARMUPS" -ne 3 || "$RUNS" -ne 7 ]]; then
+  SMOKE_SUFFIX="_smoke"
+fi
+CSV_FILE="result_${LABEL}${CSV_SUFFIX}${SMOKE_SUFFIX}.csv"
 
 # Debug information for configuration
 echo "DEBUG: Configuration set:"
 echo "  WARMUPS: $WARMUPS"
 echo "  RUNS: $RUNS"
 echo "  CSV_FILE: $CSV_FILE"
+if [[ -n "$SMOKE_SUFFIX" ]]; then
+  echo "NOTE: non-default run counts (smoke test): WARMUPS=$WARMUPS, RUNS=$RUNS. Writing $CSV_FILE."
+fi
 echo "DEBUG: End of configuration debug"
 echo
 
@@ -232,6 +266,93 @@ URLS=(
   "http://localhost:8080/oups"
 )
 
+# Prints the PIDs of all descendants of PID $1, at most 3 levels deep, children first, on one
+# line separated by single spaces (callers test membership with " $list " == *" $pid "*).
+descendant_pids() {
+  local parents="$1" next p all=""
+  for _ in 1 2 3; do
+    next=""
+    for p in $parents; do
+      next="$next $(pgrep -P "$p" 2>/dev/null | tr '\n' ' ')"
+    done
+    next=$(echo $next)
+    [[ -z "$next" ]] && break
+    all="$all $next"
+    parents="$next"
+  done
+  echo $all
+}
+
+# ---------- failure cleanup used by every failure path in hit_urls ----------
+# Stops the application the same way the callers do after a normal run (SIGTERM, then
+# SIGKILL if still alive), so nothing keeps port 8080, and removes cache files that the
+# failed run may have left behind. It does not exit; the caller exits afterwards.
+# Usage: stop_app_after_failure "<reason>"
+stop_app_after_failure() {
+  local reason="${1:-failure}"
+  # The tracked app process is stopped first; the launcher process is the fallback (tpid in
+  # the benchmark phase, pid in training and warm-up runs). SIGTERM first keeps a CRaC
+  # process shutting down normally; no checkpoint exists yet when hit_urls runs in the CRaC
+  # training run.
+  local stop_pid="${app_pid:-}"
+  local launcher_pid="${tpid:-${pid:-}}"
+  if [[ -n "$stop_pid" ]] && { [[ "$stop_pid" == "$$" ]] || [[ "$stop_pid" == "$PPID" ]] || [[ "$stop_pid" == "1" ]]; }; then
+    stop_pid=""
+  fi
+  if [[ -n "$launcher_pid" ]] && { [[ "$launcher_pid" == "$$" ]] || [[ "$launcher_pid" == "$PPID" ]] || [[ "$launcher_pid" == "1" ]]; }; then
+    launcher_pid=""
+  fi
+  # Collect the launcher's descendants (at most 3 levels) before any signal: once the launcher
+  # is gone, its children belong to init and can no longer be found from it. They are stopped
+  # too, so the app is not left running with port 8080 bound when app_pid is wrong or empty
+  # (killing /usr/bin/time does not stop its child).
+  # Only while the launcher is alive: a dead launcher's PID may already belong to another process.
+  local descendants=""
+  if [[ -n "$launcher_pid" ]] && kill -0 "$launcher_pid" 2>/dev/null; then
+    descendants=$(descendant_pids "$launcher_pid")
+  fi
+  # Only kill app_pid if it is the launcher or one of those descendants, so a stale or
+  # pgrep -f fallback PID that belongs to some other java process is left alone.
+  if [[ -n "$stop_pid" && "$stop_pid" != "$launcher_pid" && " $descendants " != *" $stop_pid "* ]]; then
+    echo "    Skipping kill of PID $stop_pid: it is not the launcher process or one of its descendants"
+    stop_pid=""
+  fi
+  # Each PID once: app_pid is usually one of the descendants already. Children before the launcher.
+  local targets="$descendants" p
+  if [[ -n "$stop_pid" && " $targets " != *" $stop_pid "* ]]; then
+    targets="$stop_pid $targets"
+  fi
+  if [[ -n "$launcher_pid" && " $targets " != *" $launcher_pid "* ]]; then
+    targets="$targets $launcher_pid"
+  fi
+  echo "    Stopping the application after the failure ($reason)..."
+  for p in $targets; do
+    kill -TERM "$p" 2>/dev/null
+  done
+  sleep 2
+  for p in $targets; do
+    kill -0 "$p" 2>/dev/null && kill -9 "$p" 2>/dev/null
+  done
+  [[ -n "$launcher_pid" ]] && wait "$launcher_pid" 2>/dev/null
+  wait_for_port_free 30
+
+  # This runs on ANY hit_urls failure, not only in training runs: also after a failed warm-up
+  # or measured run. Stopping the app can make a CDS/Leyden run write its cache from the
+  # failed or broken run, so do not benchmark a bad archive.
+  # - CDS: petclinic.jsa is removed so the next run retrains it. CDS skips training when the
+  #   archive exists. A retrain is cheap, and compile-and-run.sh deletes the archive before
+  #   every cds run anyway.
+  # - Leyden: only the leftover intermediate petclinic.aotconf is removed, never
+  #   petclinic.aot.
+  if [[ "$LABEL" == "cds" && -f petclinic.jsa ]]; then
+    rm -f petclinic.jsa
+    echo "    Removed petclinic.jsa so the next run rebuilds the archive"
+  elif [[ "$LABEL" == "leyden" && -f petclinic.aotconf ]]; then
+    rm -f petclinic.aotconf
+    echo "    Removed leftover petclinic.aotconf"
+  fi
+}
+
 # ---------- function reused by warm-ups & benchmarks ----------
 hit_urls() {
   # First, wait for the application to be ready by checking the root URL
@@ -269,10 +390,17 @@ hit_urls() {
     echo "    Check the log file for errors: $LOG_FILE"
     echo "    Last lines of application log:"
     tail -30 "$LOG_FILE" 2>/dev/null | sed 's/^/      /' || echo "      (log file empty or missing)"
+    stop_app_after_failure "readiness failure"
     exit 1
   fi
 
   # Now call the actual URLs (repeated 5x to generate more garbage)
+  # Status guard: every URL must return 200, except /oups (the deliberate crash demo page),
+  # which must return 500. Any other status means the build is broken (e.g. a native image
+  # missing reflection hints returns 500 on most pages), so the run must fail instead of
+  # being timed and recorded as a success. The check applies to training runs as well.
+  local unexpected=()
+  local expected_status
   printf '    Calling URLs: ' # four-space indent
   for round in {1..5}; do
     for url in "${URLS[@]}"; do
@@ -284,11 +412,29 @@ hit_urls() {
         echo
         echo "    ❌ ERROR: Application stopped responding (HTTP status 000)"
         echo "    Check the log file for errors: $LOG_FILE"
+        stop_app_after_failure "no response"
         exit 1
+      fi
+      expected_status="200"
+      [[ "$url" == */oups ]] && expected_status="500"
+      if [[ "$status" != "$expected_status" ]]; then
+        unexpected+=("$url=$status")
       fi
     done
   done
   echo # newline
+
+  if [[ ${#unexpected[@]} -gt 0 ]]; then
+    local summary
+    summary=$(printf '%s\n' "${unexpected[@]}" | sort | uniq -c |
+      awk '{c=$1; $1=""; sub(/^ /,""); printf "%s%s (x%d)", (NR>1 ? ", " : ""), $0, c}')
+    echo "    ❌ ERROR: ${#unexpected[@]} unexpected HTTP status code(s): $summary"
+    echo "    Check the log file for errors: $LOG_FILE"
+    echo "    Last lines of application log:"
+    tail -30 "$LOG_FILE" 2>/dev/null | sed 's/^/      /' || echo "      (log file empty or missing)"
+    stop_app_after_failure "unexpected HTTP status"
+    exit 1
+  fi
 }
 
 # Function to get the appropriate startup message based on label
@@ -401,8 +547,12 @@ extract_pid_from_log() {
 }
 
 # Function to extract GC counts from GraalVM Native Image logs
-# GraalVM logs use [X.XXXs] timestamps representing seconds since app startup
-# We can split startup vs benchmark GCs by comparing to the startup time
+# The native executable prints its -XX:+PrintGC / -XX:+VerboseGC output to stdout, so the GC
+# lines sit in the app log next to the Spring log lines. They carry [X.XXXs] process-uptime
+# stamps, so startup vs benchmark GCs split at the uptime when the app reported "Started".
+# Counting rule matches extract_gc_counts for the JVM variants: every GC log line that mentions
+# "Pause". G1 logs a start line and an end line per pause, so the columns count pause log
+# lines (about twice the number of pauses), the same way for every variant.
 extract_gc_counts_graalvm() {
   local app_log="$1"
   local gc_log="$2"
@@ -413,56 +563,48 @@ extract_gc_counts_graalvm() {
     return
   fi
 
-  # Extract startup time from app log (e.g., "Started PetClinicApplication in 5.193 seconds")
-  local startup_time=$(grep -o "Started PetClinicApplication in [0-9.]\+ seconds" "$app_log" 2>/dev/null | grep -o "[0-9.]\+" | head -1)
+  # GC pause lines in either format:
+  #   G1 (--gc=G1): [0.472s][info][gc,start ] GC(1) Pause Young (Concurrent Start) (G1 Evacuation Pause)
+  #   Serial:       [0.196s] GC(0) Pause Full GC (Collect on allocation) 32.50M->5.50M 16.560ms
+  # Try the G1 format first and fall back to Serial only when it finds nothing, so a missing
+  # "Using G1" header line can't silently turn the G1 counts into 0/0.
+  local pause_lines
+  pause_lines=$(grep -E '^\[[0-9]+\.[0-9]+s\]\[[a-z]+\]\[gc[^]]*\].*Pause' "$gc_log")
+  if [[ -z "$pause_lines" ]]; then
+    pause_lines=$(grep -E '^\[[0-9]+\.[0-9]+s\] .*(Pause Full GC|Pause Incremental GC)' "$gc_log")
+  fi
+  if [[ -z "$pause_lines" ]]; then
+    echo "0,0"
+    return
+  fi
 
+  # Uptime at startup, e.g. "Started PetClinicApplication in 0.615 seconds (process running
+  # for 0.619)". The GC stamps are process uptime, so prefer the "process running for" value.
+  local startup_time
+  startup_time=$(grep -o "process running for [0-9.]\+" "$app_log" 2>/dev/null | grep -o "[0-9.]\+" | head -1)
+  if [[ -z "$startup_time" ]]; then
+    startup_time=$(grep -o "Started PetClinicApplication in [0-9.]\+ seconds" "$app_log" 2>/dev/null | grep -o "[0-9.]\+" | head -1)
+  fi
   if [[ -z "$startup_time" ]]; then
     # Can't determine startup time, return all as benchmark GCs
-    local total_gcs=0
-    if grep -q "\[info\]\[gc\]" "$gc_log" 2>/dev/null; then
-      total_gcs=$(grep -c "Pause Young\|Pause Full" "$gc_log" 2>/dev/null || echo "0")
-    else
-      total_gcs=$(grep -c "Pause Full GC\|Pause Incremental GC" "$gc_log" 2>/dev/null || echo "0")
-    fi
-    echo "0,${total_gcs}"
+    echo "0,$(printf '%s\n' "$pause_lines" | wc -l | tr -d ' ')"
     return
   fi
 
   local startup_count=0
   local benchmark_count=0
-
-  # Detect format and parse GC events
-  if grep -q "\[info\]\[gc\]" "$gc_log" 2>/dev/null; then
-    # G1 GC format (Linux with --gc=G1)
-    # Example: [2.705s][info][gc] GC(16) Pause Young (Normal) (G1 Evacuation Pause) 2301M->1690M(4840M) 25.144ms
-    while IFS= read -r line; do
-      # Extract timestamp in format [X.XXXs]
-      local gc_time=$(echo "$line" | grep -oE '^\[[0-9]+\.[0-9]+s\]' | grep -oE '[0-9]+\.[0-9]+')
-      if [[ -n "$gc_time" ]]; then
-        # Compare using awk for floating point comparison
-        if awk -v gc="$gc_time" -v startup="$startup_time" 'BEGIN { exit (gc <= startup) ? 0 : 1 }'; then
-          ((startup_count++))
-        else
-          ((benchmark_count++))
-        fi
+  while IFS= read -r line; do
+    # Extract timestamp in format [X.XXXs]
+    local gc_time=$(echo "$line" | grep -oE '^\[[0-9]+\.[0-9]+s\]' | grep -oE '[0-9]+\.[0-9]+')
+    if [[ -n "$gc_time" ]]; then
+      # Compare using awk for floating point comparison
+      if awk -v gc="$gc_time" -v startup="$startup_time" 'BEGIN { exit (gc <= startup) ? 0 : 1 }'; then
+        ((startup_count++))
+      else
+        ((benchmark_count++))
       fi
-    done < <(grep "Pause Young\|Pause Full" "$gc_log")
-  else
-    # Serial GC format (macOS default)
-    # Example: [0.196s] GC(0) Pause Full GC (Collect on allocation) 32.50M->5.50M 16.560ms
-    while IFS= read -r line; do
-      # Extract timestamp in format [X.XXXs]
-      local gc_time=$(echo "$line" | grep -oE '^\[[0-9]+\.[0-9]+s\]' | grep -oE '[0-9]+\.[0-9]+')
-      if [[ -n "$gc_time" ]]; then
-        # Compare using awk for floating point comparison
-        if awk -v gc="$gc_time" -v startup="$startup_time" 'BEGIN { exit (gc <= startup) ? 0 : 1 }'; then
-          ((startup_count++))
-        else
-          ((benchmark_count++))
-        fi
-      fi
-    done < <(grep "Pause Full GC\|Pause Incremental GC" "$gc_log")
-  fi
+    fi
+  done <<<"$pause_lines"
 
   echo "${startup_count},${benchmark_count}"
 }
@@ -474,9 +616,10 @@ extract_gc_counts() {
   local app_log="$2"
   local gc_log="$3"
 
-  # For GraalVM Native Image, use specialized parsing
+  # For GraalVM Native Image, use specialized parsing. Its GC lines are in the app log
+  # (stdout), not in a separate GC log file.
   if [[ "$label" == "graalvm" ]]; then
-    extract_gc_counts_graalvm "$app_log" "$gc_log"
+    extract_gc_counts_graalvm "$app_log" "$app_log"
     return
   fi
 
@@ -583,10 +726,24 @@ wait_for_port_free() {
     fi
     if [[ $counter -ge $timeout ]]; then
       echo "    Warning: port 8080 still occupied after ${timeout}s, terminating"
-      local stuck_pid
-      stuck_pid=$(jcmd 2>/dev/null | grep -i "petclinic" | awk '{print $1}' | head -1)
-      [[ -z "$stuck_pid" ]] && stuck_pid=$(pgrep -f "java .*-jar.*spring-petclinic" 2>/dev/null | head -1)
-      [[ -z "$stuck_pid" ]] && stuck_pid=$(ss -tlnp 2>/dev/null | grep ':8080' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
+      # Stop only the process that holds port 8080, and only if it is a benchmark app: a JVM run
+      # with -jar ...spring-petclinic (the restored CRaC process keeps that command line), the
+      # native executable, or a CRaC restore from petclinic-crac. Anything else is left alone;
+      # the next start then fails on the busy port and the run stops with an error.
+      local stuck_pid stuck_cmd
+      stuck_pid=$(ss -tlnp 2>/dev/null | grep ':8080 ' | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | head -1)
+      if [[ -z "$stuck_pid" ]]; then
+        echo "    WARNING: could not find the process that holds port 8080; nothing stopped"
+      else
+        stuck_cmd=$(ps -o args= -p "$stuck_pid" 2>/dev/null)
+        case "$stuck_cmd" in
+        *-jar*spring-petclinic* | *nativeCompile/spring-petclinic* | *petclinic-crac*) ;;
+        *)
+          echo "    WARNING: port 8080 is held by PID $stuck_pid, which is not a benchmark app; leaving it alone: ${stuck_cmd:0:120}"
+          stuck_pid=""
+          ;;
+        esac
+      fi
       # Safety: refuse to kill self, parent, or init
       if [[ -n "$stuck_pid" ]] && { [[ "$stuck_pid" == "$$" ]] || [[ "$stuck_pid" == "$PPID" ]] || [[ "$stuck_pid" == "1" ]]; }; then
         echo "    WARNING: stuck PID detection returned $stuck_pid (self/parent/init); ignoring"
@@ -778,6 +935,13 @@ elif [[ "$LABEL" == "crac" && (! -d petclinic-crac || ! -f petclinic-crac/*.img)
   # Clean up any existing processes before starting (with proper indentation)
   cleanup_processes "    "
 
+  # A killed or timed-out earlier checkpoint can leave a core.img.* temp file behind, which
+  # would make this training run fail the completeness check. Start from a clean directory.
+  if [[ -e petclinic-crac ]]; then
+    echo "    Removing old checkpoint directory petclinic-crac before training"
+    rm -rf petclinic-crac || { echo "    ERROR: cannot remove old checkpoint directory petclinic-crac"; exit 1; }
+  fi
+
   echo "    Command: $TRAIN_CMD"
   train_start=$(date +%s)
   $TRAIN_CMD >"$LOG_FILE" 2>&1 &
@@ -886,10 +1050,18 @@ elif [[ "$LABEL" == "crac" && (! -d petclinic-crac || ! -f petclinic-crac/*.img)
     fi
   fi
 
-  # Wait for checkpoint to complete - give it more time
+  # Wait for checkpoint to complete.
+  # The warp engine (hardcoded via -XX:CRaCEngine=warp) writes the image to a temp file
+  # petclinic-crac/core.img.<random>, logs "warp: Checkpoint successful!" early, but keeps
+  # writing the image afterwards and renames it to core.img only when done. Sending TERM
+  # before that rename gets the shutdown captured in the image, so every restore exits
+  # immediately. Hence: wait for the success message, the final core.img, no temp file,
+  # and a core.img size that is stable between two consecutive 1-second checks.
   echo "    Waiting for checkpoint to complete..."
   checkpoint_wait=0
-  max_checkpoint_wait=60 # Increased from 30 to 60 seconds
+  max_checkpoint_wait=120 # Raised from 60: the image is ~240 MB and written to a slow disk on small servers
+  checkpoint_complete=false
+  prev_core_size=-2
   while [[ $checkpoint_wait -lt $max_checkpoint_wait ]]; do
     # Check if the application process is still running
     if ! kill -0 "$app_pid" 2>/dev/null; then
@@ -897,16 +1069,20 @@ elif [[ "$LABEL" == "crac" && (! -d petclinic-crac || ! -f petclinic-crac/*.img)
       break
     fi
 
-    if [[ -d petclinic-crac ]] && [[ "$(ls -A petclinic-crac 2>/dev/null)" ]]; then
-      # Check if there are files other than log files
-      non_log_files=$(find petclinic-crac -type f ! -name "*.log" 2>/dev/null | wc -l)
-      if [[ $non_log_files -gt 0 ]]; then
-        echo "    Checkpoint directory has non-log files after ${checkpoint_wait}s"
-        break
-      else
-        echo "    Checkpoint directory exists but only contains log files, waiting for actual checkpoint data..."
-      fi
+    core_size=-1
+    if [[ -f petclinic-crac/core.img ]]; then
+      core_size=$(wc -c <petclinic-crac/core.img 2>/dev/null | tr -d '[:space:]')
+      [[ "$core_size" =~ ^[0-9]+$ ]] || core_size=-1
     fi
+    if grep -q "warp: Checkpoint successful!" "$LOG_FILE" 2>/dev/null &&
+      [[ $core_size -gt 0 ]] &&
+      ! compgen -G "petclinic-crac/core.img.*" >/dev/null &&
+      [[ $core_size -eq $prev_core_size ]]; then
+      echo "    Checkpoint image complete after ${checkpoint_wait}s (core.img ${core_size} bytes, size stable)"
+      checkpoint_complete=true
+      break
+    fi
+    prev_core_size=$core_size
     sleep 1
     checkpoint_wait=$((checkpoint_wait + 1))
     if [[ $((checkpoint_wait % 5)) -eq 0 ]]; then
@@ -919,12 +1095,61 @@ elif [[ "$LABEL" == "crac" && (! -d petclinic-crac || ! -f petclinic-crac/*.img)
     fi
   done
 
+  # Timed out with the application still running: the image is not complete, do not benchmark
+  if [[ "$checkpoint_complete" != "true" ]] && kill -0 "$app_pid" 2>/dev/null; then
+    echo "    Error: Checkpoint image was not complete after ${max_checkpoint_wait}s"
+    echo "    Checkpoint directory contents:"
+    ls -lh petclinic-crac 2>&1 | sed 's/^/      /'
+    echo "    Last few lines of application log:"
+    tail -15 "$LOG_FILE" | sed 's/^/      /'
+    kill -TERM "$pid" 2>/dev/null
+    kill -TERM "$app_pid" 2>/dev/null
+    sleep 2
+    kill -0 "$app_pid" 2>/dev/null && kill -9 "$app_pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    echo "    CRaC training failed - skipping benchmark"
+    exit 1
+  fi
+
+  # The application exited by itself (older CRaC builds do that after checkpointing):
+  # re-check the completion predicate once, with one extra 1-second check for a stable size
+  if [[ "$checkpoint_complete" != "true" ]]; then
+    recheck_size_1=-1
+    if [[ -f petclinic-crac/core.img ]]; then
+      recheck_size_1=$(wc -c <petclinic-crac/core.img 2>/dev/null | tr -d '[:space:]')
+      [[ "$recheck_size_1" =~ ^[0-9]+$ ]] || recheck_size_1=-1
+    fi
+    sleep 1
+    recheck_size_2=-1
+    if [[ -f petclinic-crac/core.img ]]; then
+      recheck_size_2=$(wc -c <petclinic-crac/core.img 2>/dev/null | tr -d '[:space:]')
+      [[ "$recheck_size_2" =~ ^[0-9]+$ ]] || recheck_size_2=-1
+    fi
+    if grep -q "warp: Checkpoint successful!" "$LOG_FILE" 2>/dev/null &&
+      [[ $recheck_size_1 -gt 0 ]] &&
+      ! compgen -G "petclinic-crac/core.img.*" >/dev/null &&
+      [[ $recheck_size_1 -eq $recheck_size_2 ]]; then
+      echo "    Checkpoint image complete after ${checkpoint_wait}s (core.img ${recheck_size_2} bytes, size stable)"
+      checkpoint_complete=true
+    else
+      echo "    Error: Application exited before the checkpoint image was complete"
+      echo "    Checkpoint directory contents:"
+      ls -lh petclinic-crac 2>&1 | sed 's/^/      /'
+      echo "    Last few lines of application log:"
+      tail -15 "$LOG_FILE" | sed 's/^/      /'
+      kill -TERM "$pid" 2>/dev/null
+      wait "$pid" 2>/dev/null
+      echo "    CRaC training failed - skipping benchmark"
+      exit 1
+    fi
+  fi
+
   # Verify checkpoint directory was created and has content
   if [[ -d petclinic-crac ]]; then
     if [[ "$(ls -A petclinic-crac 2>/dev/null)" ]]; then
-      # Check if there are non-log files
+      # Require the final core.img and no leftover core.img.* temp file (see comment above)
       non_log_files=$(find petclinic-crac -type f ! -name "*.log" 2>/dev/null | wc -l)
-      if [[ $non_log_files -gt 0 ]]; then
+      if [[ -f petclinic-crac/core.img ]] && ! compgen -G "petclinic-crac/core.img.*" >/dev/null; then
         echo "    Checkpoint directory created successfully: $(ls -lh petclinic-crac)"
         echo "    Checkpoint directory contents:"
         ls -lh petclinic-crac | sed 's/^/      /'
@@ -934,12 +1159,16 @@ elif [[ "$LABEL" == "crac" && (! -d petclinic-crac || ! -f petclinic-crac/*.img)
         if grep -q "warp: Checkpoint successful!" "$LOG_FILE"; then
           echo "    ✅ Checkpoint success confirmed in application log"
         else
-          echo "    ⚠️  Warning: 'warp: Checkpoint successful!' message not found in application log"
+          echo "    Error: 'warp: Checkpoint successful!' message not found in application log"
           echo "    Last few lines of application log:"
-          tail -10 "$LOG_FILE" | sed 's/^/      /'
+          tail -15 "$LOG_FILE" | sed 's/^/      /'
+          kill -TERM "$pid" 2>/dev/null
+          wait "$pid" 2>/dev/null
+          echo "    CRaC training failed - skipping benchmark"
+          exit 1
         fi
       else
-        echo "    Error: Checkpoint directory petclinic-crac exists but only contains log files"
+        echo "    Error: Checkpoint directory petclinic-crac exists but has no final core.img (or a core.img.* temp file remains)"
         echo "    Application may have terminated during checkpoint creation"
         echo "    Checkpoint directory contents:"
         ls -lh petclinic-crac | sed 's/^/      /'
@@ -1104,8 +1333,8 @@ elif [[ "$LABEL" == "graalvm" && "$TRAINING_MODE" == "training" ]]; then
   # Check if we actually found the startup message
   if grep -q "Started PetClinicApplication in" "$LOG_FILE"; then
     echo "    Application started successfully"
-    # For training runs, we don't need to be as strict about URL errors
-    # Just hit the URLs to generate profiling data, even if some fail
+    # Hit the URLs to generate profiling data. The status guard in hit_urls also applies to
+    # training runs: unexpected HTTP status codes stop the application and fail the run.
     echo "    Hitting URLs for profiling data generation..."
     hit_urls
   else
@@ -1466,6 +1695,21 @@ avg_time=$(trimmed_mean "${times[@]}")
 avg_mem=$(trimmed_mean "${mems[@]}")
 avg_startup_gc=$(trimmed_mean "${startup_gcs[@]}")
 avg_benchmark_gc=$(trimmed_mean "${benchmark_gcs[@]}")
+
+# Size Extra for cds, leyden and crac: compile-and-run.sh measures the sizes before this script
+# runs, when the CDS archive, the Leyden AOT cache and the CRaC checkpoint do not exist yet (it
+# deletes them, and the training run above creates them), so they came out as 0.0. Measure
+# them again now, the same way as compile-and-run.sh (du -sk, MB with one decimal).
+extra_path=""
+case "$LABEL" in
+cds) extra_path="petclinic.jsa" ;;
+leyden) extra_path="petclinic.aot" ;;
+crac) extra_path="petclinic-crac" ;;
+esac
+if [[ -n "$extra_path" && -e "$extra_path" ]]; then
+  extra_kb=$(du -sk "$extra_path" | cut -f1)
+  SIZE_EXTRA_MB=$(awk "BEGIN {printf \"%.1f\", $extra_kb/1024}")
+fi
 
 # Capture calculation timestamp in ISO 8601 format
 calc_timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")

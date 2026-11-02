@@ -1,0 +1,88 @@
+[0.005s][info][gc] Using G1
+[0.009s][info][gc,init] CPUs: 2 total, 2 available
+[0.009s][info][gc,init] Memory: 1907M
+[0.009s][info][gc,init] Large Page Support: Disabled
+[0.009s][info][gc,init] NUMA Support: Disabled
+[0.009s][info][gc,init] Heap Region Size: 1M
+[0.009s][info][gc,init] Heap Min Capacity: 84M
+[0.009s][info][gc,init] Heap Initial Capacity: 106M
+[0.009s][info][gc,init] Heap Max Capacity: 204M
+[0.009s][info][gc,init] Pre-touch: Disabled
+[0.009s][info][gc,init] Parallel Workers: 2
+[0.009s][info][gc,init] Concurrent Workers: 1
+[0.009s][info][gc,init] Concurrent Refinement Workers: 2
+[0.009s][info][gc,init] Periodic GC: Disabled
+
+
+              |\      _,,,--,,_
+             /,`.-'`'   ._  \-;;,_
+  _______ __|,4-  ) )_   .;.(__`'-'__     ___ __    _ ___ _______
+ |       | '---''(_/._)-'(_\_)   |   |   |   |  |  | |   |       |
+ |    _  |    ___|_     _|       |   |   |   |   |_| |   |       | __ _ _
+ |   |_| |   |___  |   | |       |   |   |   |       |   |       | \ \ \ \
+ |    ___|    ___| |   | |      _|   |___|   |  _    |   |      _|  \ \ \ \
+ |   |   |   |___  |   | |     |_|       |   | | |   |   |     |_    ) ) ) )
+ |___|   |_______| |___| |_______|_______|___|_|  |__|___|_______|  / / / /
+ ==================================================================/_/_/_/
+
+:: Built with Spring Boot :: 4.0.3
+
+
+2026-10-31T22:07:08.579Z  INFO 47825 --- [           main] o.s.s.petclinic.PetClinicApplication     : Starting AOT-processed PetClinicApplication using Java 25.0.3 with PID 47825 (/home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/spring-petclinic started by ubuntu in /home/ubuntu/projects/petclinic-upgrade)
+2026-10-31T22:07:08.579Z  INFO 47825 --- [           main] o.s.s.petclinic.PetClinicApplication     : The following 1 profile is active: "postgres"
+[0.057s][info][gc,start] GC(0) Pause Young (Normal) (G1 Evacuation Pause)
+[0.057s][info][gc,task ] GC(0) Using 2 workers of 2 for evacuation
+[0.064s][info][gc,phases] GC(0)   Pre Evacuate Collection Set: 0.08ms
+[0.064s][info][gc,phases] GC(0)   Merge Heap Roots: 0.06ms
+[0.064s][info][gc,phases] GC(0)   Evacuate Collection Set: 7.17ms
+[0.064s][info][gc,phases] GC(0)   Post Evacuate Collection Set: 0.26ms
+[0.064s][info][gc,phases] GC(0)   Other: 0.21ms
+[0.064s][info][gc,heap  ] GC(0) Eden regions: 14->0(47)
+[0.064s][info][gc,heap  ] GC(0) Survivor regions: 0->2(2)
+[0.064s][info][gc,heap  ] GC(0) Old regions: 0->1
+[0.064s][info][gc,heap  ] GC(0) Humongous regions: 0->0
+[0.064s][info][gc,heap  ] GC(0) Image heap regions: 76->76
+[0.064s][info][gc       ] GC(0) Pause Young (Normal) (G1 Evacuation Pause) 86M->75M(182M) 7.906ms
+[0.064s][info][gc,cpu   ] GC(0) User=0.01s Sys=0.00s Real=0.01s
+2026-10-31T22:07:08.620Z  INFO 47825 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-10-31T22:07:08.620Z  INFO 47825 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-31T22:07:08.620Z  INFO 47825 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.18]
+2026-10-31T22:07:08.625Z  INFO 47825 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 44 ms
+2026-10-31T22:07:08.654Z  INFO 47825 --- [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-10-31T22:07:08.656Z  INFO 47825 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.4.Final
+2026-10-31T22:07:08.675Z  INFO 47825 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-31T22:07:08.692Z  INFO 47825 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@1f969b12
+2026-10-31T22:07:08.692Z  INFO 47825 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-31T22:07:08.697Z  INFO 47825 --- [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost/petclinic]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 16.13
+	Default catalog/schema: petclinic/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-31T22:07:08.712Z  INFO 47825 --- [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-31T22:07:08.712Z  INFO 47825 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-31T22:07:08.725Z  INFO 47825 --- [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+[0.206s][info][gc,start ] GC(1) Pause Young (Normal) (G1 Evacuation Pause)
+[0.206s][info][gc,task  ] GC(1) Using 2 workers of 2 for evacuation
+[0.223s][info][gc,phases] GC(1)   Pre Evacuate Collection Set: 0.17ms
+[0.223s][info][gc,phases] GC(1)   Merge Heap Roots: 0.06ms
+[0.223s][info][gc,phases] GC(1)   Evacuate Collection Set: 16.60ms
+[0.223s][info][gc,phases] GC(1)   Post Evacuate Collection Set: 0.45ms
+[0.223s][info][gc,phases] GC(1)   Other: 0.06ms
+[0.223s][info][gc,heap  ] GC(1) Eden regions: 47->0(71)
+[0.223s][info][gc,heap  ] GC(1) Survivor regions: 2->7(7)
+[0.223s][info][gc,heap  ] GC(1) Old regions: 1->2
+[0.223s][info][gc,heap  ] GC(1) Humongous regions: 0->0
+[0.223s][info][gc,heap  ] GC(1) Image heap regions: 76->76
+[0.223s][info][gc       ] GC(1) Pause Young (Normal) (G1 Evacuation Pause) 122M->81M(182M) 17.445ms
+[0.223s][info][gc,cpu   ] GC(1) User=0.03s Sys=0.01s Real=0.02s
+2026-10-31T22:07:08.834Z  WARN 47825 --- [           main] i.m.c.i.binder.jvm.JvmGcMetrics          : GC notifications will not be available because no GarbageCollectorMXBean of the JVM provides any. GCs=[]
+2026-10-31T22:07:08.839Z  INFO 47825 --- [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 13 endpoints beneath base path '/actuator'
+2026-10-31T22:07:08.848Z  INFO 47825 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-10-31T22:07:08.849Z  INFO 47825 --- [           main] o.s.s.petclinic.PetClinicApplication     : Started PetClinicApplication in 0.283 seconds (process running for 0.288)

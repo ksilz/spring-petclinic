@@ -1,0 +1,45 @@
+
+[1;32mUsing java version 25.0.5.0+3-graal in this shell.[0m
+java 25.0.5.0.3 2026-10-25 LTS
+Java(TM) SE Runtime Environment Oracle GraalVM 25.0.5.0.3+1.1 (build 25.0.5.0.3+1-LTS-jvmci-b01)
+Java HotSpot(TM) 64-Bit Server VM Oracle GraalVM 25.0.5.0.3+1.1 (build 25.0.5.0.3+1-LTS-jvmci-b01, mixed mode, sharing)
+GRAALVM_BUILD_START 2026-10-31T17:20:59Z
+Checking for running Java processes before benchmarks...
+  Killing Java processes: 7051
+
+Current Java:
+java 25.0.5.0.3 2026-10-25 LTS
+Java(TM) SE Runtime Environment Oracle GraalVM 25.0.5.0.3+1.1 (build 25.0.5.0.3+1-LTS-jvmci-b01)
+Java HotSpot(TM) 64-Bit Server VM Oracle GraalVM 25.0.5.0.3+1.1 (build 25.0.5.0.3+1-LTS-jvmci-b01, mixed mode, sharing)
+
+=== GraalVM Native Image (gradle, current Java) ===
+GraalVM memory allocation: -Xmx24g
+
+
+****************************************************************
+
+ BUILDING APPLICATION
+
+-> SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=25 -Dorg.gradle.jvmargs="-Xmx24g" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args='--gc=G1' --build-args='-R:MaxHeapSize=128m' --build-args='-J-Xmx25376m' --build-args='--parallelism=8' --jvm-args-native="-Xmx128m"
+
+****************************************************************
+
+Starting a Gradle Daemon, 2 stopped Daemons could not be reused, use --status for details
+Calculating task graph as no cached configuration is available for tasks: clean nativeCompile --pgo-instrument --build-args=--gc=G1 --build-args=-R:MaxHeapSize=128m --build-args=-J-Xmx25376m --build-args=--parallelism=8 --jvm-args-native=-Xmx128m
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Could not determine the dependencies of task ':cyclonedxBom'.
+> Could not create task ':cyclonedxDirectBom'.
+   > Cannot mutate the artifacts of configuration ':cyclonedxDirectBom' after the configuration was consumed as a variant. After a configuration has been observed, it should not be modified.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 12s
+Configuration cache entry stored.
+GRAALVM_BUILD_EXIT 1 2026-10-31T17:21:14Z

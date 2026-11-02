@@ -1,0 +1,27 @@
+# 2026-11-01, about 07:45-07:55 UTC, with the user's go-ahead. Nothing else ran on the servers.
+#
+# Duplicate indexes dropped with tools/drop-duplicate-indexes.sql (psql -v ON_ERROR_STOP=1, user petclinic,
+# one DROP INDEX per transaction). Table rows before and after, both servers:
+#   owners=10 pets=13 visits=4 vets=6 specialties=3 types=6 vet_specialties=5
+== small server (35.158.97.4)
+indexes before: 4152
+drop took 6.2 s, psql rc=0
+indexes after: 15
+data.sql via psql (3 runs, includes psql startup): before 0.314 / 0.333 / 0.322 s, after 0.065 / 0.065 / 0.066 s
+== big server (18.196.121.148)
+indexes before: 533
+drop took 0.8 s, psql rc=0
+indexes after: 15
+data.sql via psql (3 runs, includes psql startup): before 0.081 / 0.080 / 0.083 s, after 0.060 / 0.060 / 0.061 s
+# Remaining indexes, identical on both servers (= today's schema.sql plus primary/unique keys):
+owners: idx_owners_last_name owners_pkey
+pets: idx_pets_name idx_pets_owner_id pets_pkey unique_owner_pet_name
+specialties: idx_specialties_name specialties_pkey
+types: idx_types_name types_pkey
+vet_specialties: vet_specialties_vet_id_specialty_id_key
+vets: idx_vets_last_name vets_pkey
+visits: idx_visits_pet_id visits_pkey
+#
+# apt timers paused on both servers: sudo systemctl disable --now apt-daily.timer apt-daily-upgrade.timer
+# Result on both: is-enabled disabled disabled, is-active inactive inactive (they stay off after a reboot).
+# Re-enable after the official run: sudo systemctl enable --now apt-daily.timer apt-daily-upgrade.timer

@@ -1,0 +1,89 @@
+=== runner: track 25, variant graalvm, pin native-binary, BENCH_WARMUPS=1, BENCH_RUNS=3, commit 9fe08b8
+openjdk 25.0.3 2026-04-21 LTS
+OpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)
+OpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)
+spring-petclinic: OK
+default.iprof: OK
+=== runner: sizes app=185.4 MB extra=41.1 MB
+DEBUG: Script started with parameters:
+  JAR_PATH: build/native/nativeCompile/spring-petclinic
+  LABEL: graalvm
+  AOT_FLAG: -Dspring.aot.enabled=true
+  TRAINING_MODE: 
+  SCRIPT_START_TIME: 1793490518
+  PID: 51121
+  PPID: 51076
+  Command: ./benchmark.sh build/native/nativeCompile/spring-petclinic graalvm -Dspring.aot.enabled=true  185.4 41.1
+DEBUG: End of debug info
+
+DEBUG: Configuration set:
+  WARMUPS: 1
+  RUNS: 3
+  CSV_FILE: result_graalvm.csv
+NOTE: non-default run counts (smoke test): WARMUPS=1, RUNS=3
+DEBUG: End of configuration debug
+
+
+****************************************************************
+
+Running application
+
+-> ./build/native/nativeCompile/spring-petclinic -XX:+PrintGC -XX:+VerboseGC -Dspring.profiles.active=postgres 2>/tmp/gc_graalvm.log
+
+****************************************************************
+
+Found existing native spring-petclinic processes: 51124
+  Skipping native process cleanup during GraalVM benchmark (training already cleaned up)
+Starting 1 warm-up run…
+  Warm-up 1
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 51129
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 51129
+Starting 3 benchmark runs…
+Swap usage before benchmark: 47 MB
+  Run 1
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 51577
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 51577
+    Run 1 completed successfully
+    0.604s, 199.4 MB
+    Debug: Run 1 finished, continuing to next run...
+  Run 2
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 52038
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 52038
+    Run 2 completed successfully
+    0.611s, 201.2 MB
+    Debug: Run 2 finished, continuing to next run...
+  Run 3
+    Waiting for application to start and extract PID from log...
+    Found GraalVM app process PID from log: 52501
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 52501
+    Run 3 completed successfully
+    0.697s, 201.0 MB
+    Debug: Run 3 finished, continuing to next run...
+
+--- Swap Usage ---
+Swap before benchmark: 47 MB
+Swap after benchmark:  47 MB
+Swap delta:            0 MB
+Note: System started with 47 MB swap in use (not caused by this benchmark)
+
+--- Benchmark Results ---
+Run,Startup Time (s),Max Memory (MB),Startup GCs,Benchmark GCs,Ran at,Size App (MB),Size Extra (MB)
+1,0.604,199.4,0,0,2026-10-31T23:51:27Z,,
+2,0.611,201.2,0,0,2026-10-31T23:54:15Z,,
+3,0.697,201.0,0,0,2026-10-31T23:57:04Z,,
+A,0.611,201,0,0,2026-10-31T23:59:53Z,185.4,41.1

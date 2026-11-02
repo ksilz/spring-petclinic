@@ -1,0 +1,5 @@
+Run,Startup Time (s),Max Memory (MB),Startup GCs,Benchmark GCs,Ran at,Size App (MB),Size Extra (MB)
+1,0.323,189.8,0,0,2026-10-31T17:55:45Z,,
+2,0.311,190.0,0,0,2026-10-31T17:58:33Z,,
+3,0.3,190.4,0,0,2026-10-31T18:01:21Z,,
+A,0.311,190,0,0,2026-10-31T18:04:09Z,185.4,41.1

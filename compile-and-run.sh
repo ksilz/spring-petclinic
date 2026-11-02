@@ -6,6 +6,12 @@
 #   ./build_and_benchmark.sh maven            # maven, all stages
 #   ./build_and_benchmark.sh crac             # gradle, only CRaC
 #   ./build_and_benchmark.sh maven leyden     # maven, only Leyden
+#
+# JDK track (environment variable JDK_TRACK, default 25)
+#   JDK_TRACK=25 ./compile-and-run.sh         # JDK 25 LTS: all six variants
+#   JDK_TRACK=27 ./compile-and-run.sh         # JDK 27: five variants, GraalVM is n/a
+#                                             # (no GraalVM release for JDK 27 exists).
+#                                             # Result CSVs get a "_jdk27" suffix.
 
 set -euo pipefail
 
@@ -27,8 +33,33 @@ gradle | maven)
 *) STAGE_FILTER=$1 ;;
 esac
 
-ALL_LABELS=(baseline tuning cds leyden crac graalvm)
-REQUESTED=("${STAGE_FILTER:-${ALL_LABELS[*]}}")
+# JDK track: 25 (LTS, default) or 27. Exported so benchmark.sh tags its CSV files.
+JDK_TRACK="${JDK_TRACK:-25}"
+case "$JDK_TRACK" in
+25 | 27) ;;
+*)
+  echo "JDK_TRACK must be 25 or 27 (got '$JDK_TRACK')" >&2
+  exit 1
+  ;;
+esac
+export JDK_TRACK
+
+CSV_SUFFIX=""
+if [[ "$JDK_TRACK" != "25" ]]; then
+  CSV_SUFFIX="_jdk${JDK_TRACK}"
+fi
+
+# GraalVM has no release for JDK 27, so that variant only exists on track 25.
+if [[ "$JDK_TRACK" == "25" ]]; then
+  ALL_LABELS=(baseline tuning cds leyden crac graalvm)
+else
+  ALL_LABELS=(baseline tuning cds leyden crac)
+fi
+if [[ -n "$STAGE_FILTER" ]]; then
+  REQUESTED=("$STAGE_FILTER")
+else
+  REQUESTED=("${ALL_LABELS[@]}")
+fi
 
 # ────────────────────────────────────────────────────────────────
 # 2. Tooling sanity
@@ -201,18 +232,29 @@ NAME[leyden]="Project Leyden"
 NAME[crac]="CRaC"
 NAME[graalvm]="GraalVM Native Image"
 
-JAVA[baseline]='25.0.3-tem'
-EXPECT[baseline]='25'
-JAVA[tuning]='25.0.3-tem'
-EXPECT[tuning]='25'
-JAVA[cds]='25.0.3-tem'
-EXPECT[cds]='25'
-JAVA[leyden]='25.0.3-tem'
-EXPECT[leyden]='25'
-JAVA[crac]='25.0.2.crac-zulu'
-EXPECT[crac]='25'
-JAVA[graalvm]='25.0.3-graal'
-EXPECT[graalvm]='25'
+# Newest builds per track (SDKMAN identifiers; need SDKMAN >= 5.24 for the "+" style).
+if [[ "$JDK_TRACK" == "27" ]]; then
+  JDK_TEM='27.0.0.0+35-tem'
+  JDK_CRAC='27.0.0.0-crac+35-zulu'
+  JDK_GRAAL='n/a' # no GraalVM release for JDK 27
+else
+  JDK_TEM='25.0.5.0+8-tem'
+  JDK_CRAC='25.0.4.1-crac+1-zulu' # newest Zulu CRaC for 25 (no 25.0.5 build yet)
+  JDK_GRAAL='25.0.5.0+3-graal'
+fi
+
+JAVA[baseline]="$JDK_TEM"
+EXPECT[baseline]="$JDK_TRACK"
+JAVA[tuning]="$JDK_TEM"
+EXPECT[tuning]="$JDK_TRACK"
+JAVA[cds]="$JDK_TEM"
+EXPECT[cds]="$JDK_TRACK"
+JAVA[leyden]="$JDK_TEM"
+EXPECT[leyden]="$JDK_TRACK"
+JAVA[crac]="$JDK_CRAC"
+EXPECT[crac]="$JDK_TRACK"
+JAVA[graalvm]="$JDK_GRAAL"
+EXPECT[graalvm]="$JDK_TRACK"
 
 JAR_PATH[baseline]="build/libs/${JAR_NAME}"
 JAR_PATH[tuning]="${JAR_NAME%.jar}/${JAR_NAME}"
@@ -229,15 +271,15 @@ PARAMETERS[crac]='-Dspring.aot.enabled=false -XX:CRaCCheckpointTo=petclinic-crac
 PARAMETERS[graalvm]='-Dspring.aot.enabled=true'
 
 if [[ $BUILD_SYS == gradle ]]; then
-  CMD[baseline]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar"
-  CMD[tuning]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[cds]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[leyden]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
-  CMD[crac]="SPRING_PROFILES_ACTIVE=postgres ./gradlew --no-daemon -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar -Pcrac=true"
+  CMD[baseline]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=${JDK_TRACK} -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar"
+  CMD[tuning]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=${JDK_TRACK} -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
+  CMD[cds]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=${JDK_TRACK} -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
+  CMD[leyden]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=${JDK_TRACK} -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar && java -Djarmode=tools -jar build/libs/${JAR_NAME} extract --force"
+  CMD[crac]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=${JDK_TRACK} --no-daemon -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar -Pcrac=true"
   if [[ "$(uname)" == "Linux" ]]; then
-    CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args='--gc=G1' --build-args='-R:MaxHeapSize=128m' --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=${CPU_COUNT}' --jvm-args-native=\"-Xmx128m\""
+    CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=${JDK_TRACK} -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args='--gc=G1' --build-args='-R:MaxHeapSize=128m' --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=${CPU_COUNT}' --jvm-args-native=\"-Xmx128m\""
   else
-    CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=${CPU_COUNT}' --build-args='-R:MaxHeapSize=128m' --jvm-args-native=\"-Xmx128m\""
+    CMD[graalvm]="SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=${JDK_TRACK} -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --pgo-instrument --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=${CPU_COUNT}' --build-args='-R:MaxHeapSize=128m' --jvm-args-native=\"-Xmx128m\""
   fi
 
   OUT_DIR[gradle]="build/libs"
@@ -274,6 +316,12 @@ for label in "${REQUESTED[@]}"; do
 
   stage="${NAME[$label]}"
   expected="${EXPECT[$label]}"
+
+  if [[ "$label" == "graalvm" && "$JDK_TRACK" != "25" ]]; then
+    echo "=== $stage: n/a on JDK track $JDK_TRACK (no GraalVM release for JDK $JDK_TRACK) – skipping ==="
+    echo
+    continue
+  fi
 
   # ----- Java selection ---------------------------------------------------
   current_java_version=$(java --version 2>&1 | head -n1 | grep -oE '[0-9]+' | head -n1)
@@ -406,9 +454,9 @@ for label in "${REQUESTED[@]}"; do
     # Rebuild optimized native image
     echo "Rebuilding optimized native image..."
     if [[ "$(uname)" == "Linux" ]]; then
-      rebuild_cmd="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --build-args='--gc=G1' --build-args='-R:MaxHeapSize=128m' --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=${CPU_COUNT}' --jvm-args-native=\"-Xmx128m\""
+      rebuild_cmd="SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=${JDK_TRACK} -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --build-args='--gc=G1' --build-args='-R:MaxHeapSize=128m' --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=${CPU_COUNT}' --jvm-args-native=\"-Xmx128m\""
     else
-      rebuild_cmd="SPRING_PROFILES_ACTIVE=postgres ./gradlew -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=${CPU_COUNT}' --build-args='-R:MaxHeapSize=128m' --jvm-args-native=\"-Xmx128m\""
+      rebuild_cmd="SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=${JDK_TRACK} -Dorg.gradle.jvmargs=\"${GRAALVM_GRADLE_ARGS}\" --build-cache --parallel clean nativeCompile --build-args='-J-Xmx${GRAALVM_MAX_HEAP}' --build-args='--parallelism=${CPU_COUNT}' --build-args='-R:MaxHeapSize=128m' --jvm-args-native=\"-Xmx128m\""
     fi
     echo "-> $rebuild_cmd"
     echo
@@ -449,10 +497,13 @@ done
 if [[ ${#executed_stages[@]} -gt 0 ]]; then
   csv_files=""
   for stage in "${executed_stages[@]}"; do
-    # Only count CSVs that were modified in the last 5 minutes (i.e., from this run)
-    if [[ -f "result_${stage}.csv" && $(find "result_${stage}.csv" -mmin -5) ]]; then
-      csv_files="$csv_files result_${stage}.csv"
-    fi
+    # Only count CSVs that were modified in the last 5 minutes (i.e., from this run).
+    # Smoke tests (BENCH_WARMUPS/BENCH_RUNS other than 3/7) write result_<label>[_jdk27]_smoke.csv.
+    for csv in "result_${stage}${CSV_SUFFIX}.csv" "result_${stage}${CSV_SUFFIX}_smoke.csv"; do
+      if [[ -f "$csv" && $(find "$csv" -mmin -5) ]]; then
+        csv_files="$csv_files $csv"
+      fi
+    done
   done
   if [[ -n "$csv_files" ]]; then
     echo "Done. Result CSVs:$csv_files"

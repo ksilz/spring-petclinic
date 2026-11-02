@@ -1,0 +1,66 @@
+# tools/failpath-test.sh on the small server (Ubuntu 24.04, GNU time, stdbuf, ss), 2026-11-01. Round 1 used an earlier version of the script (T1-T3, plus T4 run by hand).
+# A python http.server on port 8080 stands in for the app. OLD = benchmark.sh at 228e57d,
+# NEW = bd04d84 (round 1). Functions extracted from benchmark.sh: descendant_pids, stop_app_after_failure, wait_for_port_free.
+=== OLD T1: app_pid is a stale non-descendant; launcher is /usr/bin/time -> stdbuf -> app
+    Skipping kill of PID 120225: it is not the launcher process or one of its descendants
+    Stopping the application after the failure (T1)...
+    Waiting for port 8080 to be released... (5s) ... (30s)
+    Warning: port 8080 still occupied after 30s, terminating
+    Sending SIGTERM to PID 120230 (preserves CRaC checkpoint integrity)
+T1 result: stop took 37s, port busy after: no, bystander: alive, app processes left: 0
+=== OLD T2: a foreign process (not a benchmark app) holds 8080
+    Warning: port 8080 still occupied after 3s, terminating
+    Sending SIGTERM to PID 120360 (preserves CRaC checkpoint integrity)
+T2 result: foreign process: gone
+=== OLD T3: a process named spring-petclinic holds 8080
+    Warning: port 8080 still occupied after 3s, terminating
+    Sending SIGTERM to PID 120394 (preserves CRaC checkpoint integrity)
+T3 result: spring-petclinic process: gone, port busy after: no
+
+=== NEW T1: app_pid is a stale non-descendant; launcher is /usr/bin/time -> stdbuf -> app
+    Skipping kill of PID 120434: it is not the launcher process or one of its descendants
+    Stopping the application after the failure (T1)...
+T1 result: stop took 2s, port busy after: no, bystander: alive, app processes left: 0
+=== NEW T2: a foreign process (not a benchmark app) holds 8080
+    Warning: port 8080 still occupied after 3s, terminating
+    WARNING: port 8080 is held by PID 120466, which is not a benchmark app; leaving it alone: python3 -m http.server 8080
+T2 result: foreign process: alive
+=== NEW T3: a process named spring-petclinic holds 8080
+    Warning: port 8080 still occupied after 3s, terminating
+    Sending SIGTERM to PID 120492 (preserves CRaC checkpoint integrity)
+T3 result: spring-petclinic process: gone, port busy after: no
+=== NEW T4 (separate run): app_pid = the real app (child of /usr/bin/time)
+app_pid=120665 descendants=120665
+    Stopping the application after the failure (T4)...
+T4: took 2s, port busy: no
+
+# Round 2 after the review fixes (NEW = fc24b83), extended tools/failpath-test.sh:
+=== NEW T1: app_pid is a stale non-descendant; launcher is /usr/bin/time -> stdbuf -> app
+    Skipping kill of PID 120913: it is not the launcher process or one of its descendants
+    Stopping the application after the failure (T1)...
+T1 result: stop took 2s, port busy after: no, bystander: alive, apps left: 0
+=== NEW T4: app_pid is the real app (child of /usr/bin/time)
+app_pid=120949 descendants=[120949]
+    Stopping the application after the failure (T4)...
+T4 result: stop took 2s, port busy after: no, apps left: 0
+=== NEW T5: app_pid is a grandchild (time -> bash -> app)
+app_pid=120994 descendants=[120991 120994]
+    Stopping the application after the failure (T5)...
+T5 result: stop took 2s, port busy after: no, apps left: 0
+=== NEW T2: a foreign process (not a benchmark app) holds 8080
+    Warning: port 8080 still occupied after 3s, terminating
+    WARNING: port 8080 is held by PID 121041, which is not a benchmark app; leaving it alone: python3 -m http.server 8080
+T2 result: foreign process: alive
+=== NEW T2b: a non-app process with spring-petclinic in a directory argument holds 8080
+    Warning: port 8080 still occupied after 3s, terminating
+    WARNING: port 8080 is held by PID 121069, which is not a benchmark app; leaving it alone: python3 -m http.server 8080 --directory /tmp/spring-petclinic-dir
+T2b result: process: alive
+=== NEW T3: the native executable holds 8080
+    Warning: port 8080 still occupied after 3s, terminating
+    Sending SIGTERM to PID 121099 (preserves CRaC checkpoint integrity)
+T3 result: process: gone, port busy after: no
+=== NEW T3b: a 'java -jar ...spring-petclinic...jar' process holds 8080
+    Warning: port 8080 still occupied after 3s, terminating
+    Sending SIGTERM to PID 121130 (preserves CRaC checkpoint integrity)
+T3b result: process: gone, port busy after: no
+port listeners now: 0 stand-ins: 0

@@ -1,0 +1,24 @@
+# Automatic updates on 2026-11-01 (unattended-upgrade, from /var/log/apt/history.log,
+# /var/log/unattended-upgrades/unattended-upgrades.log and journalctl).
+#
+# Small server (35.158.97.4): unattended-upgrade started 06:41:42 UTC, installed packages 06:43:48-06:51:59.
+Start-Date: 2026-11-01  06:48:17
+Upgrade: postgresql-16:amd64 (16.13-0ubuntu0.24.04.1, 16.15-0ubuntu0.24.04.1), postgresql-client-16:amd64 (16.13-0ubuntu0.24.04.1, 16.15-0ubuntu0.24.04.1), libpq5:amd64 (16.13-0ubuntu0.24.04.1, 16.15-0ubuntu0.24.04.1)
+Nov 01 06:48:18 systemd[1]: Stopped postgresql@16-main.service - PostgreSQL Cluster 16-main.
+Nov 01 06:48:22 systemd[1]: Started postgresql@16-main.service - PostgreSQL Cluster 16-main.
+Nov 01 06:49:37 systemd[1]: Stopping postgresql@16-main.service - PostgreSQL Cluster 16-main...
+Nov 01 06:49:40 systemd[1]: Started postgresql@16-main.service - PostgreSQL Cluster 16-main.
+# A probe start at 06:48 failed:
+#   org.hibernate.exception.JDBCConnectionException: Unable to obtain isolated JDBC connection
+#   [Connection to localhost:5432 refused. ...]
+# Other upgrades in the same run include libc6 2.39-0ubuntu8.7 -> 2.39-0ubuntu8.9, libssl3t64/openssl
+# 3.0.13-0ubuntu3.9 -> 3.0.13-0ubuntu3.16, and a new kernel package linux-image-aws 7.0.0-1014.
+# Now: PostgreSQL 16.15, glibc 2.39-0ubuntu8.9, running kernel still 6.17.0-1013-aws.
+# /var/run/reboot-required.pkgs: libc6, linux-image-7.0.0-1014-aws, linux-base
+#
+# Big server (18.196.121.148): unattended-upgrade installed packages from about 06:24 to 06:31 UTC.
+# PostgreSQL 18.3 (pgdg) was not upgraded, but systemd stopped and restarted postgresql@18-main
+# 10 times between 06:24:05 and 06:30:49. libc6 2.39-0ubuntu8.7 -> 8.9 and libssl3t64/openssl
+# 3.0.13-0ubuntu3.9 -> 3.16 were upgraded as well.
+# Now: PostgreSQL 18.3, running kernel 6.17.0-1013-aws.
+# /var/run/reboot-required.pkgs: libc6, linux-image-7.0.0-1014-aws, linux-base

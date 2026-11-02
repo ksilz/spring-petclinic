@@ -1,0 +1,20 @@
+# tools/duplicate-indexes.sql (read-only SELECT), database petclinic, 2026-11-01 ~06:56 UTC. Nothing was dropped.
+# would_keep = primary key + the named indexes from today's schema.sql (pets also keeps unique_owner_pet_name).
+== small server (35.158.97.4, PostgreSQL 16.13)
+table_name would_drop would_keep
+owners 591 2
+pets 1182 4
+specialties 591 2
+types 591 2
+vet_specialties 0 1
+vets 591 2
+visits 591 2
+== big server (18.196.121.148, PostgreSQL 18)
+table_name would_drop would_keep
+owners 74 2
+pets 148 4
+specialties 74 2
+types 74 2
+vet_specialties 0 1
+vets 74 2
+visits 74 2

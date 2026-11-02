@@ -1,0 +1,56 @@
+== host ip-172-31-21-201 2026-11-01T08:24:28Z
+model name	: Intel(R) Xeon(R) Platinum 8259CL CPU @ 2.50GHz
+vCPUs: 8
+               total        used        free      shared  buff/cache   available
+Mem:           31718         731       31033          21         354       30986
+Swap:              0           0           0
+kernel: 7.0.0-1014-aws
+ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39
+PRETTY_NAME="Ubuntu 24.04.4 LTS"
+-- 25.0.5.0+8-tem
+openjdk version "25.0.5" 2026-10-20 LTS
+OpenJDK Runtime Environment Temurin-25.0.5+8 (build 25.0.5+8-LTS)
+OpenJDK 64-Bit Server VM Temurin-25.0.5+8 (build 25.0.5+8-LTS, mixed mode, sharing)
+-- 25.0.5.0+3-graal
+java version "25.0.5.0.3" 2026-10-25 LTS
+Java(TM) SE Runtime Environment Oracle GraalVM 25.0.5.0.3+1.1 (build 25.0.5.0.3+1-LTS-jvmci-b01)
+Java HotSpot(TM) 64-Bit Server VM Oracle GraalVM 25.0.5.0.3+1.1 (build 25.0.5.0.3+1-LTS-jvmci-b01, mixed mode, sharing)
+native-image 25.0.5.0.3 2026-10-25
+GraalVM Runtime Environment Oracle GraalVM 25.0.5.0.3+1.1 (build 25.0.5.0.3+1-LTS-jvmci-b01)
+Substrate VM Oracle GraalVM 25.0.5.0.3+1.1 (build 25.0.5.0.3+1-LTS, serial gc, compressed references)
+-- 27.0.0.0+35-tem
+openjdk version "27" 2026-09-15
+OpenJDK Runtime Environment Temurin-27+35 (build 27+35)
+OpenJDK 64-Bit Server VM Temurin-27+35 (build 27+35, mixed mode, sharing)
+criu: Version: 4.1.1
+postgres: perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LANGUAGE = (unset),
+	LC_ALL = (unset),
+	LC_CTYPE = "UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to a fallback locale ("C.UTF-8").
+PostgreSQL 18.3 (Ubuntu 18.3-1.pgdg24.04+1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit
+indexes in petclinic: perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LANGUAGE = (unset),
+	LC_ALL = (unset),
+	LC_CTYPE = "UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to a fallback locale ("C.UTF-8").
+15
+apt timers: disabled disabled 
+commit: 58f09f3 fix: Record the CDS, Leyden and CRaC artifact sizes in Size Extra
+status: []
+Gradle 9.5.1
+Kotlin:        2.3.20
+Launcher JVM:  25.0.5 (Eclipse Adoptium 25.0.5+8-LTS)
+  id 'org.springframework.boot' version '4.1.2'
+  id 'org.graalvm.buildtools.native' version '1.1.2'
+  id 'org.cyclonedx.bom' version '3.5.1'
+tasks.named("cyclonedxDirectBom").configure {
+disk: /dev/root        29G   11G   18G  38% /
+port 8080: 0
+java procs: 0
