@@ -1,0 +1,210 @@
+=== runner: track 27, variant baseline, pin 27.0.0.0+35-tem, BENCH_WARMUPS=3, BENCH_RUNS=7, commit 7785519
+openjdk 27 2026-09-15
+OpenJDK Runtime Environment Temurin-27+35 (build 27+35)
+OpenJDK 64-Bit Server VM Temurin-27+35 (build 27+35, mixed mode, sharing)
+Checking for running Java processes before benchmarks...
+  Killing Java processes: 36303
+
+Current Java:
+openjdk 27 2026-09-15
+OpenJDK Runtime Environment Temurin-27+35 (build 27+35)
+OpenJDK 64-Bit Server VM Temurin-27+35 (build 27+35, mixed mode, sharing)
+
+=== Baseline (gradle, current Java) ===
+
+
+****************************************************************
+
+ BUILDING APPLICATION
+
+-> SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=27 -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar
+
+****************************************************************
+
+Starting a Gradle Daemon, 1 incompatible Daemon could not be reused, use --status for details
+Calculating task graph as configuration cache cannot be reused because JVM has changed.
+> Task :clean
+> Task :collectReachabilityMetadata
+> Task :compileJava
+> Task :cyclonedxDirectBom FROM-CACHE
+> Task :cyclonedxBom FROM-CACHE
+> Task :processResources
+> Task :classes
+> Task :resolveMainClassName
+
+> Task :processAot
+
+
+              |\      _,,,--,,_
+             /,`.-'`'   ._  \-;;,_
+  _______ __|,4-  ) )_   .;.(__`'-'__     ___ __    _ ___ _______
+ |       | '---''(_/._)-'(_\_)   |   |   |   |  |  | |   |       |
+ |    _  |    ___|_     _|       |   |   |   |   |_| |   |       | __ _ _
+ |   |_| |   |___  |   | |       |   |   |   |       |   |       | \ \ \ \
+ |    ___|    ___| |   | |      _|   |___|   |  _    |   |      _|  \ \ \ \
+ |   |   |   |___  |   | |     |_|       |   | | |   |   |     |_    ) ) ) )
+ |___|   |_______| |___| |_______|_______|___|_|  |__|___|_______|  / / / /
+ ==================================================================/_/_/_/
+
+:: Built with Spring Boot :: 4.1.2
+
+
+2026-11-03T01:26:48.667Z  INFO 36781 --- [           main] o.s.s.petclinic.PetClinicApplication     : Starting PetClinicApplication using Java 27 with PID 36781 (/home/ubuntu/projects/petclinic-upgrade/build/classes/java/main started by ubuntu in /home/ubuntu/projects/petclinic-upgrade)
+2026-11-03T01:26:48.684Z  INFO 36781 --- [           main] o.s.s.petclinic.PetClinicApplication     : The following 1 profile is active: "postgres"
+2026-11-03T01:26:51.227Z  INFO 36781 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-11-03T01:26:51.335Z  INFO 36781 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 88 ms. Found 3 JPA repository interfaces.
+2026-11-03T01:26:54.133Z  INFO 36781 --- [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: AotMetamodel]
+2026-11-03T01:26:54.316Z  INFO 36781 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final
+2026-11-03T01:26:55.111Z  INFO 36781 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-11-03T01:26:55.163Z  INFO 36781 --- [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [undefined/unknown]
+	Database driver: undefined/unknown
+	Database dialect: SpringDataJpaAotDialect
+	Database version: 0.0
+	Default catalog/schema: unknown/unknown
+	Autocommit mode: undefined/unknown
+	Isolation level: <unknown>
+	JDBC fetch size: undefined/unknown
+	Pool: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-11-03T01:26:56.972Z  INFO 36781 --- [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-11-03T01:26:58.530Z  INFO 36781 --- [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+
+> Task :processAotResources
+
+> Task :compileAotJava
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+> Task :aotClasses
+> Task :bootJar
+
+[Incubating] Problems report is available at: file:///home/ubuntu/projects/petclinic-upgrade/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 49s
+11 actionable tasks: 9 executed, 2 from cache
+Configuration cache entry stored.
+Build step took 50.0 seconds
+Artifact sizes - App: 63.9 MB, Extra: 0.0 MB
+DEBUG: Script started with parameters:
+  JAR_PATH: build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar
+  LABEL: baseline
+  AOT_FLAG: -Dspring.aot.enabled=false
+  TRAINING_MODE: 
+  SCRIPT_START_TIME: 1793669227
+  PID: 36832
+  PPID: 36301
+  Command: ./benchmark.sh build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar baseline -Dspring.aot.enabled=false  63.9 0.0
+DEBUG: End of debug info
+
+DEBUG: Configuration set:
+  WARMUPS: 3
+  RUNS: 7
+  CSV_FILE: result_baseline_jdk27.csv
+  RUN_LOG_DIR: run-logs/baseline_jdk27
+DEBUG: End of configuration debug
+
+
+****************************************************************
+
+Running application
+
+-> java -Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_baseline.log:time,uptime,level,tags -Dspring.profiles.active=postgres -Dspring.aot.enabled=false -jar build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar
+
+****************************************************************
+
+Starting 3 warm-up runs…
+  Warm-up 1
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing background process 36840
+  Warm-up 2
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing background process 37248
+  Warm-up 3
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing background process 37716
+Starting 7 benchmark runs…
+Swap usage before benchmark: 17 MB
+  Run 1
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 38137
+    Run 1 completed successfully
+    13.354s, 427.5 MB
+    Debug: Run 1 finished, continuing to next run...
+  Run 2
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 38705
+    Run 2 completed successfully
+    13.592s, 427.0 MB
+    Debug: Run 2 finished, continuing to next run...
+  Run 3
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 39214
+    Run 3 completed successfully
+    14.385s, 624.0 MB
+    Debug: Run 3 finished, continuing to next run...
+  Run 4
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 39787
+    Run 4 completed successfully
+    13.469s, 618.3 MB
+    Debug: Run 4 finished, continuing to next run...
+  Run 5
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 40286
+    Run 5 completed successfully
+    13.903s, 612.0 MB
+    Debug: Run 5 finished, continuing to next run...
+  Run 6
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 40852
+    Run 6 completed successfully
+    14.552s, 430.5 MB
+    Debug: Run 6 finished, continuing to next run...
+  Run 7
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 41422
+    Run 7 completed successfully
+    15.121s, 427.9 MB
+    Debug: Run 7 finished, continuing to next run...
+
+--- Swap Usage ---
+Swap before benchmark: 17 MB
+Swap after benchmark:  44 MB
+Swap delta:            27 MB
+WARNING: Swap space increased by 27 MB during benchmark!
+This indicates the system may have run out of physical memory.
+
+--- Benchmark Results ---
+Run,Startup Time (s),Max Memory (MB),Startup GC Pauses,Benchmark GC Pauses,Ran at,Size App (MB),Size Extra (MB),Startup From Process Start (s)
+1,13.354,427.5,18,1,2026-11-03T01:36:22Z,,,14.68
+2,13.592,427.0,18,1,2026-11-03T01:39:27Z,,,14.847
+3,14.385,624.0,16,1,2026-11-03T01:42:32Z,,,15.715
+4,13.469,618.3,16,1,2026-11-03T01:45:38Z,,,14.73
+5,13.903,612.0,17,1,2026-11-03T01:48:43Z,,,15.213
+6,14.552,430.5,18,1,2026-11-03T01:51:49Z,,,15.833
+7,15.121,427.9,17,1,2026-11-03T01:54:55Z,,,16.367
+A,13.9802,503.24,17.2,1,2026-11-03T01:58:02Z,63.9,0.0,15.2676
+
+Done. Result CSVs: result_baseline_jdk27.csv

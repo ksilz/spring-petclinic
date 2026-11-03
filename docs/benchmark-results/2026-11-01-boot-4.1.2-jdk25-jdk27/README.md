@@ -1,4 +1,6 @@
-# Official run 2026-11-01: Spring Boot 4.1.2, JDK 25 and JDK 27
+# Run 2026-11-01: Spring Boot 4.1.2, JDK 25 and JDK 27 (superseded)
+
+**Superseded by [`../2026-11-02-boot-4.1.2-jdk25-jdk27/`](../2026-11-02-boot-4.1.2-jdk25-jdk27/README.md).** An audit on 2026-11-02 found that this run's GC columns count log lines (two per pause) and split startup and benchmark pauses at whole-second precision, and that only the last run's logs were kept. `benchmark.sh` was fixed (`392548b`) and everything was measured again.
 
 The full benchmark with the default run counts (3 warm-ups + 7 measured runs per variant), for the W-JAX 2026 talk "Wie kann ich Java schneller starten". The German single-file report with all results, charts and the numbers for Keynote is [`benchmark-bericht.html`](benchmark-bericht.html).
 

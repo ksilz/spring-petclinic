@@ -377,7 +377,29 @@ After this run, the CycloneDX Gradle plugin went to 3.5.1 (`53d0ad6`). 3.5.1 bui
 
 ---
 
-## Official Run 2026-11-01
+## Official Run 2026-11-02/03
+
+The benchmark for the W-JAX 2026 talk, measured again after the GC counting fix (findings 12 and 13): Spring Boot 4.1.2, JDK 25 and JDK 27, default run counts (3 warm-ups + 7 measured runs), small server; GraalVM native executable built with PGO on the big server. Commit `7785519`, chain 2026-11-02 22:17 to 2026-11-03 04:06 UTC. All 11 variants passed, and every CSV value of all 77 runs matches that run's logs. German report: [`docs/benchmark-results/2026-11-02-boot-4.1.2-jdk25-jdk27/benchmark-bericht.html`](../docs/benchmark-results/2026-11-02-boot-4.1.2-jdk25-jdk27/benchmark-bericht.html); raw data, per-run logs and observations in the folder's [README](../docs/benchmark-results/2026-11-02-boot-4.1.2-jdk25-jdk27/README.md).
+
+Row A (trimmed mean, per column) per variant:
+
+| Variant | JDK 25 startup | JDK 27 startup | JDK 25 from process start | JDK 27 from process start | JDK 25 memory | JDK 27 memory | JDK 25 GC pauses startup / benchmark | JDK 27 GC pauses startup / benchmark |
+|---|---|---|---|---|---|---|---|---|
+| Baseline | 13.417 s | 13.980 s | 14.621 s | 15.268 s | 443 MB | 503 MB | 18 / 2 | 17.2 / 1 |
+| Tuning | 9.115 s | 8.927 s | 9.888 s | 9.522 s | 414 MB | 455 MB | 14 / 1 | 12.4 / 1 |
+| Tuning + CDS | 5.301 s | 5.449 s | 5.666 s | 5.871 s | 398 MB | 371 MB | 2 / 1 | 2.4 / 0.8 |
+| Tuning + Leyden | 4.199 s | 3.915 s | 4.907 s | 4.421 s | 360 MB | 342 MB | 2 / 0 | 2 / 0 |
+| CRaC | 0.084 s | 0.088 s | 0.084 s | 0.088 s | 387 MB | 373 MB | 0 / 0 | 0 / 0 |
+| GraalVM | 0.338 s | n/a | 0.343 s | n/a | 200 MB | n/a | 4 / 4 | n/a |
+
+Notes:
+- JDK 27 Baseline memory has two levels (4 runs at 427-431 MB, 3 runs at 612-624 MB): in the high runs G1 grew the heap from 258 MB to 445-462 MB. JDK 27 Tuning grew it to 462 MB in all runs. On JDK 25 the heap stayed at 258 MB (finding 8).
+- 8 of 77 runs are more than 8 % slower than their variant's median, each the slowest of its variant (so not in row A). The biggest is GraalVM run 4 (0.975 s vs 0.339 s); `mem.log` shows no cause.
+- Preparations as on 2026-11-01: 15 indexes in `petclinic`, apt timers disabled during the run and re-enabled afterwards.
+
+## Run 2026-11-01 (superseded)
+
+Superseded by the run of 2026-11-02/03 above: its GC columns count log lines and split at whole-second precision (finding 12), and only the last run's logs were kept.
 
 The full benchmark for the W-JAX 2026 talk: Spring Boot 4.1.2, JDK 25 and JDK 27, default run counts (3 warm-ups + 7 measured runs), small server; GraalVM native executable built with PGO on the big server. All 11 variants passed. German report with all results, charts and the numbers for Keynote: [`docs/benchmark-results/2026-11-01-boot-4.1.2-jdk25-jdk27/benchmark-bericht.html`](../docs/benchmark-results/2026-11-01-boot-4.1.2-jdk25-jdk27/benchmark-bericht.html); raw data and method notes in the folder's [README](../docs/benchmark-results/2026-11-01-boot-4.1.2-jdk25-jdk27/README.md).
 
@@ -445,7 +467,7 @@ The graalvm "Startup GCs" and "Benchmark GCs" columns were not measured in this 
    - Details: [verification README, "Follow-up 2026-11-01"](../docs/benchmark-results/2026-10-31-verification-boot-4.1.2/README.md#follow-up-2026-11-01).
 6. Pre-existing, fixed on 2026-11-01 (`de3b237`, `b78735e`): the GraalVM "Startup GCs" and "Benchmark GCs" columns were always 0/0. `benchmark.sh` put `2>/tmp/gc_graalvm.log` inside `APP_CMD`, so the shell passed it to the executable as a plain argument. The redirect would not have helped anyway: the native executable prints its GC lines to stdout and ignores `-Xlog:gc:file=...`. `benchmark.sh` now reads them from the app log and counts them like the JVM variants. The 0/0 values in the May 2026 and in this run's CSVs are not data.
 7. The May 2026 "Size App (MB)" of 164.6 for tuning, cds and leyden is inflated. The old checkout held 225 library JARs, because `java -Djarmode=tools extract --force` never deletes stale files. A fresh checkout has 93 JARs and 63.8 MB. Startup is not affected.
-8. The JDK 27 baseline peak memory is 628 MB median (643 MB max) vs 440 MB on JDK 25, with the same `-Xmx768m`. Watch this in the real benchmark. Official run 2026-11-01: JDK 27 Baseline and Tuning have two memory levels across runs. Baseline: 5 runs at 427-434 MB, 2 runs at 619/620 MB (A 469 MB, median 433 MB). Tuning: 4 runs at 447-458 MB, 3 runs at 525-536 MB (A 481 MB, median 458 MB). The high runs had slightly fewer GC pauses on average. JDK 25 shows no split.
+8. The JDK 27 baseline peak memory is 628 MB median (643 MB max) vs 440 MB on JDK 25, with the same `-Xmx768m`. Watch this in the real benchmark. Explained by the run of 2026-11-02/03, which kept every run's GC log: in the high-memory runs G1 grew the heap from 258 MB to 445-462 MB. Run 2026-11-01: JDK 27 Baseline and Tuning have two memory levels across runs. Baseline: 5 runs at 427-434 MB, 2 runs at 619/620 MB (A 469 MB, median 433 MB). Tuning: 4 runs at 447-458 MB, 3 runs at 525-536 MB (A 481 MB, median 458 MB). The high runs had slightly fewer GC pauses on average. JDK 25 shows no split.
 9. "Size Extra (MB)" is 0.0 for cds, leyden and crac in the old and the new runs. `compile-and-run.sh` measures sizes before `benchmark.sh` creates the archive, cache or checkpoint. Pre-existing, fixed in `58f09f3`: `benchmark.sh` measures the artifact itself before it writes the A row.
 10. Found on 2026-11-01: the duplicate indexes (finding 5) slow down every JVM variant too. On the JVM baseline, `data.sql` took 495-559 ms on the `petclinic` database vs 86-109 ms on a clean one, about 0.4 s per startup (about 9% of leyden). Removed on 2026-11-01 on both servers (`tools/drop-duplicate-indexes.sql` in that results folder): 4,152 to 15 indexes on the small server, 533 to 15 on the big server, rows unchanged. The old checkouts in `~/projects/spring-petclinic` still have the old `schema.sql` and would add the copies again.
 11. Found on 2026-11-01: `unattended-upgrade` ran on both servers in the morning (small server 06:41-06:52 UTC, big server about 06:24-06:31 UTC). On the small server it upgraded PostgreSQL 16.13 to 16.15 and restarted it twice; a start at 06:48 failed with "Connection to localhost:5432 refused". On the big server PostgreSQL 18.3 was restarted 10 times. Both got glibc 2.39-0ubuntu8.9, a newer OpenSSL and a new kernel, with a reboot pending. The apt timers were disabled on both servers on 2026-11-01 (`systemctl disable --now apt-daily.timer apt-daily-upgrade.timer`), so they stay off after the reboot. They were re-enabled after the official run on 2026-11-01; pause them again before the next run. Record the versions again: the "Tested Versions" table no longer matches the servers.

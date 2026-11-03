@@ -1,0 +1,57 @@
+== host ip-172-31-40-188 2026-11-02T22:14:55Z
+model name	: Intel(R) Xeon(R) Platinum 8259CL CPU @ 2.50GHz
+vCPUs: 2
+               total        used        free      shared  buff/cache   available
+Mem:            1905         410         778          17         901        1495
+Swap:           2047           0        2047
+kernel: 7.0.0-1014-aws
+ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39
+PRETTY_NAME="Ubuntu 24.04.4 LTS"
+-- 25.0.5.0+8-tem
+openjdk version "25.0.5" 2026-10-20 LTS
+OpenJDK Runtime Environment Temurin-25.0.5+8 (build 25.0.5+8-LTS)
+OpenJDK 64-Bit Server VM Temurin-25.0.5+8 (build 25.0.5+8-LTS, mixed mode, sharing)
+-- 25.0.4.1-crac+1-zulu
+openjdk version "25.0.4.1" 2026-08-18 LTS
+OpenJDK Runtime Environment Zulu25.36+205-CRaC-CA (build 25.0.4.1+1-LTS)
+OpenJDK 64-Bit Server VM Zulu25.36+205-CRaC-CA (build 25.0.4.1+1-LTS, mixed mode, sharing)
+-- 27.0.0.0+35-tem
+openjdk version "27" 2026-09-15
+OpenJDK Runtime Environment Temurin-27+35 (build 27+35)
+OpenJDK 64-Bit Server VM Temurin-27+35 (build 27+35, mixed mode, sharing)
+-- 27.0.0.0-crac+35-zulu
+openjdk version "27" 2026-09-15
+OpenJDK Runtime Environment Zulu27.28+101-CRaC-CA (build 27+35)
+OpenJDK 64-Bit Server VM Zulu27.28+101-CRaC-CA (build 27+35, mixed mode, sharing)
+criu: Version: 4.1.1
+postgres: perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LANGUAGE = (unset),
+	LC_ALL = (unset),
+	LC_CTYPE = "UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to a fallback locale ("C.UTF-8").
+PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit
+indexes in petclinic: perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LANGUAGE = (unset),
+	LC_ALL = (unset),
+	LC_CTYPE = "UTF-8",
+	LANG = "C.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to a fallback locale ("C.UTF-8").
+15
+apt timers: disabled disabled 
+commit: 7785519 docs: Read the new CSV format in the report generator
+status: []
+Gradle 9.5.1
+Kotlin:        2.3.20
+Launcher JVM:  25.0.5 (Eclipse Adoptium 25.0.5+8-LTS)
+  id 'org.springframework.boot' version '4.1.2'
+  id 'org.graalvm.buildtools.native' version '1.1.2'
+  id 'org.cyclonedx.bom' version '3.5.1'
+tasks.named("cyclonedxDirectBom").configure {
+disk: /dev/root        19G   14G  4.7G  75% /
+port 8080: 0
+java procs: 0

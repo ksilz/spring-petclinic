@@ -1,0 +1,49 @@
+== baseline 2026-11-02T22:49:28Z
+65388 KB disk, 65381 KB apparent, build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar
+8 KB disk, 1 KB apparent, petclinic-crac
+== tuning 2026-11-02T23:20:02Z
+65388 KB disk, 65381 KB apparent, build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar
+65324 KB disk, 65118 KB apparent, spring-petclinic-4.0.0-SNAPSHOT
+1032 KB disk, 1031 KB apparent, spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+64288 KB disk, 64087 KB apparent, spring-petclinic-4.0.0-SNAPSHOT/lib
+8 KB disk, 1 KB apparent, petclinic-crac
+lib jars: 93
+== cds 2026-11-02T23:52:38Z
+65388 KB disk, 65381 KB apparent, build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar
+65324 KB disk, 65118 KB apparent, spring-petclinic-4.0.0-SNAPSHOT
+1032 KB disk, 1031 KB apparent, spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+64288 KB disk, 64087 KB apparent, spring-petclinic-4.0.0-SNAPSHOT/lib
+108024 KB disk, 108024 KB apparent, petclinic.jsa
+8 KB disk, 1 KB apparent, petclinic-crac
+lib jars: 93
+== leyden 2026-11-03T00:25:09Z
+65388 KB disk, 65381 KB apparent, build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar
+65324 KB disk, 65118 KB apparent, spring-petclinic-4.0.0-SNAPSHOT
+1032 KB disk, 1031 KB apparent, spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+64288 KB disk, 64087 KB apparent, spring-petclinic-4.0.0-SNAPSHOT/lib
+108024 KB disk, 108024 KB apparent, petclinic.jsa
+136992 KB disk, 136988 KB apparent, petclinic.aot
+8 KB disk, 1 KB apparent, petclinic-crac
+lib jars: 93
+== crac 2026-11-03T00:58:11Z
+65404 KB disk, 65398 KB apparent, build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar
+65324 KB disk, 65118 KB apparent, spring-petclinic-4.0.0-SNAPSHOT
+1032 KB disk, 1031 KB apparent, spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+64288 KB disk, 64087 KB apparent, spring-petclinic-4.0.0-SNAPSHOT/lib
+108024 KB disk, 108024 KB apparent, petclinic.jsa
+136992 KB disk, 136988 KB apparent, petclinic.aot
+235808 KB disk, 235797 KB apparent, petclinic-crac
+235800 KB disk, 235796 KB apparent, petclinic-crac/core.img
+lib jars: 93
+== graalvm 2026-11-03T01:26:15Z
+65404 KB disk, 65398 KB apparent, build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar
+65324 KB disk, 65118 KB apparent, spring-petclinic-4.0.0-SNAPSHOT
+1032 KB disk, 1031 KB apparent, spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+64288 KB disk, 64087 KB apparent, spring-petclinic-4.0.0-SNAPSHOT/lib
+108024 KB disk, 108024 KB apparent, petclinic.jsa
+136992 KB disk, 136988 KB apparent, petclinic.aot
+235808 KB disk, 235797 KB apparent, petclinic-crac
+235800 KB disk, 235796 KB apparent, petclinic-crac/core.img
+189704 KB disk, 189699 KB apparent, build/native/nativeCompile/spring-petclinic
+42032 KB disk, 42028 KB apparent, src/pgo-profiles/main/default.iprof
+lib jars: 93

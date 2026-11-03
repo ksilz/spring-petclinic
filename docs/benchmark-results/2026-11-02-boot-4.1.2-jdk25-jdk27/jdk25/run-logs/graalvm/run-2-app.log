@@ -1,0 +1,445 @@
+[0.005s][info][gc] Using G1
+[0.009s][info][gc,init] CPUs: 2 total, 2 available
+[0.009s][info][gc,init] Memory: 1905M
+[0.009s][info][gc,init] Large Page Support: Disabled
+[0.009s][info][gc,init] NUMA Support: Disabled
+[0.009s][info][gc,init] Heap Region Size: 1M
+[0.009s][info][gc,init] Heap Min Capacity: 90M
+[0.009s][info][gc,init] Heap Initial Capacity: 90M
+[0.009s][info][gc,init] Heap Max Capacity: 212M
+[0.009s][info][gc,init] Pre-touch: Disabled
+[0.009s][info][gc,init] Parallel Workers: 2
+[0.009s][info][gc,init] Concurrent Workers: 1
+[0.009s][info][gc,init] Concurrent Refinement Workers: 2
+[0.009s][info][gc,init] Periodic GC: Disabled
+
+
+              |\      _,,,--,,_
+             /,`.-'`'   ._  \-;;,_
+  _______ __|,4-  ) )_   .;.(__`'-'__     ___ __    _ ___ _______
+ |       | '---''(_/._)-'(_\_)   |   |   |   |  |  | |   |       |
+ |    _  |    ___|_     _|       |   |   |   |   |_| |   |       | __ _ _
+ |   |_| |   |___  |   | |       |   |   |   |       |   |       | \ \ \ \
+ |    ___|    ___| |   | |      _|   |___|   |  _    |   |      _|  \ \ \ \
+ |   |   |   |___  |   | |     |_|       |   | | |   |   |     |_    ) ) ) )
+ |___|   |_______| |___| |_______|_______|___|_|  |__|___|_______|  / / / /
+ ==================================================================/_/_/_/
+
+:: Built with Spring Boot :: 4.1.2
+
+
+2026-11-03T01:09:26.036Z  INFO 33415 --- [           main] o.s.s.petclinic.PetClinicApplication     : Starting AOT-processed PetClinicApplication using Java 25.0.5.0.3 with PID 33415 (/home/ubuntu/projects/petclinic-upgrade/build/native/nativeCompile/spring-petclinic started by ubuntu in /home/ubuntu/projects/petclinic-upgrade)
+2026-11-03T01:09:26.036Z  INFO 33415 --- [           main] o.s.s.petclinic.PetClinicApplication     : The following 1 profile is active: "postgres"
+[0.057s][info][gc,start] GC(0) Pause Young (Normal) (G1 Evacuation Pause)
+[0.057s][info][gc,task ] GC(0) Using 2 workers of 2 for evacuation
+[0.065s][info][gc,phases] GC(0)   Pre Evacuate Collection Set: 0.09ms
+[0.065s][info][gc,phases] GC(0)   Merge Heap Roots: 0.05ms
+[0.065s][info][gc,phases] GC(0)   Evacuate Collection Set: 7.07ms
+[0.065s][info][gc,phases] GC(0)   Post Evacuate Collection Set: 0.47ms
+[0.065s][info][gc,phases] GC(0)   Other: 0.18ms
+[0.065s][info][gc,heap  ] GC(0) Eden regions: 14->0(40)
+[0.065s][info][gc,heap  ] GC(0) Survivor regions: 0->2(2)
+[0.065s][info][gc,heap  ] GC(0) Old regions: 0->1
+[0.065s][info][gc,heap  ] GC(0) Humongous regions: 0->0
+[0.065s][info][gc,heap  ] GC(0) Image heap regions: 83->83
+[0.065s][info][gc       ] GC(0) Pause Young (Normal) (G1 Evacuation Pause) 92M->81M(173M) 7.993ms
+[0.065s][info][gc,cpu   ] GC(0) User=0.01s Sys=0.01s Real=0.01s
+2026-11-03T01:09:26.079Z  INFO 33415 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-11-03T01:09:26.080Z  INFO 33415 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-03T01:09:26.080Z  INFO 33415 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.27]
+2026-11-03T01:09:26.083Z  INFO 33415 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 47 ms
+2026-11-03T01:09:26.110Z  INFO 33415 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-03T01:09:26.127Z  INFO 33415 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@1338e40e
+2026-11-03T01:09:26.127Z  INFO 33415 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-03T01:09:26.149Z  INFO 33415 --- [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-11-03T01:09:26.151Z  INFO 33415 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final
+2026-11-03T01:09:26.173Z  INFO 33415 --- [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost/petclinic]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 16.15
+	Default catalog/schema: petclinic/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-11-03T01:09:26.190Z  INFO 33415 --- [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-11-03T01:09:26.192Z  INFO 33415 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-11-03T01:09:26.205Z  INFO 33415 --- [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+[0.205s][info][gc,start ] GC(1) Pause Young (Concurrent Start) (G1 Evacuation Pause)
+[0.205s][info][gc,task  ] GC(1) Using 2 workers of 2 for evacuation
+[0.222s][info][gc,phases] GC(1)   Pre Evacuate Collection Set: 0.18ms
+[0.222s][info][gc,phases] GC(1)   Merge Heap Roots: 0.08ms
+[0.222s][info][gc,phases] GC(1)   Evacuate Collection Set: 16.15ms
+[0.222s][info][gc,phases] GC(1)   Post Evacuate Collection Set: 0.34ms
+[0.222s][info][gc,phases] GC(1)   Other: 0.06ms
+[0.222s][info][gc,heap  ] GC(1) Eden regions: 40->0(58)
+[0.222s][info][gc,heap  ] GC(1) Survivor regions: 2->6(6)
+[0.222s][info][gc,heap  ] GC(1) Old regions: 1->2
+[0.222s][info][gc,heap  ] GC(1) Humongous regions: 0->0
+[0.222s][info][gc,heap  ] GC(1) Image heap regions: 83->83
+[0.222s][info][gc       ] GC(1) Pause Young (Concurrent Start) (G1 Evacuation Pause) 121M->86M(173M) 16.913ms
+[0.222s][info][gc,cpu   ] GC(1) User=0.03s Sys=0.01s Real=0.02s
+[0.222s][info][gc       ] GC(2) Concurrent Mark Cycle
+[0.222s][info][gc,marking] GC(2) Concurrent Scan Root Regions
+[0.240s][info][gc,marking] GC(2) Concurrent Scan Root Regions 17.404ms
+[0.240s][info][gc,marking] GC(2) Concurrent Mark
+[0.240s][info][gc,marking] GC(2) Concurrent Mark From Roots
+[0.240s][info][gc,task   ] GC(2) Using 1 workers of 1 for marking
+[0.275s][info][gc,marking] GC(2) Concurrent Mark From Roots 34.955ms
+[0.275s][info][gc,marking] GC(2) Concurrent Preclean
+[0.275s][info][gc,marking] GC(2) Concurrent Preclean 0.010ms
+[0.277s][info][gc,start  ] GC(2) Pause Remark
+[0.277s][info][gc        ] GC(2) Pause Remark 100M->100M(173M) 0.234ms
+[0.277s][info][gc,cpu    ] GC(2) User=0.00s Sys=0.00s Real=0.00s
+[0.277s][info][gc,marking] GC(2) Concurrent Mark 37.283ms
+[0.277s][info][gc,marking] GC(2) Concurrent Rebuild Remembered Sets and Scrub Regions
+[0.280s][info][gc,marking] GC(2) Concurrent Rebuild Remembered Sets and Scrub Regions 3.341ms
+[0.280s][info][gc,start  ] GC(2) Pause Cleanup
+[0.281s][info][gc        ] GC(2) Pause Cleanup 101M->101M(173M) 0.015ms
+[0.281s][info][gc,cpu    ] GC(2) User=0.00s Sys=0.00s Real=0.00s
+[0.281s][info][gc,marking] GC(2) Concurrent Clear Claimed Marks
+[0.281s][info][gc,marking] GC(2) Concurrent Clear Claimed Marks 0.005ms
+[0.281s][info][gc,marking] GC(2) Concurrent Cleanup for Next Mark
+[0.282s][info][gc,marking] GC(2) Concurrent Cleanup for Next Mark 1.192ms
+[0.282s][info][gc        ] GC(2) Concurrent Mark Cycle 59.463ms
+2026-11-03T01:09:26.338Z  WARN 33415 --- [           main] i.m.c.i.binder.jvm.JvmGcMetrics          : GC notifications will not be available because no GarbageCollectorMXBean of the JVM provides any. GCs=[]
+2026-11-03T01:09:26.343Z  INFO 33415 --- [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 13 endpoints beneath base path '/actuator'
+2026-11-03T01:09:26.351Z  INFO 33415 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-11-03T01:09:26.352Z  INFO 33415 --- [           main] o.s.s.petclinic.PetClinicApplication     : Started PetClinicApplication in 0.329 seconds (process running for 0.334)
+2026-11-03T01:09:27.022Z  INFO 33415 --- [nio-8080-exec-3] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-03T01:09:27.022Z  INFO 33415 --- [nio-8080-exec-3] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-03T01:09:27.023Z  INFO 33415 --- [nio-8080-exec-3] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+[10.114s][info][gc,start  ] GC(3) Pause Young (Normal) (G1 Evacuation Pause)
+[10.114s][info][gc,task   ] GC(3) Using 2 workers of 2 for evacuation
+[10.140s][info][gc,phases ] GC(3)   Pre Evacuate Collection Set: 0.13ms
+[10.140s][info][gc,phases ] GC(3)   Merge Heap Roots: 0.10ms
+[10.140s][info][gc,phases ] GC(3)   Evacuate Collection Set: 25.24ms
+[10.140s][info][gc,phases ] GC(3)   Post Evacuate Collection Set: 0.39ms
+[10.140s][info][gc,phases ] GC(3)   Other: 0.08ms
+[10.140s][info][gc,heap   ] GC(3) Eden regions: 58->0(50)
+[10.140s][info][gc,heap   ] GC(3) Survivor regions: 6->7(8)
+[10.140s][info][gc,heap   ] GC(3) Old regions: 2->8
+[10.140s][info][gc,heap   ] GC(3) Humongous regions: 0->0
+[10.140s][info][gc,heap   ] GC(3) Image heap regions: 83->83
+[10.140s][info][gc        ] GC(3) Pause Young (Normal) (G1 Evacuation Pause) 144M->93M(173M) 26.092ms
+[10.140s][info][gc,cpu    ] GC(3) User=0.04s Sys=0.00s Real=0.02s
+2026-11-03T01:10:00.278Z ERROR 33415 --- [nio-8080-exec-1] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown] with root cause
+
+java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown
+	at org.springframework.samples.petclinic.system.CrashController.triggerException(CrashController.java:33) ~[spring-petclinic:na]
+	at java.base@25.0.5.0.3/java.lang.reflect.Method.invoke(Method.java:565) ~[spring-petclinic:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-petclinic:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[spring-petclinic:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-petclinic:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[spring-petclinic:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132) ~[na:na]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.servlet.resource.ResourceUrlEncodingFilter.doFilter(ResourceUrlEncodingFilter.java:66) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:164) ~[na:na]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[na:na]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:540) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[na:na]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71) ~[na:na]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347) ~[na:na]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:411) ~[na:na]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71) ~[spring-petclinic:11.0.27]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1308) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2202) ~[na:na]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:947) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:481) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74) ~[na:na]
+	at java.base@25.0.5.0.3/java.lang.Thread.runWith(Thread.java:1487) ~[spring-petclinic:na]
+	at java.base@25.0.5.0.3/java.lang.Thread.run(Thread.java:1474) ~[spring-petclinic:na]
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:832) ~[spring-petclinic:na]
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:808) ~[spring-petclinic:na]
+
+2026-11-03T01:10:33.440Z ERROR 33415 --- [nio-8080-exec-2] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown] with root cause
+
+java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown
+	at org.springframework.samples.petclinic.system.CrashController.triggerException(CrashController.java:33) ~[spring-petclinic:na]
+	at java.base@25.0.5.0.3/java.lang.reflect.Method.invoke(Method.java:565) ~[spring-petclinic:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-petclinic:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[spring-petclinic:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-petclinic:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[spring-petclinic:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132) ~[na:na]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.servlet.resource.ResourceUrlEncodingFilter.doFilter(ResourceUrlEncodingFilter.java:66) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:164) ~[na:na]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[na:na]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:540) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[na:na]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71) ~[na:na]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347) ~[na:na]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:411) ~[na:na]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71) ~[spring-petclinic:11.0.27]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1308) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2202) ~[na:na]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:947) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:481) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74) ~[na:na]
+	at java.base@25.0.5.0.3/java.lang.Thread.runWith(Thread.java:1487) ~[spring-petclinic:na]
+	at java.base@25.0.5.0.3/java.lang.Thread.run(Thread.java:1474) ~[spring-petclinic:na]
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:832) ~[spring-petclinic:na]
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:808) ~[spring-petclinic:na]
+
+2026-11-03T01:11:06.606Z ERROR 33415 --- [nio-8080-exec-5] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown] with root cause
+
+java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown
+	at org.springframework.samples.petclinic.system.CrashController.triggerException(CrashController.java:33) ~[spring-petclinic:na]
+	at java.base@25.0.5.0.3/java.lang.reflect.Method.invoke(Method.java:565) ~[spring-petclinic:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-petclinic:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[spring-petclinic:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-petclinic:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[spring-petclinic:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132) ~[na:na]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.servlet.resource.ResourceUrlEncodingFilter.doFilter(ResourceUrlEncodingFilter.java:66) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:164) ~[na:na]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[na:na]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:540) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[na:na]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71) ~[na:na]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347) ~[na:na]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:411) ~[na:na]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71) ~[spring-petclinic:11.0.27]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1308) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2202) ~[na:na]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:947) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:481) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74) ~[na:na]
+	at java.base@25.0.5.0.3/java.lang.Thread.runWith(Thread.java:1487) ~[spring-petclinic:na]
+	at java.base@25.0.5.0.3/java.lang.Thread.run(Thread.java:1474) ~[spring-petclinic:na]
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:832) ~[spring-petclinic:na]
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:808) ~[spring-petclinic:na]
+
+[112.657s][info][gc,start  ] GC(4) Pause Young (Concurrent Start) (G1 Evacuation Pause)
+[112.657s][info][gc,task   ] GC(4) Using 2 workers of 2 for evacuation
+[112.671s][info][gc,phases ] GC(4)   Pre Evacuate Collection Set: 0.15ms
+[112.671s][info][gc,phases ] GC(4)   Merge Heap Roots: 0.06ms
+[112.671s][info][gc,phases ] GC(4)   Evacuate Collection Set: 12.72ms
+[112.671s][info][gc,phases ] GC(4)   Post Evacuate Collection Set: 0.36ms
+[112.671s][info][gc,phases ] GC(4)   Other: 0.06ms
+[112.671s][info][gc,heap   ] GC(4) Eden regions: 50->0(54)
+[112.671s][info][gc,heap   ] GC(4) Survivor regions: 7->1(8)
+[112.671s][info][gc,heap   ] GC(4) Old regions: 8->15
+[112.671s][info][gc,heap   ] GC(4) Humongous regions: 0->0
+[112.671s][info][gc,heap   ] GC(4) Image heap regions: 83->83
+[112.671s][info][gc        ] GC(4) Pause Young (Concurrent Start) (G1 Evacuation Pause) 143M->94M(173M) 13.463ms
+[112.671s][info][gc,cpu    ] GC(4) User=0.02s Sys=0.00s Real=0.01s
+[112.671s][info][gc        ] GC(5) Concurrent Mark Cycle
+[112.671s][info][gc,marking] GC(5) Concurrent Scan Root Regions
+[112.677s][info][gc,marking] GC(5) Concurrent Scan Root Regions 6.376ms
+[112.677s][info][gc,marking] GC(5) Concurrent Mark
+[112.677s][info][gc,marking] GC(5) Concurrent Mark From Roots
+[112.677s][info][gc,task   ] GC(5) Using 1 workers of 1 for marking
+[112.706s][info][gc,marking] GC(5) Concurrent Mark From Roots 28.630ms
+[112.706s][info][gc,marking] GC(5) Concurrent Preclean
+[112.706s][info][gc,marking] GC(5) Concurrent Preclean 0.013ms
+[112.706s][info][gc,start  ] GC(5) Pause Remark
+[112.707s][info][gc        ] GC(5) Pause Remark 95M->95M(173M) 0.488ms
+[112.707s][info][gc,cpu    ] GC(5) User=0.00s Sys=0.00s Real=0.00s
+[112.707s][info][gc,marking] GC(5) Concurrent Mark 29.350ms
+[112.707s][info][gc,marking] GC(5) Concurrent Rebuild Remembered Sets and Scrub Regions
+[112.724s][info][gc,marking] GC(5) Concurrent Rebuild Remembered Sets and Scrub Regions 17.675ms
+[112.725s][info][gc,start  ] GC(5) Pause Cleanup
+[112.725s][info][gc        ] GC(5) Pause Cleanup 95M->95M(173M) 0.026ms
+[112.725s][info][gc,cpu    ] GC(5) User=0.00s Sys=0.00s Real=0.00s
+[112.725s][info][gc,marking] GC(5) Concurrent Clear Claimed Marks
+[112.725s][info][gc,marking] GC(5) Concurrent Clear Claimed Marks 0.009ms
+[112.725s][info][gc,marking] GC(5) Concurrent Cleanup for Next Mark
+[112.725s][info][gc,marking] GC(5) Concurrent Cleanup for Next Mark 0.288ms
+[112.725s][info][gc        ] GC(5) Concurrent Mark Cycle 54.023ms
+2026-11-03T01:11:39.779Z ERROR 33415 --- [nio-8080-exec-6] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown] with root cause
+
+java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown
+	at org.springframework.samples.petclinic.system.CrashController.triggerException(CrashController.java:33) ~[spring-petclinic:na]
+	at java.base@25.0.5.0.3/java.lang.reflect.Method.invoke(Method.java:565) ~[spring-petclinic:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-petclinic:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[spring-petclinic:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-petclinic:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[spring-petclinic:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132) ~[na:na]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.servlet.resource.ResourceUrlEncodingFilter.doFilter(ResourceUrlEncodingFilter.java:66) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:164) ~[na:na]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[na:na]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:540) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[na:na]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71) ~[na:na]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347) ~[na:na]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:411) ~[na:na]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71) ~[spring-petclinic:11.0.27]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1308) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2202) ~[na:na]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:947) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:481) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74) ~[na:na]
+	at java.base@25.0.5.0.3/java.lang.Thread.runWith(Thread.java:1487) ~[spring-petclinic:na]
+	at java.base@25.0.5.0.3/java.lang.Thread.run(Thread.java:1474) ~[spring-petclinic:na]
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:832) ~[spring-petclinic:na]
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:808) ~[spring-petclinic:na]
+
+2026-11-03T01:12:12.931Z ERROR 33415 --- [nio-8080-exec-7] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown] with root cause
+
+java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown
+	at org.springframework.samples.petclinic.system.CrashController.triggerException(CrashController.java:33) ~[spring-petclinic:na]
+	at java.base@25.0.5.0.3/java.lang.reflect.Method.invoke(Method.java:565) ~[spring-petclinic:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-petclinic:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[spring-petclinic:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-petclinic:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[spring-petclinic:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132) ~[na:na]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.servlet.resource.ResourceUrlEncodingFilter.doFilter(ResourceUrlEncodingFilter.java:66) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-petclinic:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-petclinic:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[na:na]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:164) ~[na:na]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[na:na]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:540) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[na:na]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86) ~[spring-petclinic:11.0.27]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71) ~[na:na]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347) ~[na:na]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:411) ~[na:na]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71) ~[spring-petclinic:11.0.27]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1308) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2202) ~[na:na]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:947) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:481) ~[spring-petclinic:11.0.27]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74) ~[na:na]
+	at java.base@25.0.5.0.3/java.lang.Thread.runWith(Thread.java:1487) ~[spring-petclinic:na]
+	at java.base@25.0.5.0.3/java.lang.Thread.run(Thread.java:1474) ~[spring-petclinic:na]
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:832) ~[spring-petclinic:na]
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:808) ~[spring-petclinic:na]
+
+2026-11-03T01:12:12.934Z  INFO 33415 --- [ionShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-03T01:12:12.935Z  INFO 33415 --- [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-11-03T01:12:12.936Z  INFO 33415 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-11-03T01:12:12.936Z  INFO 33415 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-03T01:12:12.954Z  INFO 33415 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.

@@ -1,0 +1,31 @@
+[2026-11-03T00:52:24.883+0000][0.005s][info][gc,init] CardTable entry size: 512
+[2026-11-03T00:52:24.883+0000][0.005s][info][gc     ] Using G1
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] Version: 25.0.4.1+1-LTS (release)
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] CPUs: 2 total, 2 available
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] Memory: 1905M
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] Large Page Support: Disabled
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] NUMA Support: Disabled
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] Compressed Oops: Enabled (32-bit)
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] Heap Region Size: 1M
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] Heap Min Capacity: 8M
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] Heap Initial Capacity: 30M
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] Heap Max Capacity: 478M
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] Pre-touch: Disabled
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] Parallel Workers: 2
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] Concurrent Workers: 1
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] Concurrent Refinement Workers: 2
+[2026-11-03T00:52:24.885+0000][0.007s][info][gc,init] Periodic GC: Disabled
+[2026-11-03T00:52:24.895+0000][0.017s][info][gc,metaspace] CDS archive(s) mapped at: [0x000000002a000000-0x000000002adb0000-0x000000002adb0000), size 14352384, SharedBaseAddress: 0x000000002a000000, ArchiveRelocationMode: 1.
+[2026-11-03T00:52:24.895+0000][0.017s][info][gc,metaspace] Compressed class space mapped at: 0x000000002b000000-0x000000006b000000, reserved size: 1073741824
+[2026-11-03T00:52:24.895+0000][0.017s][info][gc,metaspace] UseCompressedClassPointers 1, UseCompactObjectHeaders 0
+[2026-11-03T00:52:24.895+0000][0.017s][info][gc,metaspace] Narrow klass pointer bits 32, Max shift 3
+[2026-11-03T00:52:24.895+0000][0.017s][info][gc,metaspace] Narrow klass base: 0x000000002a000000, Narrow klass shift: 0
+[2026-11-03T00:52:24.895+0000][0.017s][info][gc,metaspace] Encoding Range: [0x000000002a000000 - 0x000000012a000000), (4294967296 bytes)
+[2026-11-03T00:52:24.895+0000][0.017s][info][gc,metaspace] Klass Range:    [0x000000002a001000 - 0x000000006b000000), (1090514944 bytes)
+[2026-11-03T00:52:24.895+0000][0.017s][info][gc,metaspace] Klass ID Range:  [4096 - 1090519033) (1090514937)
+[2026-11-03T00:52:24.895+0000][0.017s][info][gc,metaspace] Protection zone: [0x000000002a000000 - 0x000000002a001000), (4096 bytes)
+[2026-11-03T00:55:17.264+0000][1746.699s][info][gc,exit        ] Heap
+[2026-11-03T00:55:17.264+0000][1746.699s][info][gc,exit        ]  garbage-first heap   total reserved 786432K, committed 262144K, used 181295K [0x00000000d0000000, 0x0000000100000000)
+[2026-11-03T00:55:17.264+0000][1746.699s][info][gc,exit        ]   region size 1024K, 142 young (145408K), 0 survivors (0K)
+[2026-11-03T00:55:17.264+0000][1746.699s][info][gc,exit        ]  Metaspace       used 99223K, committed 99968K, reserved 1179648K
+[2026-11-03T00:55:17.264+0000][1746.699s][info][gc,exit        ]   class space    used 14409K, committed 14720K, reserved 1048576K

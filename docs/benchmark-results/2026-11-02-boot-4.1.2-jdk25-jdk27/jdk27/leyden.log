@@ -1,0 +1,185 @@
+=== runner: track 27, variant leyden, pin 27.0.0.0+35-tem, BENCH_WARMUPS=3, BENCH_RUNS=7, commit 7785519
+openjdk 27 2026-09-15
+OpenJDK Runtime Environment Temurin-27+35 (build 27+35)
+OpenJDK 64-Bit Server VM Temurin-27+35 (build 27+35, mixed mode, sharing)
+Checking for running Java processes before benchmarks...
+  Killing Java processes: 52918
+47645
+
+Current Java:
+openjdk 27 2026-09-15
+OpenJDK Runtime Environment Temurin-27+35 (build 27+35)
+OpenJDK 64-Bit Server VM Temurin-27+35 (build 27+35, mixed mode, sharing)
+
+=== Project Leyden (gradle, current Java) ===
+
+
+****************************************************************
+
+ BUILDING APPLICATION
+
+-> SPRING_PROFILES_ACTIVE=postgres ./gradlew -PjavaVersion=27 -Dorg.gradle.jvmargs=-Xmx768m --build-cache --parallel clean bootJar && \
+    java -Djarmode=tools -jar build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar extract --force
+
+****************************************************************
+
+Starting a Gradle Daemon, 2 incompatible and 2 stopped Daemons could not be reused, use --status for details
+Reusing configuration cache.
+> Task :clean
+> Task :compileJava FROM-CACHE
+> Task :collectReachabilityMetadata
+> Task :cyclonedxDirectBom FROM-CACHE
+> Task :cyclonedxBom FROM-CACHE
+> Task :processResources
+> Task :classes
+> Task :resolveMainClassName
+> Task :processAot FROM-CACHE
+> Task :processAotResources
+> Task :compileAotJava FROM-CACHE
+> Task :aotClasses
+> Task :bootJar
+
+BUILD SUCCESSFUL in 14s
+11 actionable tasks: 6 executed, 5 from cache
+Configuration cache entry reused.
+Build step took 17.0 seconds
+Deleting existing Leyden AOT cache: petclinic.aot
+
+Artifact sizes - App: 63.8 MB, Extra: 0.0 MB
+DEBUG: Script started with parameters:
+  JAR_PATH: spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+  LABEL: leyden
+  AOT_FLAG: -Dspring.aot.enabled=true -XX:AOTCache=petclinic.aot
+  TRAINING_MODE: 
+  SCRIPT_START_TIME: 1793674868
+  PID: 53124
+  PPID: 52916
+  Command: ./benchmark.sh spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar leyden -Dspring.aot.enabled=true -XX:AOTCache=petclinic.aot  63.8 0.0
+DEBUG: End of debug info
+
+DEBUG: Configuration set:
+  WARMUPS: 3
+  RUNS: 7
+  CSV_FILE: result_leyden_jdk27.csv
+  RUN_LOG_DIR: run-logs/leyden_jdk27
+DEBUG: End of configuration debug
+
+⚠️  WARNING: Leyden AOT cache generation may cause system hangs on Linux.
+   If this happens, set SKIP_LEYDEN_AOT=true to skip AOT generation.
+   Example: SKIP_LEYDEN_AOT=true ./compile-and-run.sh leyden
+
+
+****************************************************************
+
+Running application
+
+-> java -Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_leyden.log:time,uptime,level,tags -Dspring.aot.enabled=true -Dspring.profiles.active=postgres -XX:AOTCache=petclinic.aot -jar spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+
+****************************************************************
+
+Training run Leyden (creates petclinic.aot in two steps)
+    Step 1: Recording AOT configuration...
+    Command: java -Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_leyden.log:time,uptime,level,tags -Dspring.aot.enabled=true -Dspring.profiles.active=postgres -XX:AOTMode=record -XX:AOTConfiguration=petclinic.aotconf -jar spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+    Application started successfully
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Step 2: Creating AOT cache from configuration...
+    Configuration file size: 138M
+    Command: java -Xms256m -Xmx768m -XX:+UseG1GC -Xlog:gc*:file=/tmp/gc_leyden.log:time,uptime,level,tags -Dspring.aot.enabled=true -Dspring.profiles.active=postgres -XX:AOTMode=create -XX:AOTConfiguration=petclinic.aotconf -XX:AOTCache=petclinic.aot -jar spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar
+    AOT cache created successfully
+  Leyden training run complete. Proceeding with benchmark measurements.
+Training run took 201.0 seconds
+Starting 3 warm-up runs…
+  Warm-up 1
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing background process 53821
+  Warm-up 2
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing background process 54206
+  Warm-up 3
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing background process 54646
+Starting 7 benchmark runs…
+Swap usage before benchmark: 47 MB
+  Run 1
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 55086
+    Run 1 completed successfully
+    3.935s, 342.3 MB
+    Debug: Run 1 finished, continuing to next run...
+  Run 2
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 55561
+    Run 2 completed successfully
+    4.785s, 337.1 MB
+    Debug: Run 2 finished, continuing to next run...
+  Run 3
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 55972
+    Run 3 completed successfully
+    3.961s, 344.0 MB
+    Debug: Run 3 finished, continuing to next run...
+  Run 4
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 56387
+    Run 4 completed successfully
+    3.956s, 343.6 MB
+    Debug: Run 4 finished, continuing to next run...
+  Run 5
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 56862
+    Run 5 completed successfully
+    3.819s, 345.1 MB
+    Debug: Run 5 finished, continuing to next run...
+  Run 6
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 57276
+    Run 6 completed successfully
+    3.902s, 333.9 MB
+    Debug: Run 6 finished, continuing to next run...
+  Run 7
+    Waiting for application to be ready...
+    Application is ready (status: 200)
+    Calling URLs: 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 200 200 200 200 200 200 200 200 200 200 500 
+    Killing app process 57753
+    Run 7 completed successfully
+    3.777s, 345.9 MB
+    Debug: Run 7 finished, continuing to next run...
+
+--- Swap Usage ---
+Swap before benchmark: 47 MB
+Swap after benchmark:  47 MB
+Swap delta:            0 MB
+Note: System started with 47 MB swap in use (not caused by this benchmark)
+
+--- Benchmark Results ---
+Run,Startup Time (s),Max Memory (MB),Startup GC Pauses,Benchmark GC Pauses,Ran at,Size App (MB),Size Extra (MB),Startup From Process Start (s)
+1,3.935,342.3,2,0,2026-11-03T03:13:05Z,,,4.474
+2,4.785,337.1,2,0,2026-11-03T03:15:58Z,,,5.295
+3,3.961,344.0,2,0,2026-11-03T03:18:52Z,,,4.437
+4,3.956,343.6,2,0,2026-11-03T03:21:46Z,,,4.463
+5,3.819,345.1,2,0,2026-11-03T03:24:39Z,,,4.32
+6,3.902,333.9,2,0,2026-11-03T03:27:32Z,,,4.411
+7,3.777,345.9,2,0,2026-11-03T03:30:25Z,,,4.28
+A,3.9146,342.42,2,0,2026-11-03T03:33:18Z,63.8,142.5,4.421
+
+Done. Result CSVs: result_leyden_jdk27.csv

@@ -1,0 +1,548 @@
+
+
+              |\      _,,,--,,_
+             /,`.-'`'   ._  \-;;,_
+  _______ __|,4-  ) )_   .;.(__`'-'__     ___ __    _ ___ _______
+ |       | '---''(_/._)-'(_\_)   |   |   |   |  |  | |   |       |
+ |    _  |    ___|_     _|       |   |   |   |   |_| |   |       | __ _ _
+ |   |_| |   |___  |   | |       |   |   |   |       |   |       | \ \ \ \
+ |    ___|    ___| |   | |      _|   |___|   |  _    |   |      _|  \ \ \ \
+ |   |   |   |___  |   | |     |_|       |   | | |   |   |     |_    ) ) ) )
+ |___|   |_______| |___| |_______|_______|___|_|  |__|___|_______|  / / / /
+ ==================================================================/_/_/_/
+
+:: Built with Spring Boot :: 4.1.2
+
+
+2026-11-02T23:20:23.835Z  INFO 14769 --- [           main] o.s.s.petclinic.PetClinicApplication     : Starting AOT-processed PetClinicApplication v4.0.0-SNAPSHOT using Java 25.0.5 with PID 14769 (/home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar started by ubuntu in /home/ubuntu/projects/petclinic-upgrade)
+2026-11-02T23:20:23.848Z  INFO 14769 --- [           main] o.s.s.petclinic.PetClinicApplication     : The following 1 profile is active: "postgres"
+[2.657s][warning][cds] class org/springframework/core/type/classreading/ClassFileMetadataReaderFactory cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/spring-core-7.0.10.jar as claimed
+[3.169s][warning][cds] class org/springframework/core/type/classreading/ClassFileMetadataReader cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/spring-core-7.0.10.jar as claimed
+[3.172s][warning][cds] class org/springframework/core/type/classreading/ClassFileAnnotationMetadata cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/spring-core-7.0.10.jar as claimed
+[3.173s][warning][cds] class org/springframework/core/type/classreading/ClassFileAnnotationMetadata$Builder cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/spring-core-7.0.10.jar as claimed
+[3.180s][warning][cds] class org/springframework/core/type/classreading/ClassFileMethodMetadata cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/spring-core-7.0.10.jar as claimed
+[3.182s][warning][cds] class org/springframework/core/type/classreading/ClassFileMethodMetadata$Source cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/spring-core-7.0.10.jar as claimed
+[3.187s][warning][cds] class org/springframework/core/type/classreading/ClassFileAnnotationDelegate cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/spring-core-7.0.10.jar as claimed
+[3.190s][warning][cds] class org/springframework/core/type/classreading/ClassFileAnnotationDelegate$Source cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/spring-core-7.0.10.jar as claimed
+2026-11-02T23:20:25.374Z  INFO 14769 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-11-02T23:20:25.402Z  INFO 14769 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-02T23:20:25.402Z  INFO 14769 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.27]
+2026-11-02T23:20:25.465Z  INFO 14769 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1581 ms
+2026-11-02T23:20:25.970Z  INFO 14769 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+[5.297s][warning][cds] class org/postgresql/util/LazyCleanerImpl$CleanableWrapper cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/postgresql-42.7.14.jar as claimed
+2026-11-02T23:20:26.695Z  INFO 14769 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@377949f1
+2026-11-02T23:20:26.698Z  INFO 14769 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-02T23:20:27.061Z  INFO 14769 --- [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-11-02T23:20:27.166Z  INFO 14769 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.13.Final
+[6.874s][warning][cds] class net/bytebuddy/jar/asmjdkbridge/JdkClassReader cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/byte-buddy-1.18.15.jar as claimed
+[6.875s][warning][cds] class net/bytebuddy/jar/asmjdkbridge/AsmWrappedAttribute cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/byte-buddy-1.18.15.jar as claimed
+[6.875s][warning][cds] class net/bytebuddy/jar/asmjdkbridge/AsmWrappedAttribute$AsmSourceIdAttribute cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/byte-buddy-1.18.15.jar as claimed
+[6.876s][warning][cds] class net/bytebuddy/jar/asmjdkbridge/AsmWrappedAttribute$AsmCompilationIdAttribute cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/byte-buddy-1.18.15.jar as claimed
+[6.876s][warning][cds] class net/bytebuddy/jar/asmjdkbridge/AsmWrappedAttribute$AsmModuleResolutionAttribute cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/byte-buddy-1.18.15.jar as claimed
+[6.877s][warning][cds] class net/bytebuddy/jar/asmjdkbridge/AsmWrappedAttribute$AsmModuleHashesAttribute cannot be archived because it was not defined from /home/ubuntu/projects/petclinic-upgrade/spring-petclinic-4.0.0-SNAPSHOT/lib/byte-buddy-1.18.15.jar as claimed
+2026-11-02T23:20:28.264Z  INFO 14769 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-11-02T23:20:28.391Z  INFO 14769 --- [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost/petclinic]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 16.15
+	Default catalog/schema: petclinic/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-11-02T23:20:30.376Z  INFO 14769 --- [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-11-02T23:20:30.389Z  INFO 14769 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-11-02T23:20:30.618Z  INFO 14769 --- [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-11-02T23:20:32.175Z  INFO 14769 --- [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 13 endpoints beneath base path '/actuator'
+2026-11-02T23:20:32.354Z  INFO 14769 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-11-02T23:20:32.361Z  INFO 14769 --- [           main] o.s.s.petclinic.PetClinicApplication     : Started PetClinicApplication in 10.339 seconds (process running for 10.98)
+2026-11-02T23:20:32.618Z  INFO 14769 --- [nio-8080-exec-2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-02T23:20:32.619Z  INFO 14769 --- [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-02T23:20:32.623Z  INFO 14769 --- [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
+2026-11-02T23:21:07.893Z ERROR 14769 --- [nio-8080-exec-2] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown] with root cause
+
+java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown
+	at org.springframework.samples.petclinic.system.CrashController.triggerException(CrashController.java:33) ~[spring-petclinic-4.0.0-SNAPSHOT.jar:4.0.0-SNAPSHOT]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.27.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.27.jar:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59) ~[tomcat-embed-websocket-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.servlet.resource.ResourceUrlEncodingFilter.doFilter(ResourceUrlEncodingFilter.java:66) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:164) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:540) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:411) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1308) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2202) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:947) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:481) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at java.base/java.lang.Thread.run(Thread.java:1474) ~[na:na]
+
+2026-11-02T23:21:41.286Z ERROR 14769 --- [nio-8080-exec-4] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown] with root cause
+
+java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown
+	at org.springframework.samples.petclinic.system.CrashController.triggerException(CrashController.java:33) ~[spring-petclinic-4.0.0-SNAPSHOT.jar:4.0.0-SNAPSHOT]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.27.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.27.jar:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59) ~[tomcat-embed-websocket-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.servlet.resource.ResourceUrlEncodingFilter.doFilter(ResourceUrlEncodingFilter.java:66) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:164) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:540) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:411) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1308) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2202) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:947) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:481) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at java.base/java.lang.Thread.run(Thread.java:1474) ~[na:na]
+
+2026-11-02T23:22:14.626Z ERROR 14769 --- [nio-8080-exec-1] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown] with root cause
+
+java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown
+	at org.springframework.samples.petclinic.system.CrashController.triggerException(CrashController.java:33) ~[spring-petclinic-4.0.0-SNAPSHOT.jar:4.0.0-SNAPSHOT]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.27.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.27.jar:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59) ~[tomcat-embed-websocket-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.servlet.resource.ResourceUrlEncodingFilter.doFilter(ResourceUrlEncodingFilter.java:66) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:164) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:540) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:411) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1308) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2202) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:947) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:481) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at java.base/java.lang.Thread.run(Thread.java:1474) ~[na:na]
+
+2026-11-02T23:22:47.909Z ERROR 14769 --- [nio-8080-exec-9] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown] with root cause
+
+java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown
+	at org.springframework.samples.petclinic.system.CrashController.triggerException(CrashController.java:33) ~[spring-petclinic-4.0.0-SNAPSHOT.jar:4.0.0-SNAPSHOT]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.27.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.27.jar:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59) ~[tomcat-embed-websocket-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.servlet.resource.ResourceUrlEncodingFilter.doFilter(ResourceUrlEncodingFilter.java:66) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:164) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:540) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:411) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1308) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2202) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:947) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:481) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at java.base/java.lang.Thread.run(Thread.java:1474) ~[na:na]
+
+2026-11-02T23:23:21.242Z ERROR 14769 --- [nio-8080-exec-7] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown] with root cause
+
+java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown
+	at org.springframework.samples.petclinic.system.CrashController.triggerException(CrashController.java:33) ~[spring-petclinic-4.0.0-SNAPSHOT.jar:4.0.0-SNAPSHOT]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.27.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.27.jar:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59) ~[tomcat-embed-websocket-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.servlet.resource.ResourceUrlEncodingFilter.doFilter(ResourceUrlEncodingFilter.java:66) ~[spring-webmvc-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.ServerHttpObservationFilter.doFilterInternal(ServerHttpObservationFilter.java:110) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.10.jar:7.0.10]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:164) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:540) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:411) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1308) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2202) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:947) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:481) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74) ~[tomcat-embed-core-11.0.27.jar:11.0.27]
+	at java.base/java.lang.Thread.run(Thread.java:1474) ~[na:na]
+
+2026-11-02T23:23:21.255Z  INFO 14769 --- [ionShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-02T23:23:21.260Z  INFO 14769 --- [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-11-02T23:23:21.269Z  INFO 14769 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-11-02T23:23:21.274Z  INFO 14769 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-02T23:23:21.300Z  INFO 14769 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+[180.015s][warning][cds] Preload Warning: Verification failed for org.springframework.transaction.reactive.TransactionalOperator
+[180.025s][warning][cds] Preload Warning: Verification failed for org.springframework.core.ReactiveAdapterRegistry$ReactorAdapter
+[180.110s][warning][cds] Preload Warning: Verification failed for org.hibernate.type.format.jackson.JacksonXmlFormatMapper
+[180.110s][warning][cds] Preload Warning: Verification failed for org.hibernate.type.format.jackson.JacksonJsonFormatMapper
+[180.110s][warning][cds] Preload Warning: Verification failed for org.hibernate.type.format.jakartajson.JsonBJsonFormatMapper
+[180.209s][warning][cds] Preload Warning: Verification failed for org.springframework.boot.logging.log4j2.Log4J2LoggingSystem
+[180.261s][warning][cds] Preload Warning: Verification failed for org.springframework.web.servlet.view.freemarker.FreeMarkerView
+[180.484s][warning][cds] Skipping net/bytebuddy/dynamic/loading/$Proxy129: Unsupported location
+[180.484s][warning][cds] Skipping jdk/proxy2/$Proxy155: Unsupported location
+[180.484s][warning][cds] Skipping org/springframework/core/type/classreading/ClassFileMetadataReaderFactory: Unsupported location
+[180.484s][warning][cds] Skipping jdk/proxy2/$Proxy115: Unsupported location
+[180.484s][warning][cds] Skipping jdk/proxy2/$Proxy103: Unsupported location
+[180.484s][warning][cds] Skipping net/bytebuddy/jar/asmjdkbridge/AsmWrappedAttribute$AsmCompilationIdAttribute: Unsupported location
+[180.484s][warning][cds] Skipping jdk/proxy2/$Proxy40: Unsupported location
+[180.485s][warning][cds] Skipping jdk/proxy2/$Proxy117: Unsupported location
+[180.485s][warning][cds] Skipping org/springframework/samples/petclinic/owner/Visit$HibernateInstantiator: Unsupported location
+[180.485s][warning][cds] Skipping org/hibernate/type/format/jakartajson/JsonBJsonFormatMapper: Failed verification
+[180.485s][warning][cds] Skipping jdk/proxy2/$Proxy102: Unsupported location
+[180.485s][warning][cds] Skipping jdk/proxy2/$Proxy2: Unsupported location
+[180.485s][warning][cds] Skipping net/bytebuddy/jar/asmjdkbridge/AsmWrappedAttribute$AsmSourceIdAttribute: Unsupported location
+[180.485s][warning][cds] Skipping jdk/proxy2/$Proxy130: Unsupported location
+[180.485s][warning][cds] Skipping jdk/proxy2/$Proxy114: Unsupported location
+[180.485s][warning][cds] Skipping org/springframework/samples/petclinic/vet/Specialty$HibernateProxy: Unsupported location
+[180.485s][warning][cds] Skipping jdk/proxy2/$Proxy60: Unsupported location
+[180.485s][warning][cds] Skipping jdk/proxy2/$Proxy118: Unsupported location
+[180.485s][warning][cds] Skipping org/springframework/samples/petclinic/owner/Visit$HibernateProxy: Unsupported location
+[180.486s][warning][cds] Skipping jdk/proxy2/$Proxy153: Unsupported location
+[180.486s][warning][cds] Skipping jdk/proxy2/$Proxy11: Unsupported location
+[180.486s][warning][cds] Skipping jdk/proxy2/$Proxy137: Unsupported location
+[180.486s][warning][cds] Skipping jdk/proxy2/$Proxy58: Unsupported location
+[180.486s][warning][cds] Skipping jdk/proxy2/$Proxy74: Unsupported location
+[180.486s][warning][cds] Skipping net/bytebuddy/description/method/$Proxy85: Unsupported location
+[180.486s][warning][cds] Skipping jdk/proxy2/$Proxy55: Unsupported location
+[180.486s][warning][cds] Skipping org/springframework/core/type/classreading/ClassFileAnnotationDelegate$Source: Unsupported location
+[180.486s][warning][cds] Skipping jdk/proxy2/$Proxy39: Unsupported location
+[180.486s][warning][cds] Skipping jdk/proxy2/$Proxy42: Unsupported location
+[180.487s][warning][cds] Skipping jdk/proxy2/$Proxy154: Unsupported location
+[180.487s][warning][cds] Skipping org/hibernate/type/format/jackson/JacksonJsonFormatMapper: Failed verification
+[180.487s][warning][cds] Skipping org/springframework/samples/petclinic/owner/PetType$HibernateInstantiator: Unsupported location
+[180.487s][warning][cds] Skipping jdk/proxy2/$Proxy152: Unsupported location
+[180.487s][warning][cds] Skipping jdk/proxy2/$Proxy138: Unsupported location
+[180.487s][warning][cds] Skipping jdk/proxy2/$Proxy63: Unsupported location
+[180.487s][warning][cds] Skipping jdk/proxy2/$Proxy14: Unsupported location
+[180.487s][warning][cds] Skipping jdk/proxy2/$Proxy104: Unsupported location
+[180.487s][warning][cds] Skipping org/springframework/core/$Proxy6: Unsupported location
+[180.487s][warning][cds] Skipping jdk/proxy2/$Proxy38: Unsupported location
+[180.487s][warning][cds] Skipping org/springframework/samples/petclinic/owner/Owner$HibernateProxy: Unsupported location
+[180.487s][warning][cds] Skipping jdk/proxy2/$Proxy29: Unsupported location
+[180.487s][warning][cds] Skipping jdk/proxy2/$Proxy7: Unsupported location
+[180.487s][warning][cds] Skipping jdk/proxy2/$Proxy89: Unsupported location
+[180.487s][warning][cds] Skipping net/bytebuddy/description/type/$Proxy126: Unsupported location
+[180.487s][warning][cds] Skipping jdk/proxy2/$Proxy128: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy12: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy122: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy109: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy96: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy150: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy142: Unsupported location
+[180.488s][warning][cds] Skipping org/springframework/samples/petclinic/owner/PetType$HibernateProxy: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy156: Unsupported location
+[180.488s][warning][cds] Skipping org/springframework/core/type/classreading/ClassFileAnnotationDelegate: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy91: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy83: Unsupported location
+[180.488s][warning][cds] Skipping jdk/internal/event/Event: JFR event class
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy49: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy37: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy135: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy95: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy1/$Proxy4: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy52: Unsupported location
+[180.488s][warning][cds] Skipping com/sun/proxy/jdk/proxy1/$Proxy116: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy67: Unsupported location
+[180.488s][warning][cds] Skipping org/hibernate/type/format/jackson/JacksonXmlFormatMapper: Failed verification
+[180.488s][warning][cds] Skipping org/springframework/samples/petclinic/owner/Owner$HibernateInstantiator: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy141: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy162: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy1/$Proxy15: Unsupported location
+[180.488s][warning][cds] Skipping jdk/proxy2/$Proxy90: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy65: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy43: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy48: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy112: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy131: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy1/$Proxy1: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy110: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy36: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy161: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy98: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy16: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy1/$Proxy17: Unsupported location
+[180.489s][warning][cds] Skipping jdk/internal/event/SecurityProviderServiceEvent: JFR event class
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy165: Unsupported location
+[180.489s][warning][cds] Skipping org/springframework/web/servlet/view/freemarker/FreeMarkerView: Failed verification
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy5: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy35: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy111: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy66: Unsupported location
+[180.489s][warning][cds] Skipping org/springframework/core/type/classreading/ClassFileMethodMetadata$Source: Unsupported location
+[180.489s][warning][cds] Skipping net/bytebuddy/description/type/$Proxy84: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy146: Unsupported location
+[180.489s][warning][cds] Skipping jdk/proxy2/$Proxy88: Unsupported location
+[180.490s][warning][cds] Skipping jdk/proxy2/$Proxy132: Unsupported location
+[180.490s][warning][cds] Skipping net/bytebuddy/description/method/$Proxy81: Unsupported location
+[180.490s][warning][cds] Skipping jdk/proxy2/$Proxy163: Unsupported location
+[180.490s][warning][cds] Skipping org/springframework/core/ReactiveAdapterRegistry$ReactorAdapter: Failed verification
+[180.490s][warning][cds] Skipping jdk/proxy2/$Proxy87: Unsupported location
+[180.490s][warning][cds] Skipping jdk/proxy2/$Proxy143: Unsupported location
+[180.490s][warning][cds] Skipping jdk/proxy2/$Proxy10: Unsupported location
+[180.490s][warning][cds] Skipping jdk/proxy2/$Proxy56: Unsupported location
+[180.490s][warning][cds] Skipping jdk/proxy2/$Proxy61: Unsupported location
+[180.490s][warning][cds] Skipping jdk/proxy2/$Proxy136: Unsupported location
+[180.490s][warning][cds] Skipping jdk/proxy1/$Proxy3: Unsupported location
+[180.490s][warning][cds] Skipping jdk/internal/event/ThreadSleepEvent: JFR event class
+[180.490s][warning][cds] Skipping jdk/proxy2/$Proxy145: Unsupported location
+[180.490s][warning][cds] Skipping jdk/proxy2/$Proxy50: Unsupported location
+[180.490s][warning][cds] Skipping jdk/proxy2/$Proxy78: Unsupported location
+[180.490s][warning][cds] Skipping org/springframework/samples/petclinic/owner/Pet$HibernateProxy: Unsupported location
+[180.491s][warning][cds] Skipping jdk/proxy2/$Proxy76: Unsupported location
+[180.491s][warning][cds] Skipping org/springframework/core/$Proxy71: Unsupported location
+[180.491s][warning][cds] Skipping jdk/proxy2/$Proxy92: Unsupported location
+[180.491s][warning][cds] Skipping jdk/internal/event/X509CertificateEvent: JFR event class
+[180.491s][warning][cds] Skipping jdk/proxy2/$Proxy44: Unsupported location
+[180.491s][warning][cds] Skipping net/bytebuddy/description/type/$Proxy97: Unsupported location
+[180.491s][warning][cds] Skipping jdk/proxy2/$Proxy68: Unsupported location
+[180.491s][warning][cds] Skipping jdk/proxy2/$Proxy144: Unsupported location
+[180.491s][warning][cds] Skipping org/springframework/boot/actuate/autoconfigure/web/server/$Proxy62: Unsupported location
+[180.491s][warning][cds] Skipping jdk/internal/event/TLSHandshakeEvent: JFR event class
+[180.491s][warning][cds] Skipping net/bytebuddy/jar/asmjdkbridge/JdkClassReader: Unsupported location
+[180.491s][warning][cds] Skipping net/bytebuddy/description/method/$Proxy86: Unsupported location
+[180.491s][warning][cds] Skipping org/springframework/core/type/classreading/ClassFileAnnotationMetadata: Unsupported location
+[180.491s][warning][cds] Skipping jdk/proxy3/$Proxy75: Unsupported location
+[180.491s][warning][cds] Skipping jdk/proxy2/$Proxy77: Unsupported location
+[180.491s][warning][cds] Skipping jdk/proxy2/$Proxy27: Unsupported location
+[180.491s][warning][cds] Skipping org/springframework/core/type/classreading/ClassFileMethodMetadata: Unsupported location
+[180.491s][warning][cds] Skipping net/bytebuddy/jar/asmjdkbridge/AsmWrappedAttribute: Unsupported location
+[180.492s][warning][cds] Skipping org/springframework/core/type/classreading/ClassFileMetadataReader: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy34: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy73: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy140: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy101: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy105: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy72: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy149: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy28: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy164: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy120: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy33: Unsupported location
+[180.492s][warning][cds] Skipping org/springframework/samples/petclinic/owner/Pet$HibernateInstantiator: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy22: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy19: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy157: Unsupported location
+[180.492s][warning][cds] Skipping jdk/proxy2/$Proxy69: Unsupported location
+[180.492s][warning][cds] Skipping org/postgresql/util/LazyCleanerImpl$CleanableWrapper: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy106: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy147: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy1/$Proxy0: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy54: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy159: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy1/$Proxy8: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy23: Unsupported location
+[180.493s][warning][cds] Skipping net/bytebuddy/description/type/$Proxy80: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy119: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy57: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy158: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy32: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy107: Unsupported location
+[180.493s][warning][cds] Skipping jdk/internal/event/SocketReadEvent: JFR event class
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy47: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy108: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy148: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy18: Unsupported location
+[180.493s][warning][cds] Skipping org/springframework/core/type/classreading/ClassFileAnnotationMetadata$Builder: Unsupported location
+[180.493s][warning][cds] Skipping jdk/proxy2/$Proxy24: Unsupported location
+[180.494s][warning][cds] Skipping jdk/proxy2/$Proxy94: Unsupported location
+[180.494s][warning][cds] Skipping jdk/proxy2/$Proxy99: Unsupported location
+[180.494s][warning][cds] Skipping jdk/proxy2/$Proxy151: Unsupported location
+[180.494s][warning][cds] Skipping jdk/proxy2/$Proxy79: Unsupported location
+[180.494s][warning][cds] Skipping org/springframework/boot/logging/log4j2/Log4J2LoggingSystem: Failed verification
+[180.494s][warning][cds] Skipping jdk/proxy2/$Proxy45: Unsupported location
+[180.494s][warning][cds] Skipping jdk/proxy2/$Proxy121: Unsupported location
+[180.494s][warning][cds] Skipping jdk/proxy2/$Proxy41: Unsupported location
+[180.494s][warning][cds] Skipping org/springframework/transaction/reactive/TransactionalOperator: Failed verification
+[180.494s][warning][cds] Skipping jdk/internal/event/SocketWriteEvent: JFR event class
+[180.494s][warning][cds] Skipping com/sun/proxy/jdk/proxy1/$Proxy9: Unsupported location
+[180.494s][warning][cds] Skipping jdk/proxy2/$Proxy139: Unsupported location
+[180.494s][warning][cds] Skipping jdk/proxy2/$Proxy21: Unsupported location
+[180.494s][warning][cds] Skipping jdk/proxy2/$Proxy25: Unsupported location
+[180.494s][warning][cds] Skipping jdk/proxy2/$Proxy100: Unsupported location
+[180.494s][warning][cds] Skipping jdk/proxy2/$Proxy82: Unsupported location
+[180.495s][warning][cds] Skipping jdk/proxy2/$Proxy59: Unsupported location
+[180.495s][warning][cds] Skipping jdk/proxy2/$Proxy160: Unsupported location
+[180.495s][warning][cds] Skipping jdk/proxy2/$Proxy13: Unsupported location
+[180.495s][warning][cds] Skipping jdk/proxy2/$Proxy26: Unsupported location
+[180.495s][warning][cds] Skipping net/bytebuddy/description/type/$Proxy127: Unsupported location
+[180.495s][warning][cds] Skipping jdk/proxy2/$Proxy123: Unsupported location
+[180.495s][warning][cds] Skipping jdk/proxy2/$Proxy93: Unsupported location
+[180.495s][warning][cds] Skipping org/springframework/samples/petclinic/vet/Vet$HibernateInstantiator: Unsupported location
+[180.495s][warning][cds] Skipping jdk/proxy2/$Proxy46: Unsupported location
+[180.495s][warning][cds] Skipping net/bytebuddy/description/type/$Proxy124: Unsupported location
+[180.495s][warning][cds] Skipping jdk/proxy2/$Proxy51: Unsupported location
+[180.495s][warning][cds] Skipping net/bytebuddy/jar/asmjdkbridge/AsmWrappedAttribute$AsmModuleHashesAttribute: Unsupported location
+[180.495s][warning][cds] Skipping jdk/proxy2/$Proxy20: Unsupported location
+[180.495s][warning][cds] Skipping jdk/proxy2/$Proxy31: Unsupported location
+[180.495s][warning][cds] Skipping net/bytebuddy/description/type/$Proxy125: Unsupported location
+[180.495s][warning][cds] Skipping jdk/proxy2/$Proxy30: Unsupported location
+[180.495s][warning][cds] Skipping net/bytebuddy/jar/asmjdkbridge/AsmWrappedAttribute$AsmModuleResolutionAttribute: Unsupported location
+[180.495s][warning][cds] Skipping org/springframework/samples/petclinic/vet/Specialty$HibernateInstantiator: Unsupported location
+[180.495s][warning][cds] Skipping jdk/proxy2/$Proxy133: Unsupported location
+[180.495s][warning][cds] Skipping jdk/proxy2/$Proxy53: Unsupported location
+[180.495s][warning][cds] Skipping org/springframework/core/$Proxy70: Unsupported location
+[180.495s][warning][cds] Skipping jdk/proxy2/$Proxy64: Unsupported location
+[180.496s][warning][cds] Skipping jdk/proxy1/$Proxy134: Unsupported location
+[180.496s][warning][cds] Skipping org/springframework/samples/petclinic/vet/Vet$HibernateProxy: Unsupported location
+[180.496s][warning][cds] Skipping jdk/proxy2/$Proxy113: Unsupported location
