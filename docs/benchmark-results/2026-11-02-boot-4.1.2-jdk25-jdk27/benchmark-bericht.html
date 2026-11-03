@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Java schneller starten – Benchmark-Ergebnisse</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --hair: rgba(11, 11, 11, 0.10);
+  --chip: #f0efec;
+  --s25: #2a78d6;
+  --s27: #eb6834;
+  --smay: #1baf7a;
+  --link: #1c5cab;
+  --focus: #1c5cab;
+  --better: #006300;
+  --worse: #b42318;
+  --warn: #fab219;
+  --warn-ink: #0b0b0b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --hair: rgba(255, 255, 255, 0.10); --chip: #262624;
+    --s25: #3987e5; --s27: #d95926; --smay: #199e70; --link: #86b6ef; --focus: #86b6ef;
+    --better: #0ca30c; --worse: #e66767;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --hair: rgba(255, 255, 255, 0.10); --chip: #262624;
+  --s25: #3987e5; --s27: #d95926; --smay: #199e70; --link: #86b6ef; --focus: #86b6ef;
+  --better: #0ca30c; --worse: #e66767;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 17px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--link); }
+code { font-family: ui-monospace, Menlo, monospace; font-size: 0.86em; white-space: nowrap; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); max-width: 1240px; margin: 0 auto; }
+@media (min-width: 1100px) { .layout { grid-template-columns: 230px minmax(0, 1fr); } }
+
+nav.toc { display: none; }
+@media (min-width: 1100px) {
+  nav.toc {
+    display: block; position: sticky; top: 0; align-self: start; height: 100vh;
+    padding: 56px 24px 24px 32px; font-size: 15px;
+  }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; }
+  nav.toc li { margin: 0 0 10px; }
+  nav.toc a { color: var(--ink-2); text-decoration: none; }
+  nav.toc a:hover { color: var(--ink); text-decoration: underline; }
+  nav.toc .toc-title { font-weight: 600; color: var(--ink); margin-bottom: 18px; }
+}
+
+main { padding: 40px 22px 80px; min-width: 0; }
+@media (min-width: 760px) { main { padding: 56px 48px 96px; } }
+
+.masthead { max-width: 860px; margin-bottom: 40px; }
+.masthead h1 {
+  font-size: clamp(34px, 5.4vw, 58px);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  margin: 0 0 18px;
+}
+.masthead .lede { font-size: 20px; color: var(--ink-2); max-width: 64ch; margin: 0 0 22px; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 10px; margin: 0; padding: 0; list-style: none; }
+.facts li { background: var(--chip); border-radius: 999px; padding: 4px 12px; font-size: 14px; color: var(--ink-2); }
+.theme-toggle {
+  float: right; margin: 4px 0 0 16px; font: inherit; font-size: 14px; color: var(--ink-2);
+  background: none; border: 1px solid var(--hair); border-radius: 999px; padding: 4px 12px; cursor: pointer;
+}
+
+.banner {
+  display: flex; gap: 12px; align-items: flex-start; max-width: 860px;
+  border-left: 4px solid var(--warn); background: var(--surface); padding: 14px 18px; margin: 0 0 40px;
+  border-radius: 0 8px 8px 0; box-shadow: 0 0 0 1px var(--hair);
+}
+.banner .icon { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--warn); color: var(--warn-ink);
+  font-weight: 700; display: grid; place-items: center; font-size: 14px; }
+.banner p { margin: 0; }
+
+section { margin: 0 0 64px; scroll-margin-top: 24px; }
+section > h2 { font-size: 30px; line-height: 1.15; letter-spacing: -0.01em; margin: 0 0 8px; font-weight: 700; }
+section > .intro { color: var(--ink-2); max-width: 70ch; margin: 0 0 22px; }
+h3 { font-size: 20px; margin: 30px 0 10px; font-weight: 600; }
+p.small, .small { font-size: 14px; color: var(--ink-2); }
+
+.panel { background: var(--surface); border-radius: 12px; box-shadow: 0 0 0 1px var(--hair); padding: 22px 22px 18px; min-width: 0; }
+@media (max-width: 640px) { .panel { padding: 16px 14px 12px; } .theme-toggle { float: none; display: block; margin: 0 0 14px; } }
+.panel + .panel { margin-top: 20px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 10px; font-size: 14px; color: var(--ink-2); padding: 0; list-style: none; }
+.legend .key { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: inherit; }
+.mark:focus { outline: none; }
+.mark:focus-visible rect.hit, .mark:hover rect.hit { fill: var(--chip); }
+
+#tip {
+  position: fixed; z-index: 10; pointer-events: none; background: var(--surface); color: var(--ink);
+  box-shadow: 0 0 0 1px var(--hair), 0 6px 24px rgba(0, 0, 0, 0.12); border-radius: 8px;
+  padding: 8px 12px; font-size: 14px; line-height: 1.4; max-width: 280px; opacity: 0; transition: opacity 0.08s;
+}
+#tip.on { opacity: 1; }
+#tip b { font-weight: 600; }
+
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--grid); vertical-align: top; }
+thead th { font-weight: 600; color: var(--ink-2); font-size: 14px; border-bottom: 1px solid var(--axis); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tbody tr:last-child td { border-bottom: none; }
+.tablewrap { overflow-x: auto; }
+.better { color: var(--better); }
+.worse { color: var(--worse); }
+.na { color: var(--muted); }
+
+/* Copy sheet: the numbers as they go onto the slides */
+.sheet h3 { margin-top: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.sheet h3 small { font-size: 14px; font-weight: 400; color: var(--ink-2); }
+.sheet table th.series { white-space: nowrap; }
+.sheet .key { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+button.copy {
+  font: inherit; font-variant-numeric: tabular-nums; color: var(--ink); background: none; border: 0; border-radius: 6px;
+  padding: 2px 6px; margin: -2px -6px; cursor: copy; font-size: 17px; font-weight: 600;
+}
+button.copy:hover { background: var(--chip); }
+button.copy.done { background: var(--chip); }
+button.copyall {
+  font: inherit; font-size: 14px; color: var(--ink); background: var(--chip); border: 1px solid var(--hair);
+  border-radius: 999px; padding: 4px 14px; cursor: copy;
+}
+button.copyall:hover { border-color: var(--axis); }
+.decimal { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -6px 0 22px; font-size: 14px; color: var(--ink-2); }
+.decimal span { margin-right: 4px; }
+button.seg { font: inherit; font-size: 14px; color: var(--ink-2); background: none; border: 1px solid var(--hair); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+button.seg[aria-pressed="true"] { color: var(--ink); background: var(--chip); border-color: var(--axis); font-weight: 600; }
+.captions { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 8px 36px; margin: 6px 0 0; padding: 0; list-style: none; }
+.captions li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--grid); padding: 6px 0; }
+.captions li span:first-child { color: var(--ink-2); }
+
+details { background: var(--surface); border-radius: 12px; box-shadow: 0 0 0 1px var(--hair); margin: 0 0 12px; }
+details > summary { cursor: pointer; padding: 14px 20px; font-weight: 600; list-style: none; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+details > summary::-webkit-details-marker { display: none; }
+details > summary::before { content: "+"; color: var(--muted); width: 1em; display: inline-block; font-weight: 400; }
+details[open] > summary::before { content: "–"; }
+details > summary .sum { font-weight: 400; color: var(--ink-2); font-size: 15px; }
+details > .body { padding: 0 20px 18px; }
+
+ul.notes { padding-left: 1.2em; max-width: 72ch; }
+ul.notes li { margin: 0 0 10px; }
+dl.method { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: 10px 24px; margin: 0; max-width: 860px; }
+dl.method dt { font-weight: 600; }
+dl.method dd { margin: 0; color: var(--ink-2); }
+@media (max-width: 640px) { dl.method { grid-template-columns: 1fr; } dl.method dd { margin-bottom: 8px; } }
+
+footer { color: var(--muted); font-size: 14px; border-top: 1px solid var(--grid); padding-top: 18px; max-width: 860px; }
+#live { position: absolute; left: -9999px; }
+
+@media print {
+  nav.toc, .theme-toggle, button.copyall { display: none !important; }
+  body { background: #fff; }
+  details { box-shadow: none; }
+  details:not([open]) > .body { display: block; }
+  section { break-inside: avoid-page; }
+}
+</style>
+</head>
+<body>
+<div id="tip" role="tooltip"></div>
+<div id="live" aria-live="polite"></div>
+<div class="layout">
+  <nav class="toc" aria-label="Inhalt">
+    <div class="toc-title">Inhalt</div>
+    <ol>
+      <li><a href="#ueberblick">Startzeit auf einen Blick</a></li>
+      <li id="toc-proc" hidden><a href="#prozessstart">Startzeit ab Prozessstart</a></li>
+      <li><a href="#speicher">Speicherverbrauch</a></li>
+      <li><a href="#gc">Garbage Collections</a></li>
+      <li><a href="#groessen">Größen und Build</a></li>
+      <li><a href="#jdk27">JDK 25 gegen JDK 27</a></li>
+      <li><a href="#einzeln">Einzelmessungen</a></li>
+      <li><a href="#methodik">So wurde gemessen</a></li>
+      <li><a href="#umgebung">Testumgebung</a></li>
+      <li><a href="#hinweise">Hinweise</a></li>
+      <li><a href="#keynote">Zahlen für Keynote</a></li>
+    </ol>
+  </nav>
+  <main id="app"></main>
+</div>
+<script>
+const DATA = {"preview": false, "previewText": "<b>Vorschau mit Platzhalterwerten.<\/b> Die Zahlen stammen aus dem Verifikationslauf vom 31. Oktober (1 Aufwärmlauf + 3 Messläufe, noch mit den doppelten Datenbank-Indizes). Der offizielle Lauf mit 3 + 7 Läufen läuft gerade; der fertige Bericht ersetzt alle Werte. Die Größen der Tuning-JARs fehlen hier noch.", "lede": "Spring PetClinic mit Spring Boot 4.1.2, gemessen auf JDK 25 und JDK 27: Standardstart, Spring-Boot-Tuning, Class Data Sharing, Project Leyden, CRaC und GraalVM Native Image.", "facts": ["Lauf vom 2./3. November 2026", "3 Aufwärm- und 7 Messläufe je Variante", "Messserver AWS t3.small (2 vCPU, 2 GB RAM)", "Spring Boot 4.1.2"], "variants": [{"key": "baseline", "name": "Baseline"}, {"key": "tuning", "name": "Tuning"}, {"key": "cds", "name": "Tuning + CDS"}, {"key": "leyden", "name": "Tuning + Leyden"}, {"key": "crac", "name": "CRaC"}, {"key": "graalvm", "name": "GraalVM"}], "trackOrder": ["25", "27"], "tracks": {"25": {"results": {"baseline": {"runs": [{"run": 1, "startup": 13.652, "mem": 440.2, "gcStart": 17.0, "gcBench": 2.0, "ranAt": "2026-11-02T22:27:55Z", "startupProc": 14.889}, {"run": 2, "startup": 13.627, "mem": 446.6, "gcStart": 18.0, "gcBench": 2.0, "ranAt": "2026-11-02T22:31:00Z", "startupProc": 14.845}, {"run": 3, "startup": 12.872, "mem": 448.7, "gcStart": 18.0, "gcBench": 2.0, "ranAt": "2026-11-02T22:34:05Z", "startupProc": 14.096}, {"run": 4, "startup": 13.276, "mem": 441.2, "gcStart": 18.0, "gcBench": 2.0, "ranAt": "2026-11-02T22:37:09Z", "startupProc": 14.457}, {"run": 5, "startup": 13.526, "mem": 441.7, "gcStart": 18.0, "gcBench": 2.0, "ranAt": "2026-11-02T22:40:13Z", "startupProc": 14.705}, {"run": 6, "startup": 13.006, "mem": 442.4, "gcStart": 18.0, "gcBench": 2.0, "ranAt": "2026-11-02T22:43:18Z", "startupProc": 14.211}, {"run": 7, "startup": 13.716, "mem": 444.2, "gcStart": 18.0, "gcBench": 2.0, "ranAt": "2026-11-02T22:46:23Z", "startupProc": 14.936}], "A": {"startup": 13.4174, "mem": 443.22, "gcStart": 18.0, "gcBench": 2.0, "sizeApp": 63.9, "sizeExtra": 0.0, "startupProc": 14.6214}, "stats": {"median": 13.526, "min": 12.872, "max": 13.716, "memMedian": 442.4}}, "tuning": {"runs": [{"run": 1, "startup": 9.35, "mem": 407.3, "gcStart": 14.0, "gcBench": 1.0, "ranAt": "2026-11-02T22:59:00Z", "startupProc": 9.937}, {"run": 2, "startup": 9.543, "mem": 408.9, "gcStart": 14.0, "gcBench": 1.0, "ranAt": "2026-11-02T23:02:00Z", "startupProc": 10.131}, {"run": 3, "startup": 10.314, "mem": 415.8, "gcStart": 14.0, "gcBench": 1.0, "ranAt": "2026-11-02T23:05:00Z", "startupProc": 10.91}, {"run": 4, "startup": 8.931, "mem": 413.1, "gcStart": 14.0, "gcBench": 1.0, "ranAt": "2026-11-02T23:08:01Z", "startupProc": 10.145}, {"run": 5, "startup": 8.856, "mem": 421.4, "gcStart": 14.0, "gcBench": 1.0, "ranAt": "2026-11-02T23:11:02Z", "startupProc": 9.641}, {"run": 6, "startup": 8.897, "mem": 415.9, "gcStart": 14.0, "gcBench": 1.0, "ranAt": "2026-11-02T23:14:02Z", "startupProc": 9.584}, {"run": 7, "startup": 8.691, "mem": 415.2, "gcStart": 14.0, "gcBench": 1.0, "ranAt": "2026-11-02T23:17:02Z", "startupProc": 9.368}], "A": {"startup": 9.1154, "mem": 413.78, "gcStart": 14.0, "gcBench": 1.0, "sizeApp": 63.8, "sizeExtra": 0.0, "startupProc": 9.8876}, "stats": {"median": 8.931, "min": 8.691, "max": 10.314, "memMedian": 415.2}}, "cds": {"runs": [{"run": 1, "startup": 5.277, "mem": 403.0, "gcStart": 2.0, "gcBench": 1.0, "ranAt": "2026-11-02T23:32:10Z", "startupProc": 5.632}, {"run": 2, "startup": 5.281, "mem": 398.5, "gcStart": 2.0, "gcBench": 1.0, "ranAt": "2026-11-02T23:35:05Z", "startupProc": 5.652}, {"run": 3, "startup": 5.969, "mem": 367.2, "gcStart": 3.0, "gcBench": 0.0, "ranAt": "2026-11-02T23:38:01Z", "startupProc": 6.378}, {"run": 4, "startup": 5.467, "mem": 392.7, "gcStart": 2.0, "gcBench": 1.0, "ranAt": "2026-11-02T23:40:56Z", "startupProc": 5.815}, {"run": 5, "startup": 5.113, "mem": 398.4, "gcStart": 2.0, "gcBench": 1.0, "ranAt": "2026-11-02T23:43:52Z", "startupProc": 5.495}, {"run": 6, "startup": 5.207, "mem": 405.1, "gcStart": 2.0, "gcBench": 1.0, "ranAt": "2026-11-02T23:46:47Z", "startupProc": 5.582}, {"run": 7, "startup": 5.273, "mem": 398.8, "gcStart": 2.0, "gcBench": 1.0, "ranAt": "2026-11-02T23:49:42Z", "startupProc": 5.648}], "A": {"startup": 5.301, "mem": 398.28, "gcStart": 2.0, "gcBench": 1.0, "sizeApp": 63.8, "sizeExtra": 105.5, "startupProc": 5.6658}, "stats": {"median": 5.277, "min": 5.113, "max": 5.969, "memMedian": 398.5}}, "leyden": {"runs": [{"run": 1, "startup": 4.205, "mem": 364.7, "gcStart": 2.0, "gcBench": 0.0, "ranAt": "2026-11-03T00:04:53Z", "startupProc": 4.904}, {"run": 2, "startup": 4.195, "mem": 357.5, "gcStart": 2.0, "gcBench": 0.0, "ranAt": "2026-11-03T00:07:47Z", "startupProc": 4.923}, {"run": 3, "startup": 4.139, "mem": 360.0, "gcStart": 2.0, "gcBench": 0.0, "ranAt": "2026-11-03T00:10:40Z", "startupProc": 4.853}, {"run": 4, "startup": 4.628, "mem": 371.9, "gcStart": 2.0, "gcBench": 0.0, "ranAt": "2026-11-03T00:13:34Z", "startupProc": 5.357}, {"run": 5, "startup": 4.227, "mem": 352.4, "gcStart": 2.0, "gcBench": 0.0, "ranAt": "2026-11-03T00:16:29Z", "startupProc": 4.928}, {"run": 6, "startup": 4.227, "mem": 366.5, "gcStart": 2.0, "gcBench": 0.0, "ranAt": "2026-11-03T00:19:22Z", "startupProc": 4.927}, {"run": 7, "startup": 4.07, "mem": 337.9, "gcStart": 2.0, "gcBench": 0.0, "ranAt": "2026-11-03T00:22:15Z", "startupProc": 4.806}], "A": {"startup": 4.1986, "mem": 360.22, "gcStart": 2.0, "gcBench": 0.0, "sizeApp": 63.8, "sizeExtra": 133.8, "startupProc": 4.907}, "stats": {"median": 4.205, "min": 4.07, "max": 4.628, "memMedian": 360.0}}, "crac": {"runs": [{"run": 1, "startup": 0.094, "mem": 387.3, "gcStart": 0.0, "gcBench": 0.0, "ranAt": "2026-11-03T00:37:57Z", "startupProc": 0.094}, {"run": 2, "startup": 0.084, "mem": 387.2, "gcStart": 0.0, "gcBench": 0.0, "ranAt": "2026-11-03T00:40:51Z", "startupProc": 0.084}, {"run": 3, "startup": 0.084, "mem": 387.4, "gcStart": 0.0, "gcBench": 0.0, "ranAt": "2026-11-03T00:43:44Z", "startupProc": 0.084}, {"run": 4, "startup": 0.088, "mem": 382.3, "gcStart": 0.0, "gcBench": 0.0, "ranAt": "2026-11-03T00:46:37Z", "startupProc": 0.088}, {"run": 5, "startup": 0.08, "mem": 387.5, "gcStart": 0.0, "gcBench": 0.0, "ranAt": "2026-11-03T00:49:31Z", "startupProc": 0.08}, {"run": 6, "startup": 0.077, "mem": 387.2, "gcStart": 0.0, "gcBench": 0.0, "ranAt": "2026-11-03T00:52:24Z", "startupProc": 0.077}, {"run": 7, "startup": 0.085, "mem": 388.1, "gcStart": 0.0, "gcBench": 0.0, "ranAt": "2026-11-03T00:55:18Z", "startupProc": 0.085}], "A": {"startup": 0.0842, "mem": 387.32, "gcStart": 0.0, "gcBench": 0.0, "sizeApp": 63.9, "sizeExtra": 230.3, "startupProc": 0.0842}, "stats": {"median": 0.084, "min": 0.077, "max": 0.094, "memMedian": 387.3}}, "graalvm": {"runs": [{"run": 1, "startup": 0.338, "mem": 200.5, "gcStart": 4.0, "gcBench": 4.0, "ranAt": "2026-11-03T01:06:37Z", "startupProc": 0.343}, {"run": 2, "startup": 0.329, "mem": 200.6, "gcStart": 4.0, "gcBench": 4.0, "ranAt": "2026-11-03T01:09:25Z", "startupProc": 0.334}, {"run": 3, "startup": 0.339, "mem": 200.5, "gcStart": 4.0, "gcBench": 4.0, "ranAt": "2026-11-03T01:12:14Z", "startupProc": 0.344}, {"run": 4, "startup": 0.975, "mem": 200.0, "gcStart": 4.0, "gcBench": 4.0, "ranAt": "2026-11-03T01:15:02Z", "startupProc": 1.03}, {"run": 5, "startup": 0.339, "mem": 200.3, "gcStart": 4.0, "gcBench": 4.0, "ranAt": "2026-11-03T01:17:51Z", "startupProc": 0.343}, {"run": 6, "startup": 0.34, "mem": 200.2, "gcStart": 4.0, "gcBench": 4.0, "ranAt": "2026-11-03T01:20:39Z", "startupProc": 0.345}, {"run": 7, "startup": 0.335, "mem": 199.9, "gcStart": 4.0, "gcBench": 4.0, "ranAt": "2026-11-03T01:23:27Z", "startupProc": 0.34}], "A": {"startup": 0.3382, "mem": 200.3, "gcStart": 4.0, "gcBench": 4.0, "sizeApp": 185.3, "sizeExtra": 41.0, "startupProc": 0.343}, "stats": {"median": 0.339, "min": 0.329, "max": 0.975, "memMedian": 200.3}}}}, "27": {"results": {"baseline": {"runs": [{"run": 1, "startup": 13.354, "mem": 427.5, "gcStart": 18.0, "gcBench": 1.0, "ranAt": "2026-11-03T01:36:22Z", "startupProc": 14.68}, {"run": 2, "startup": 13.592, "mem": 427.0, "gcStart": 18.0, "gcBench": 1.0, "ranAt": "2026-11-03T01:39:27Z", "startupProc": 14.847}, {"run": 3, "startup": 14.385, "mem": 624.0, "gcStart": 16.0, "gcBench": 1.0, "ranAt": "2026-11-03T01:42:32Z", "startupProc": 15.715}, {"run": 4, "startup": 13.469, "mem": 618.3, "gcStart": 16.0, "gcBench": 1.0, "ranAt": "2026-11-03T01:45:38Z", "startupProc": 14.73}, {"run": 5, "startup": 13.903, "mem": 612.0, "gcStart": 17.0, "gcBench": 1.0, "ranAt": "2026-11-03T01:48:43Z", "startupProc": 15.213}, {"run": 6, "startup": 14.552, "mem": 430.5, "gcStart": 18.0, "gcBench": 1.0, "ranAt": "2026-11-03T01:51:49Z", "startupProc": 15.833}, {"run": 7, "startup": 15.121, "mem": 427.9, "gcStart": 17.0, "gcBench": 1.0, "ranAt": "2026-11-03T01:54:55Z", "startupProc": 16.367}], "A": {"startup": 13.9802, "mem": 503.24, "gcStart": 17.2, "gcBench": 1.0, "sizeApp": 63.9, "sizeExtra": 0.0, "startupProc": 15.2676}, "stats": {"median": 13.903, "min": 13.354, "max": 15.121, "memMedian": 430.5}}, "tuning": {"runs": [{"run": 1, "startup": 8.972, "mem": 455.4, "gcStart": 12.0, "gcBench": 1.0, "ranAt": "2026-11-03T02:07:18Z", "startupProc": 9.573}, {"run": 2, "startup": 8.708, "mem": 454.7, "gcStart": 12.0, "gcBench": 1.0, "ranAt": "2026-11-03T02:10:17Z", "startupProc": 9.282}, {"run": 3, "startup": 8.901, "mem": 457.7, "gcStart": 12.0, "gcBench": 1.0, "ranAt": "2026-11-03T02:13:17Z", "startupProc": 9.478}, {"run": 4, "startup": 8.845, "mem": 456.1, "gcStart": 14.0, "gcBench": 1.0, "ranAt": "2026-11-03T02:16:17Z", "startupProc": 9.453}, {"run": 5, "startup": 9.23, "mem": 450.8, "gcStart": 14.0, "gcBench": 1.0, "ranAt": "2026-11-03T02:19:17Z", "startupProc": 9.793}, {"run": 6, "startup": 8.873, "mem": 465.7, "gcStart": 12.0, "gcBench": 1.0, "ranAt": "2026-11-03T02:22:16Z", "startupProc": 9.453}, {"run": 7, "startup": 9.046, "mem": 453.1, "gcStart": 12.0, "gcBench": 1.0, "ranAt": "2026-11-03T02:25:16Z", "startupProc": 9.651}], "A": {"startup": 8.9274, "mem": 455.4, "gcStart": 12.4, "gcBench": 1.0, "sizeApp": 63.8, "sizeExtra": 0.0, "startupProc": 9.5216}, "stats": {"median": 8.901, "min": 8.708, "max": 9.23, "memMedian": 455.4}}, "cds": {"runs": [{"run": 1, "startup": 5.347, "mem": 384.7, "gcStart": 2.0, "gcBench": 1.0, "ranAt": "2026-11-03T02:40:22Z", "startupProc": 5.727}, {"run": 2, "startup": 5.483, "mem": 362.6, "gcStart": 3.0, "gcBench": 0.0, "ranAt": "2026-11-03T02:43:17Z", "startupProc": 5.877}, {"run": 3, "startup": 5.445, "mem": 336.1, "gcStart": 3.0, "gcBench": 0.0, "ranAt": "2026-11-03T02:46:12Z", "startupProc": 5.828}, {"run": 4, "startup": 5.164, "mem": 346.0, "gcStart": 3.0, "gcBench": 1.0, "ranAt": "2026-11-03T02:49:07Z", "startupProc": 5.551}, {"run": 5, "startup": 5.675, "mem": 382.3, "gcStart": 2.0, "gcBench": 1.0, "ranAt": "2026-11-03T02:52:02Z", "startupProc": 6.248}, {"run": 6, "startup": 6.217, "mem": 379.1, "gcStart": 2.0, "gcBench": 1.0, "ranAt": "2026-11-03T02:54:58Z", "startupProc": 6.59}, {"run": 7, "startup": 5.297, "mem": 386.4, "gcStart": 2.0, "gcBench": 1.0, "ranAt": "2026-11-03T02:57:54Z", "startupProc": 5.675}], "A": {"startup": 5.4494, "mem": 370.94, "gcStart": 2.4, "gcBench": 0.8, "sizeApp": 63.8, "sizeExtra": 105.0, "startupProc": 5.871}, "stats": {"median": 5.445, "min": 5.164, "max": 6.217, "memMedian": 379.1}}, "leyden": {"runs": [{"run": 1, "startup": 3.935, "mem": 342.3, "gcStart": 2.0, "gcBench": 0.0, "ranAt": "2026-11-03T03:13:05Z", "startupProc": 4.474}, {"run": 2, "startup": 4.785, "mem": 337.1, "gcStart": 2.0, "gcBench": 0.0, "ranAt": "2026-11-03T03:15:58Z", "startupProc": 5.295}, {"run": 3, "startup": 3.961, "mem": 344.0, "gcStart": 2.0, "gcBench": 0.0, "ranAt": "2026-11-03T03:18:52Z", "startupProc": 4.437}, {"run": 4, "startup": 3.956, "mem": 343.6, "gcStart": 2.0, "gcBench": 0.0, "ranAt": "2026-11-03T03:21:46Z", "startupProc": 4.463}, {"run": 5, "startup": 3.819, "mem": 345.1, "gcStart": 2.0, "gcBench": 0.0, "ranAt": "2026-11-03T03:24:39Z", "startupProc": 4.32}, {"run": 6, "startup": 3.902, "mem": 333.9, "gcStart": 2.0, "gcBench": 0.0, "ranAt": "2026-11-03T03:27:32Z", "startupProc": 4.411}, {"run": 7, "startup": 3.777, "mem": 345.9, "gcStart": 2.0, "gcBench": 0.0, "ranAt": "2026-11-03T03:30:25Z", "startupProc": 4.28}], "A": {"startup": 3.9146, "mem": 342.42, "gcStart": 2.0, "gcBench": 0.0, "sizeApp": 63.8, "sizeExtra": 142.5, "startupProc": 4.421}, "stats": {"median": 3.935, "min": 3.777, "max": 4.785, "memMedian": 343.6}}, "crac": {"runs": [{"run": 1, "startup": 0.083, "mem": 369.6, "gcStart": 0.0, "gcBench": 0.0, "ranAt": "2026-11-03T03:46:00Z", "startupProc": 0.083}, {"run": 2, "startup": 0.081, "mem": 376.7, "gcStart": 0.0, "gcBench": 0.0, "ranAt": "2026-11-03T03:48:54Z", "startupProc": 0.081}, {"run": 3, "startup": 0.09, "mem": 370.9, "gcStart": 0.0, "gcBench": 0.0, "ranAt": "2026-11-03T03:51:47Z", "startupProc": 0.09}, {"run": 4, "startup": 0.082, "mem": 377.3, "gcStart": 0.0, "gcBench": 0.0, "ranAt": "2026-11-03T03:54:41Z", "startupProc": 0.082}, {"run": 5, "startup": 0.089, "mem": 377.4, "gcStart": 0.0, "gcBench": 0.0, "ranAt": "2026-11-03T03:57:34Z", "startupProc": 0.089}, {"run": 6, "startup": 0.096, "mem": 370.1, "gcStart": 0.0, "gcBench": 0.0, "ranAt": "2026-11-03T04:00:27Z", "startupProc": 0.096}, {"run": 7, "startup": 0.096, "mem": 369.9, "gcStart": 0.0, "gcBench": 0.0, "ranAt": "2026-11-03T04:03:21Z", "startupProc": 0.096}], "A": {"startup": 0.088, "mem": 372.98, "gcStart": 0.0, "gcBench": 0.0, "sizeApp": 63.9, "sizeExtra": 380.5, "startupProc": 0.088}, "stats": {"median": 0.089, "min": 0.081, "max": 0.096, "memMedian": 370.9}}}}}, "sizeRows": [{"name": "Baseline: App-JAR", "a": 63.85546875, "b": 63.85546875}, {"name": "Tuning: App-JAR", "a": 1.0078125, "b": 1.00390625}, {"name": "Tuning: Lib-JARs", "a": 62.78125, "b": 62.78125}, {"name": "CDS-Cache", "a": 105.4921875, "b": 104.99609375}, {"name": "Leyden-Cache", "a": 133.78125, "b": 142.46484375}, {"name": "CRaC-Snapshot", "a": 230.28125, "b": 380.54296875}, {"name": "GraalVM: Linux-App", "a": 185.2578125, "b": null}], "jdkNotes": ["<b>GraalVM auf JDK 27:<\/b> gibt es nicht. GraalVM folgt nicht mehr dem JDK-Takt; alle aktuellen Releases (GraalVM 25 und die Innovation-Releases 25.1 bis 25.4) basieren auf JDK 25.", "<b>CRaC auf JDK 27:<\/b> Azul Zulu 27 mit CRaC (Build 27+35). Für das Update 27.0.1 gibt es noch keinen CRaC-Build.", "<b>Leyden auf JDK 27:<\/b> cacht weiterhin keinen Maschinencode. Neu gegenüber JDK 25 ist das Objekt-Caching mit jedem Garbage Collector.", "<b>Speicher auf JDK 27:<\/b> Baseline hat zwei Niveaus: 4 Läufe mit 427 bis 431 MB, 3 Läufe mit 612 bis 624 MB. In den hohen Läufen vergrößerte G1 den Heap von 258 MB auf 445 bis 462 MB, in den niedrigen nicht. Bei Tuning vergrößerte G1 den Heap in allen 7 Läufen auf 462 MB (451 bis 466 MB). Auf JDK 25 blieb der Heap in jedem Lauf bei 258 MB. Zeile A der Baseline auf JDK 27 enthält zwei hohe Werte (503 MB); der Median liegt bei 431 MB."], "naReason": {"graalvm": "kein GraalVM für JDK 27"}, "captions": {"25": [{"label": "Baseline: App-JAR", "value": "64", "shown": "64 MB"}, {"label": "Tuning: App-JAR (entpackt)", "value": "1", "shown": "1 MB", "na": "kommt aus dem Lauf"}, {"label": "Tuning: Lib-JARs", "value": "63", "shown": "63 MB", "na": "kommt aus dem Lauf"}, {"label": "CDS-Cache", "value": "105", "shown": "105 MB"}, {"label": "Leyden-Cache", "value": "134", "shown": "134 MB"}, {"label": "CRaC-Snapshot", "value": "230", "shown": "230 MB"}, {"label": "GraalVM: Linux-App", "value": "185", "shown": "185 MB"}, {"label": "Native Image: instrumentierter Build", "value": "12:06", "shown": "12:06 Min"}, {"label": "Native Image: optimierter Build", "value": "7:41", "shown": "7:41 Min"}, {"label": "Build-Server", "value": "32 GB RAM & 8 CPUs", "shown": "32 GB RAM, 8 CPUs"}], "27": [{"label": "Baseline: App-JAR", "value": "64", "shown": "64 MB"}, {"label": "Tuning: App-JAR (entpackt)", "value": "1", "shown": "1 MB", "na": "kommt aus dem Lauf"}, {"label": "Tuning: Lib-JARs", "value": "63", "shown": "63 MB", "na": "kommt aus dem Lauf"}, {"label": "CDS-Cache", "value": "105", "shown": "105 MB"}, {"label": "Leyden-Cache", "value": "142", "shown": "142 MB"}, {"label": "CRaC-Snapshot", "value": "381", "shown": "381 MB"}, {"label": "GraalVM: Linux-App", "value": null, "na": "n/a, kein GraalVM für JDK 27"}]}, "artifacts": [{"label": "Boot-JAR (Baseline, CRaC)", "path": "build/libs/spring-petclinic-4.0.0-SNAPSHOT.jar", "25": 63.85546875, "27": 63.85546875}, {"label": "Entpackter Ordner gesamt (Tuning, CDS, Leyden)", "path": "spring-petclinic-4.0.0-SNAPSHOT/", "25": 63.79296875, "27": 63.7890625}, {"label": "davon App-JAR", "path": "spring-petclinic-4.0.0-SNAPSHOT/spring-petclinic-4.0.0-SNAPSHOT.jar", "25": 1.0078125, "27": 1.00390625}, {"label": "davon Lib-JARs", "path": "spring-petclinic-4.0.0-SNAPSHOT/lib/", "25": 62.78125, "27": 62.78125}, {"label": "CDS-Archiv", "path": "petclinic.jsa", "25": 105.4921875, "27": 104.99609375}, {"label": "Leyden-AOT-Cache", "path": "petclinic.aot", "25": 133.78125, "27": 142.46484375}, {"label": "CRaC-Checkpoint gesamt", "path": "petclinic-crac/", "25": 230.28125, "27": 380.54296875}, {"label": "GraalVM Native Executable", "path": "build/native/nativeCompile/spring-petclinic", "25": 185.2578125, "27": null}, {"label": "PGO-Profil", "path": "src/pgo-profiles/main/default.iprof", "25": 41.046875, "27": null}], "build": [["Instrumentierter Build", "12:06 Min, Spitzenspeicher 19,51 GB"], ["Trainingslauf", "Die instrumentierte Anwendung läuft einmal mit der Seitenlast und schreibt das PGO-Profil."], ["Optimierter Build", "7:41 Min, Spitzenspeicher 10,40 GB"], ["Build-Server", "AWS t3.2xlarge, 8 vCPU, 32 GB RAM; Gradle mit <code>-Xmx24g<\/code>, native-image mit <code>--gc=G1<\/code>"]], "method": {"warmups": 3, "runs": 7}, "methodText": [["Anwendung", "Spring PetClinic (Fork), Spring Boot 4.1.2, Gradle 9.5.1, PostgreSQL-Profil mit Datenbank auf demselben Server."], ["Varianten", "Baseline: <code>java -jar<\/code> ohne Spring AOT. Tuning: entpacktes JAR mit Spring AOT. Tuning + CDS: zusätzlich CDS-Archiv. Tuning + Leyden: zusätzlich Leyden-AOT-Cache (record, dann create). CRaC: Wiederherstellen aus einem Checkpoint (Engine warp). GraalVM: Native Image mit Profile-Guided Optimization."], ["Ablauf je Variante", "Build, bei CDS, Leyden und CRaC ein Trainingslauf, dann 3 Aufwärmläufe und 7 Messläufe. Jeder Lauf startet die Anwendung neu."], ["Last je Lauf", "Nach dem Start 5 Runden über 11 Aufrufe (10 verschiedene Seiten), also 55 Anfragen mit je 3 Sekunden Pause davor. Jede Seite muss HTTP 200 liefern, nur <code>/oups<\/code> (absichtlicher Fehler) HTTP 500, sonst bricht der Lauf ab."], ["Startzeit", "Die Zeit, die die Anwendung selbst meldet, wie im Mai. JVM-Varianten und GraalVM: „Started PetClinicApplication in … seconds“. Diese Uhr läuft erst ab dem Start von Spring Boot; der Start der JVM davor fehlt. CRaC: „restored JVM running for … ms“, gezählt ab dem Start des Prozesses, also mit dem Wiederherstellen."], ["Startzeit ab Prozessstart", "Neu in diesem Lauf: „process running for …“ aus derselben Zeile von Spring Boot, also mit dem Start der JVM. Bei CRaC derselbe Wert wie die Startzeit."], ["Speicher", "Maximale Resident Set Size des Prozesses über den ganzen Lauf, gemessen mit <code>/usr/bin/time -v<\/code>."], ["Garbage Collections", "Anzahl der GC-Pausen, getrennt vor und nach dem Start, auf die Millisekunde genau. Jede Pause zählt einmal: Young Collections und die zwei kurzen Pausen jeder Markierungsrunde von G1 (Remark, Cleanup). Gleiche Regel für alle Varianten. Die GC-Logs jedes Laufs liegen im Repository."], ["Kennzahl A", "Getrimmtes Mittel je Kennzahl: Der kleinste und der größte Wert fallen weg, der Rest wird gemittelt. Bei der Startzeit sind das der schnellste und der langsamste Lauf; Speicher und GC-Pausen werden jeweils für sich getrimmt. Diese Zahl steht auf den Folien."], ["JVM-Einstellungen", "<code>-Xms256m -Xmx768m -XX:+UseG1GC<\/code>, Profil <code>postgres<\/code>. CRaC übernimmt die Einstellungen aus dem Checkpoint. GraalVM: G1 mit höchstens 128 MB Heap, zur Build-Zeit festgelegt; dazu kommen rund 83 MB Objekte, die beim Build entstanden und in der Anwendung liegen."], ["Server", "Alle Messungen auf einem AWS t3.small (2 vCPU, 2 GB RAM, 2 GB Swap), wie im Mai. Das Native Image entsteht auf einem t3.2xlarge (8 vCPU, 32 GB RAM) und wird kopiert."], ["Störungen", "Server vorher neu gestartet, automatische Updates pausiert, keine anderen Anwendungen. Bei Baseline, Tuning, CDS und Leyden läuft der Gradle-Daemon aus dem Build während der Messung im Leerlauf weiter (wie im Mai, so arbeitet compile-and-run.sh). CRaC baut ohne Daemon, GraalVM baut nicht auf dem Messserver. CPU-Steal im Lauf: im Mittel 0,32 %, höchstens 46 % (1307 Stichproben). Swap: auf JDK 25 höchstens 16 MB belegt, auf JDK 27 bis zu 65 MB."]], "versions": [["Spring Boot", "4.1.2", "4.1.2"], ["Baseline, Tuning, CDS, Leyden", "Eclipse Temurin 25.0.5+8 (<code>25.0.5.0+8-tem<\/code>)", "Eclipse Temurin 27+35 (<code>27.0.0.0+35-tem<\/code>)"], ["CRaC", "Azul Zulu 25.0.4.1 CRaC, Zulu25.36+205-CRaC-CA (<code>25.0.4.1-crac+1-zulu<\/code>)", "Azul Zulu 27 CRaC, Zulu27.28+101-CRaC-CA (<code>27.0.0.0-crac+35-zulu<\/code>)"], ["GraalVM", "Oracle GraalVM 25.0.5.0.3, native-image 25.0.5.0.3 (<code>25.0.5.0+3-graal<\/code>)", "n/a"], ["GraalVM Native Build Tools", "1.1.2", "–"], ["Gradle", "9.5.1", "9.5.1"], ["CRaC-Engine", "warp (braucht kein CRIU)", "warp (braucht kein CRIU)"], ["PostgreSQL", "16.15 auf dem Messserver", "16.15 auf dem Messserver"], ["Betriebssystem", "Ubuntu 24.04.4 LTS, Kernel 7.0.0-1014-aws, glibc 2.39-0ubuntu8.9", "wie JDK 25"], ["Messserver", "AWS t3.small, 2 vCPU Intel Xeon Platinum 8259CL @ 2,50 GHz, 2 GB RAM (1,9 GB nutzbar), 2 GB Swap", "wie JDK 25"], ["Build-Server (Native Image)", "AWS t3.2xlarge, 8 vCPU, 32 GB RAM (31 GB nutzbar), kein Swap", "–"]], "notes": ["Alle Werte auf den Folien sind Zeile A (getrimmtes Mittel). Median, Spanne und jeder einzelne Lauf stehen unter „Einzelmessungen“.", "GraalVM startet langsamer als auf den alten Folien (0,338 s statt 0,287 s). Etwa 0,03 s davon kommen daher, dass das Native Image jetzt wie alle JVM-Varianten <code>schema.sql<\/code> und <code>data.sql<\/code> beim Start ausführt; vorher fehlten die Skripte im Native Image (behoben im Upstream-Commit <code>a2c2ef9<\/code>). Den Rest kostet das Upgrade (Spring Boot 4.1.2, Hibernate 7.4, GraalVM 25.0.5), ähnlich wie bei den JVM-Varianten.", "GraalVM-GCs werden seit dem 1. November gezählt; die 0 auf den alten Folien war ein Fehler im Messskript. Das Native Image schreibt sein GC-Log auf die Standardausgabe, das Skript suchte es vorher in einer Datei, die nie entstand.", "Die Größen von CDS-Archiv, Leyden-Cache und CRaC-Checkpoint stehen seit dem 1. November auch im CSV (vorher immer 0,0).", "Die Datenbank des Messservers hatte vor dem Lauf 15 Indizes, also keine doppelten (4.137 Duplikate der alten <code>schema.sql<\/code> wurden vor dem Lauf vom 1. November entfernt).", "Dieser Lauf ersetzt den vom 1. November. Damals zählte das Messskript GC-Logzeilen statt Pausen (zwei je Pause) und trennte Start und Benchmark nur auf die Sekunde genau; die Startzeit ab Prozessstart fehlte, und nur der letzte Lauf jeder Variante hatte Logs.", "Die Speicherwerte sind Resident Set Size, nicht Heap. CRaC zeigt den Speicher des wiederhergestellten Prozesses.", "<b>Messqualität:<\/b> Der Messserver ist eine AWS-t3-Instanz mit geteilter CPU. 8 von 77 Messläufen sind mehr als 8 % langsamer als der Median ihrer Variante, am deutlichsten GraalVM-Lauf 4 (0,975 s statt 0,339 s): Dort lief der ganze Prozess etwa dreimal so langsam, auch die GC-Pausen. Die Ursache zeigt das Protokoll nicht; es misst CPU-Steal, Plattenzugriffe und Speicher nur alle 15 Sekunden, und keine Stichprobe nahe dieser Läufe zeigt Auffälliges. Jeder dieser Läufe ist der langsamste seiner Variante, also nicht in Zeile A."], "footer": "Erzeugt am 03.11.2026, 04:08 UTC aus Branch run-upgrade-benchmarks-jdk25-jdk27, Commit 7785519. Rohdaten (CSV, Logs) liegen im Repository unter docs/benchmark-results/."};
+</script>
+<script>
+(() => {
+  "use strict";
+  const D = DATA;
+  const VARIANTS = D.variants;            // [{key, name}]
+  const TRACKS = D.trackOrder;            // ["25", "27"]
+  const NS = "http://www.w3.org/2000/svg";
+  const SERIES = { "25": { label: "JDK 25", color: "var(--s25)" }, "27": { label: "JDK 27", color: "var(--s27)" },
+    may: { label: "Mai 2026 (Folien)", color: "var(--smay)" } };
+
+  // ---------- number formatting (German) ----------
+  const nf = (min, max) => new Intl.NumberFormat("de-DE", { minimumFractionDigits: min, maximumFractionDigits: max });
+  const fmt = (v, dec) => (v == null || Number.isNaN(v)) ? "n/a" : nf(dec, dec).format(v);
+  const fmtStartup = v => v == null ? "n/a" : (v < 1 ? fmt(v, 3) : fmt(v, 1));
+  const fmtStartupFull = v => v == null ? "n/a" : fmt(v, 3);
+  const fmtMem = v => v == null ? "n/a" : fmt(v, 0);
+  const fmtGc = v => {
+    if (v == null) return "n/a";
+    const r = Math.round(v * 10) / 10;
+    return Number.isInteger(r) ? fmt(r, 0) : fmt(r, 1);
+  };
+  const fmtMb = v => v == null ? "n/a" : fmt(v, 0);
+  const fmtPct = v => {
+    if (v == null || !isFinite(v)) return "–";
+    const r = Math.round(v * 100);
+    return (r > 0 ? "+" : r < 0 ? "−" : "±") + nf(0, 0).format(Math.abs(r)) + " %";
+  };
+  const METRICS = {
+    startup: { label: "Startzeit", unit: "s", get: r => r.A.startup, fmt: fmtStartup, full: fmtStartupFull, lowerIsBetter: true },
+    startupProc: { label: "Startzeit ab Prozessstart", unit: "s", get: r => r.A.startupProc, fmt: fmtStartup, full: fmtStartupFull, lowerIsBetter: true },
+    mem: { label: "Maximaler Speicherverbrauch", unit: "MB", get: r => r.A.mem, fmt: fmtMem, full: v => fmt(v, 1), lowerIsBetter: true },
+    gcStart: { label: "Garbage Collections beim Start", unit: "", get: r => r.A.gcStart, fmt: fmtGc, full: v => fmt(v, 1), lowerIsBetter: true },
+    gcBench: { label: "Garbage Collections im Benchmark", unit: "", get: r => r.A.gcBench, fmt: fmtGc, full: v => fmt(v, 1), lowerIsBetter: true },
+  };
+  const res = (track, v) => (D.tracks[track] && D.tracks[track].results[v]) || null;
+  const val = (track, v, m) => { const r = res(track, v); const x = r ? METRICS[m].get(r) : null; return x === undefined ? null : x; };
+  // Startup time from process start: only in CSVs written by benchmark.sh since 2026-11-02
+  const hasProc = Object.values(D.tracks).some(t => Object.values(t.results).some(r => r.A && r.A.startupProc != null));
+
+  // ---------- tiny DOM helpers ----------
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v == null) continue;
+      if (k === "html") n.innerHTML = v; else if (k === "class") n.className = v; else n.setAttribute(k, v);
+    }
+    for (const k of kids.flat(Infinity)) if (k != null) n.append(k.nodeType ? k : document.createTextNode(k));
+    return n;
+  };
+  const svg = (tag, attrs = {}) => {
+    const n = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) if (v != null) n.setAttribute(k, v);
+    return n;
+  };
+  const text = (x, y, s, attrs = {}) => { const t = svg("text", Object.assign({ x, y }, attrs)); t.textContent = s; return t; };
+
+  // ---------- tooltip ----------
+  const tip = document.getElementById("tip");
+  const showTip = (e, html) => {
+    tip.innerHTML = html; tip.classList.add("on");
+    const r = (e.target.getBoundingClientRect ? e.target.getBoundingClientRect() : { left: e.clientX, top: e.clientY, width: 0 });
+    const x = e.clientX != null && e.type.startsWith("pointer") ? e.clientX : r.left + r.width / 2;
+    const y = e.clientY != null && e.type.startsWith("pointer") ? e.clientY : r.top;
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.min(window.innerWidth - w - 8, Math.max(8, x + 14)) + "px";
+    tip.style.top = Math.max(8, y - h - 12) + "px";
+  };
+  const hideTip = () => tip.classList.remove("on");
+  const bindTip = (node, html) => {
+    node.addEventListener("pointermove", e => showTip(e, html));
+    node.addEventListener("pointerleave", hideTip);
+    node.addEventListener("focus", e => showTip(e, html));
+    node.addEventListener("blur", hideTip);
+  };
+
+  // ---------- copy ----------
+  // Keynote parses pasted numbers in the system's format: an English macOS needs "14.7", a German one "14,7".
+  // The page shows German numbers; what gets copied follows this setting (default: decimal point).
+  let copyComma = false;
+  try { copyComma = localStorage.getItem("copyDecimal") === "comma"; } catch (_) {}
+  const NUMERIC = /^-?\d{1,3}(\.\d{3})*(,\d+)?$|^-?\d+(,\d+)?$/;
+  const toCopy = shown => (!copyComma && NUMERIC.test(shown)) ? shown.replace(/\./g, "").replace(",", ".") : shown;
+  // What the copy sheet shows: the leading number of e.g. "14,7" or "111 MB" in the chosen format.
+  const LEADING = /^-?\d{1,3}(?:\.\d{3})*(?:,\d+)?(?![\d:])|^-?\d+(?:,\d+)?(?![\d:])/;
+  const toShow = shown => copyComma ? shown : shown.replace(LEADING, n => n.replace(/\./g, "").replace(",", "."));
+  const copyButtons = [];
+  const live = document.getElementById("live");
+  async function copyText(s) {
+    try { await navigator.clipboard.writeText(s); }
+    catch (_) {
+      const ta = el("textarea", { style: "position:fixed;left:-9999px" }); ta.value = s; document.body.append(ta);
+      ta.select(); document.execCommand("copy"); ta.remove();
+    }
+  }
+  const copyButton = (shown, value, label) => {
+    const b = el("button", { class: "copy", type: "button" });
+    const refresh = () => {
+      b.textContent = toShow(shown);
+      b.title = "Kopiert " + toCopy(value);
+      b.setAttribute("aria-label", label + ": " + toShow(shown) + ", kopieren");
+    };
+    refresh(); copyButtons.push(refresh);
+    b.addEventListener("click", async () => {
+      const v = toCopy(value);
+      await copyText(v); b.classList.add("done"); live.textContent = "Kopiert: " + v;
+      setTimeout(() => b.classList.remove("done"), 900);
+    });
+    return b;
+  };
+
+  // ---------- layout helpers for charts ----------
+  const niceTicks = (max, count = 5) => {
+    if (max <= 0) return [0, 1];
+    const raw = max / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(s => s * mag).find(s => raw <= s);
+    const ticks = []; for (let t = 0; t <= max + step * 0.001; t += step) ticks.push(+t.toFixed(10));
+    if (ticks[ticks.length - 1] < max) ticks.push(+(ticks[ticks.length - 1] + step).toFixed(10));
+    return ticks;
+  };
+  const textWidth = (() => {
+    const c = document.createElement("canvas").getContext("2d");
+    return (s, size = 14, weight = 400) => {
+      c.font = `${weight} ${size}px ${getComputedStyle(document.body).fontFamily}`;
+      return c.measureText(s).width;
+    };
+  })();
+
+  // Dot ladder: one row per item, the JDK 25 dot a little above and the JDK 27 dot a little below the
+  // row centre, so equal values never hide each other. Values sit in columns on the right.
+  // cfg: { rows: [{ name, a, b }], log, unit, fmtVal, third: { label, value(row) } }
+  function ladder(container, cfg) {
+    const W = Math.max(320, container.clientWidth);
+    const narrow = W < 640;
+    const labelW = narrow ? 112 : (cfg.labelW || 160), colW = 84, thirdW = 76;
+    const valW = narrow ? 0 : colW * 2 + thirdW + 12;
+    const rowH = 46, top = 30, bottom = 34;
+    const plotL = labelW, plotR = W - valW - 18;
+    const H = top + rowH * cfg.rows.length + bottom;
+    const vals = cfg.rows.flatMap(r => [r.a, r.b]).filter(x => x != null && (!cfg.log || x > 0));
+    let X, ticks, tickLabel;
+    if (cfg.log) {
+      const lo = Math.pow(10, Math.floor(Math.log10(Math.min(...vals)) * 2) / 2);
+      const hi = Math.pow(10, Math.ceil(Math.log10(Math.max(...vals)) * 2) / 2);
+      X = v => plotL + (Math.log10(v) - Math.log10(lo)) / (Math.log10(hi) - Math.log10(lo)) * (plotR - plotL);
+      ticks = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50].filter(t => t >= lo * 0.999 && t <= hi * 1.001);
+      // On narrow screens only the decades get a label, so the labels never collide.
+      tickLabel = t => (!narrow || Math.abs(Math.log10(t) - Math.round(Math.log10(t))) < 1e-9)
+        ? fmt(t, t < 0.1 ? 2 : t < 1 ? 1 : 0) + " " + cfg.unit : null;
+    } else {
+      ticks = niceTicks(Math.max(...vals, 0));
+      const maxT = ticks[ticks.length - 1];
+      X = v => plotL + (v / maxT) * (plotR - plotL);
+      tickLabel = (t, i) => (!narrow || i % 2 === 0) ? fmt(t, t % 1 ? 1 : 0) : null;
+    }
+    const s = svg("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": cfg.aria });
+    ticks.forEach((t, i) => {
+      const x = X(t);
+      s.append(svg("line", { x1: x, x2: x, y1: top - 8, y2: H - bottom + 4, stroke: (!cfg.log && t === 0) ? "var(--axis)" : "var(--grid)", "stroke-width": 1 }));
+      const lab = tickLabel(t, i);
+      if (lab) s.append(text(x, H - bottom + 22, lab, { "text-anchor": "middle", "font-size": 13, fill: "var(--muted)", style: "font-variant-numeric: tabular-nums" }));
+    });
+    const c1 = plotR + 18 + colW, c2 = c1 + colW;
+    const num = (x, y, str, extra = {}) => text(x, y, str, Object.assign({ "text-anchor": "end", "font-size": 15, fill: "var(--ink)", style: "font-variant-numeric: tabular-nums" }, extra));
+    if (!narrow) {
+      s.append(num(c1, 16, "JDK 25", { "font-size": 13, fill: "var(--ink-2)" }));
+      s.append(num(c2, 16, "JDK 27", { "font-size": 13, fill: "var(--ink-2)" }));
+      if (cfg.third) s.append(num(W, 16, cfg.third.label, { "font-size": 13, fill: "var(--ink-2)" }));
+    }
+    const show = v => v == null ? "n/a" : cfg.fmtVal(v) + (cfg.unit ? " " + cfg.unit : "");
+    cfg.rows.forEach((r, i) => {
+      const cy = top + rowH * i + rowH / 2;
+      const third = cfg.third ? cfg.third.value(r) : null;
+      const g = svg("g", { class: "mark", tabindex: 0, "aria-label": `${r.name}: JDK 25 ${show(r.a)}, JDK 27 ${show(r.b)}` + (third ? `, ${cfg.third.label} ${third}` : "") });
+      g.append(svg("rect", { class: "hit", x: 0, y: cy - rowH / 2 + 2, width: W, height: rowH - 4, rx: 8, fill: "transparent" }));
+      g.append(text(0, cy + 5, r.name, { "font-size": narrow ? 14 : 15, "font-weight": 600, fill: "var(--ink)" }));
+      [["25", r.a, -6], ["27", r.b, 6]].forEach(([t, x, dy]) => {
+        if (x == null || (cfg.log && x <= 0)) return;
+        g.append(svg("line", { x1: plotL, x2: X(x), y1: cy + dy, y2: cy + dy, stroke: "var(--grid)", "stroke-width": 1 }));
+        g.append(svg("circle", { cx: X(x), cy: cy + dy, r: 6, fill: SERIES[t].color, stroke: "var(--surface)", "stroke-width": 2 }));
+      });
+      if (!narrow) {
+        g.append(num(c1, cy + 5, show(r.a), r.a == null ? { fill: "var(--muted)" } : {}));
+        g.append(num(c2, cy + 5, show(r.b), r.b == null ? { fill: "var(--muted)" } : {}));
+        if (third) g.append(num(W, cy + 5, third, { "font-weight": 600 }));
+      }
+      bindTip(g, `<b>${r.name}</b><br>JDK 25: ${show(r.a)}<br>JDK 27: ${show(r.b)}` + (third ? `<br>${cfg.third.label}: ${third}` : ""));
+      s.append(g);
+    });
+    container.replaceChildren(s);
+  }
+
+  const metricRows = mk => VARIANTS.map(v => ({ name: v.name, a: val("25", v.key, mk), b: val("27", v.key, mk) }));
+  const delta = { label: "27 ggü. 25", value: r => (r.a == null || r.b == null || r.a === 0) ? null : fmtPct(r.b / r.a - 1) };
+  const legend = () => el("ul", { class: "legend" },
+    el("li", {}, el("span", { class: "key", style: "background:var(--s25)" }), "JDK 25"),
+    el("li", {}, el("span", { class: "key", style: "background:var(--s27)" }), "JDK 27"));
+  const ladderSection = (id, title, intro, panels) => el("section", { id }, el("h2", {}, title), el("p", { class: "intro" }, intro),
+    panels.map(([sub, cfg]) => { const c = el("div", { class: "chart" });
+      return el("div", { class: "panel" }, sub ? el("h3", { style: "margin-top:0" }, sub) : null, legend(), addChart(c, n => ladder(n, cfg))); }));
+
+  // ---------- page ----------
+  const app = document.getElementById("app");
+  const charts = [];
+  const addChart = (node, fn) => { charts.push([node, fn]); return node; };
+
+  const head = el("header", { class: "masthead" },
+    el("button", { class: "theme-toggle", type: "button", id: "theme" }, "Dunkles Design"),
+    el("h1", {}, "Wie schnell startet Java? Die Messwerte zum Vortrag"),
+    el("p", { class: "lede" }, D.lede),
+    el("ul", { class: "facts" }, D.facts.map(f => el("li", {}, f))));
+  app.append(head);
+  if (D.preview) {
+    app.append(el("div", { class: "banner", role: "note" }, el("span", { class: "icon", "aria-hidden": "true" }, "!"),
+      el("p", { html: D.previewText })));
+  }
+
+  // 1. Startup (log axis, factor)
+  {
+    const base25 = val("25", "baseline", "startup");
+    app.append(ladderSection("ueberblick", "Startzeit auf einen Blick",
+      "Sechs Wege, Spring PetClinic zu starten, auf einer logarithmischen Zeitachse: jeder Teilstrich ist ein Faktor. Faktor = Baseline auf JDK 25 geteilt durch die Startzeit der Variante auf JDK 25.",
+      [[null, { rows: metricRows("startup"), log: true, unit: "s", fmtVal: fmtStartupFull, aria: "Startzeit je Variante, logarithmische Achse",
+        third: { label: "Faktor", value: r => (r.a && base25) ? (base25 / r.a < 10 ? fmt(base25 / r.a, 1) : fmt(base25 / r.a, 0)) + "×" : null } }]]));
+    if (hasProc) {
+      const baseP = val("25", "baseline", "startupProc");
+      app.append(ladderSection("prozessstart", "Startzeit ab Prozessstart",
+        "Wie oben, aber ab dem Start des Prozesses gezählt, also mit dem Start der JVM und allem vor Spring Boot (bei Leyden und CDS zum Beispiel das Laden des Caches). Spring Boot meldet diese Zeit in derselben Zeile („process running for …“). Bei CRaC ist der Wert derselbe wie oben. Faktor = Baseline auf JDK 25 geteilt durch die Variante auf JDK 25.",
+        [[null, { rows: metricRows("startupProc"), log: true, unit: "s", fmtVal: fmtStartupFull, aria: "Startzeit ab Prozessstart je Variante, logarithmische Achse",
+          third: { label: "Faktor", value: r => (r.a && baseP) ? (baseP / r.a < 10 ? fmt(baseP / r.a, 1) : fmt(baseP / r.a, 0)) + "×" : null } }]]));
+      document.getElementById("toc-proc").hidden = false;
+    }
+  }
+
+  // 2. Memory, garbage collections (linear from 0, change JDK 27 vs 25)
+  app.append(ladderSection("speicher", "Speicherverbrauch",
+    "Maximale Resident Set Size des Prozesses über den ganzen Lauf, in MB. Rechts die Änderung von JDK 27 gegenüber JDK 25.",
+    [[null, { rows: metricRows("mem"), unit: "MB", fmtVal: v => fmt(v, 0), aria: "Maximaler Speicherverbrauch je Variante", third: delta }]]));
+  app.append(ladderSection("gc", "Garbage Collections",
+    "Anzahl der GC-Pausen vor dem Start und während der Seitenlast.",
+    [["Beim Start", { rows: metricRows("gcStart"), unit: "", fmtVal: fmtGc, aria: "Garbage Collections beim Start", third: delta }],
+     ["Im Benchmark", { rows: metricRows("gcBench"), unit: "", fmtVal: fmtGc, aria: "Garbage Collections im Benchmark", third: delta }]]));
+
+  // 3. Sizes and build
+  {
+    const sec = ladderSection("groessen", "Größen und Build",
+      "Die Größen von den Folien, auf der Platte des Messservers gemessen (du). Rechts die Änderung von JDK 27 gegenüber JDK 25.",
+      [[null, { rows: D.sizeRows, unit: "MB", fmtVal: v => fmt(v, 0), aria: "Artefaktgrößen in MB", third: delta, labelW: 190 }]]);
+    const rows = D.artifacts.map(a => el("tr", {}, el("td", {}, a.label), el("td", { class: "small" }, a.path || ""),
+      ...TRACKS.map(t => el("td", { class: "num" }, a[t] == null ? el("span", { class: "na" }, "n/a") : fmt(a[t], 1) + " MB"))));
+    sec.append(el("div", { class: "panel" }, el("h3", { style: "margin-top:0" }, "Alle Dateien"), el("div", { class: "tablewrap" }, el("table", {},
+      el("thead", {}, el("tr", {}, el("th", {}, "Artefakt"), el("th", {}, "Datei"), ...TRACKS.map(t => el("th", { class: "num" }, SERIES[t].label)))),
+      el("tbody", {}, rows)))));
+    sec.append(el("div", { class: "panel" }, el("h3", { style: "margin-top:0" }, "GraalVM Native Image Build"),
+      el("dl", { class: "method" }, D.build.map(b => [el("dt", {}, b[0]), el("dd", { html: b[1] })]))));
+    app.append(sec);
+  }
+
+  // 5. JDK 25 vs JDK 27
+  {
+    const sec = el("section", { id: "jdk27" }, el("h2", {}, "JDK 25 gegen JDK 27"),
+      el("p", { class: "intro" }, "Dieselbe Anwendung, derselbe Server, nur die JDK-Version wechselt. Änderung = JDK 27 relativ zu JDK 25."));
+    const rows = VARIANTS.map(v => {
+      const cells = [];
+      for (const mk of ["startup", "mem", "gcStart", "gcBench"]) {
+        const m = METRICS[mk], a = val("25", v.key, mk), b = val("27", v.key, mk);
+        const d = (a == null || b == null || a === 0) ? null : b / a - 1;
+        const cls = d == null ? "" : (Math.abs(d) < 0.03 ? "" : ((d > 0) === m.lowerIsBetter ? "worse" : "better"));
+        cells.push(el("td", { class: "num" }, a == null ? "n/a" : m.fmt(a)), el("td", { class: "num" }, b == null ? "n/a" : m.fmt(b)),
+          el("td", { class: "num " + cls }, fmtPct(d)));
+      }
+      return el("tr", {}, el("th", { scope: "row" }, v.name), cells);
+    });
+    const grp = (t) => [el("th", { class: "num" }, "25"), el("th", { class: "num" }, "27"), el("th", { class: "num" }, "Δ")];
+    sec.append(el("div", { class: "panel" }, el("div", { class: "tablewrap" }, el("table", {},
+      el("thead", {},
+        el("tr", {}, el("th", {}, ""), el("th", { colspan: 3, class: "num" }, "Startzeit (s)"), el("th", { colspan: 3, class: "num" }, "Speicher (MB)"),
+          el("th", { colspan: 3, class: "num" }, "GCs Startup"), el("th", { colspan: 3, class: "num" }, "GCs Benchmark")),
+        el("tr", {}, el("th", {}, "Variante"), grp(), grp(), grp(), grp())),
+      el("tbody", {}, rows)))));
+    if (D.jdkNotes && D.jdkNotes.length) sec.append(el("ul", { class: "notes" }, D.jdkNotes.map(n => el("li", { html: n }))));
+    app.append(sec);
+  }
+
+  // 6. Single runs
+  {
+    const sec = el("section", { id: "einzeln" }, el("h2", {}, "Einzelmessungen"),
+      el("p", { class: "intro" }, `Jeder Messlauf einzeln, nach ${D.method.warmups} ${D.method.warmups === 1 ? "Aufwärmlauf" : "Aufwärmläufen"}. A ist das getrimmte Mittel: Je Spalte fallen der kleinste und der größte Wert weg. Diese Zahl steht auf den Folien.`));
+    for (const t of TRACKS) {
+      sec.append(el("h3", {}, el("span", { class: "key", style: `display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;background:${SERIES[t].color}` }), SERIES[t].label));
+      for (const v of VARIANTS) {
+        const r = res(t, v.key);
+        if (!r) { sec.append(el("details", {}, el("summary", {}, v.name, el("span", { class: "sum" }, "n/a: " + (D.naReason[v.key] || "nicht gemessen"))))); continue; }
+        const st = r.stats;
+        const sum = `A ${fmtStartupFull(r.A.startup)} s, Median ${fmtStartupFull(st.median)} s, Spanne ${fmtStartupFull(st.min)} bis ${fmtStartupFull(st.max)} s, ${r.runs.length} Läufe`;
+        const body = el("div", { class: "body" }, el("div", { class: "tablewrap" }, el("table", {},
+          el("thead", {}, el("tr", {}, el("th", {}, "Lauf"), el("th", { class: "num" }, "Startzeit (s)"),
+            hasProc ? el("th", { class: "num" }, "Ab Prozessstart (s)") : null, el("th", { class: "num" }, "Speicher (MB)"),
+            el("th", { class: "num" }, "GCs Startup"), el("th", { class: "num" }, "GCs Benchmark"), el("th", { class: "num" }, "Zeitpunkt (UTC)"))),
+          el("tbody", {},
+            r.runs.map(x => el("tr", {}, el("td", {}, String(x.run)), el("td", { class: "num" }, fmtStartupFull(x.startup)),
+              hasProc ? el("td", { class: "num" }, fmtStartupFull(x.startupProc)) : null, el("td", { class: "num" }, fmt(x.mem, 1)),
+              el("td", { class: "num" }, fmtGc(x.gcStart)), el("td", { class: "num" }, fmtGc(x.gcBench)), el("td", { class: "num" }, x.ranAt.replace("T", " ").replace("Z", "")))),
+            el("tr", {}, el("th", { scope: "row" }, "A"), el("td", { class: "num" }, el("b", {}, fmtStartupFull(r.A.startup))),
+              hasProc ? el("td", { class: "num" }, el("b", {}, fmtStartupFull(r.A.startupProc))) : null, el("td", { class: "num" }, el("b", {}, fmt(r.A.mem, 1))),
+              el("td", { class: "num" }, el("b", {}, fmt(r.A.gcStart, 1))), el("td", { class: "num" }, el("b", {}, fmt(r.A.gcBench, 1))), el("td", {}, "")),
+            el("tr", {}, el("th", { scope: "row" }, "Median"), el("td", { class: "num" }, fmtStartupFull(st.median)),
+              hasProc ? el("td", {}, "") : null, el("td", { class: "num" }, fmt(st.memMedian, 1)), el("td", {}, ""), el("td", {}, ""), el("td", {}, ""))))));
+        sec.append(el("details", {}, el("summary", {}, v.name, el("span", { class: "sum" }, sum)), body));
+      }
+    }
+    app.append(sec);
+  }
+
+  // 8. Method
+  app.append(el("section", { id: "methodik" }, el("h2", {}, "So wurde gemessen"),
+    el("div", { class: "panel" }, el("dl", { class: "method" }, D.methodText.map(m => [el("dt", {}, m[0]), el("dd", { html: m[1] })])))));
+
+  // 9. Environment
+  app.append(el("section", { id: "umgebung" }, el("h2", {}, "Testumgebung"),
+    el("div", { class: "panel" }, el("div", { class: "tablewrap" }, el("table", {},
+      el("thead", {}, el("tr", {}, el("th", {}, ""), el("th", {}, "JDK 25"), el("th", {}, "JDK 27"))),
+      el("tbody", {}, D.versions.map(r => el("tr", {}, el("th", { scope: "row" }, r[0]), el("td", { html: r[1] }), el("td", { html: r[2] })))))))));
+
+  // 10. Notes
+  app.append(el("section", { id: "hinweise" }, el("h2", {}, "Hinweise"),
+    el("ul", { class: "notes" }, D.notes.map(n => el("li", { html: n })))));
+
+  // Decimal separator switch for copying (Keynote reads pasted numbers in the macOS system format)
+  function decimalSwitch() {
+    const mk = (comma, label) => {
+      const b = el("button", { type: "button", class: "seg", "aria-pressed": String(copyComma === comma) }, label);
+      b.addEventListener("click", () => {
+        copyComma = comma;
+        try { localStorage.setItem("copyDecimal", comma ? "comma" : "point"); } catch (_) {}
+        wrap.querySelectorAll("button.seg").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+        copyButtons.forEach(refresh => refresh());
+        live.textContent = comma ? "Kopieren mit Dezimalkomma" : "Kopieren mit Dezimalpunkt";
+      });
+      return b;
+    };
+    const wrap = el("div", { class: "decimal", role: "group", "aria-label": "Dezimaltrennzeichen beim Kopieren" },
+      el("span", {}, "Beim Kopieren"),
+      mk(false, "14.7 für macOS auf Englisch"), mk(true, "14,7 für macOS auf Deutsch"));
+    return wrap;
+  }
+
+  // Last: the numbers for Keynote
+  {
+    const sec = el("section", { id: "keynote", class: "sheet" },
+      el("h2", {}, "Zahlen für Keynote"),
+      el("p", { class: "intro" }, "Die Werte in der Reihenfolge und Rundung der Folien, im Zahlenformat, das der Schalter wählt. Ein Klick auf eine Zahl kopiert sie genau so. „Diagrammdaten kopieren“ kopiert die ganze Tabelle mit Tabulatoren, passend zum Einfügen in den Diagrammdaten-Editor von Keynote. Alle Werte sind Zeile A, das getrimmte Mittel ohne den kleinsten und den größten Wert."),
+      decimalSwitch());
+    const sheets = [["startup", "Startzeit", "in Sekunden"]]
+      .concat(hasProc ? [["startupProc", "Startzeit ab Prozessstart", "in Sekunden"]] : [])
+      .concat([["mem", "Maximaler Speicherverbrauch", "in MB"],
+        ["gcStart", "Garbage Collections: Startup", "Anzahl GC-Pausen"], ["gcBench", "Garbage Collections: Benchmark", "Anzahl GC-Pausen"]]);
+    for (const [mk, title, unitNote] of sheets) {
+      const m = METRICS[mk];
+      const tsv = () => ["\t" + VARIANTS.map(v => v.name).join("\t")]
+        .concat(TRACKS.map(t => SERIES[t].label + "\t" + VARIANTS.map(v => { const x = val(t, v.key, mk); return x == null ? "" : toCopy(m.fmt(x)); }).join("\t")))
+        .join("\n");
+      const btn = el("button", { class: "copyall", type: "button" }, "Diagrammdaten kopieren");
+      btn.addEventListener("click", async () => { await copyText(tsv()); btn.textContent = "Kopiert"; live.textContent = title + ": Diagrammdaten kopiert"; setTimeout(() => btn.textContent = "Diagrammdaten kopieren", 1200); });
+      const thead = el("thead", {}, el("tr", {}, el("th", {}, ""), VARIANTS.map(v => el("th", { class: "num" }, v.name))));
+      const tbody = el("tbody", {}, TRACKS.map(t => el("tr", {},
+        el("th", { class: "series", scope: "row" }, el("span", { class: "key", style: `background:${SERIES[t].color}` }), SERIES[t].label),
+        VARIANTS.map(v => { const x = val(t, v.key, mk); return el("td", { class: "num" }, x == null ? el("span", { class: "na" }, "n/a") : copyButton(m.fmt(x), m.fmt(x), `${SERIES[t].label}, ${v.name}, ${title}`)); }))));
+      sec.append(el("div", { class: "panel" }, el("h3", {}, el("span", {}, title + " ", el("small", {}, unitNote)), btn),
+        el("div", { class: "tablewrap" }, el("table", {}, thead, tbody))));
+    }
+    // Slide captions (sizes, build times)
+    const capPanel = el("div", { class: "panel" }, el("h3", {}, el("span", {}, "Beschriftungen ", el("small", {}, "Größen und Build-Zeiten wie auf den Folien"))));
+    for (const t of TRACKS) {
+      const items = D.captions[t] || [];
+      capPanel.append(el("h3", { style: "font-size:17px;margin:14px 0 4px" }, el("span", {}, el("span", { class: "key", style: `background:${SERIES[t].color}` }), SERIES[t].label)));
+      capPanel.append(el("ul", { class: "captions" }, items.map(it => el("li", {}, el("span", {}, it.label),
+        it.value == null ? el("span", { class: "na" }, it.na || "n/a") : copyButton(it.shown || it.value, it.value, it.label)))));
+    }
+    sec.append(capPanel);
+    app.append(sec);
+  }
+
+  app.append(el("footer", {}, D.footer));
+
+  // theme toggle
+  const btn = document.getElementById("theme");
+  const setLabel = () => { const dark = document.documentElement.dataset.theme === "dark" ||
+    (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+    btn.textContent = dark ? "Helles Design" : "Dunkles Design"; };
+  btn.addEventListener("click", () => {
+    const dark = btn.textContent === "Dunkles Design";
+    document.documentElement.dataset.theme = dark ? "dark" : "light"; setLabel();
+  });
+  setLabel();
+
+  // draw + redraw on resize
+  const draw = () => charts.forEach(([n, fn]) => fn(n));
+  draw();
+  let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(draw, 120); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+12470.911477: warp: Restore successful!
+2026-11-03T00:49:31.548Z  WARN 25843 --- [l-1:housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=20m42s696ms644µs30ns).
+2026-11-03T00:49:31.570Z  INFO 25843 --- [Attach Listener] o.s.c.support.DefaultLifecycleProcessor  : Restarting Spring-managed lifecycle beans after JVM restore
+2026-11-03T00:49:31.572Z  INFO 25843 --- [Attach Listener] o.s.b.j.HikariCheckpointRestoreLifecycle : Resuming Hikari pool
+2026-11-03T00:49:31.579Z  INFO 25843 --- [Attach Listener] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-11-03T00:49:31.582Z  INFO 25843 --- [Attach Listener] o.s.c.support.DefaultLifecycleProcessor  : Spring-managed lifecycle restart completed (restored JVM running for 80 ms)
+2026-11-03T00:52:23.839Z  INFO 25843 --- [ionShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-11-03T00:52:23.840Z  INFO 25843 --- [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-11-03T00:52:23.841Z  INFO 25843 --- [ionShutdownHook] o.s.b.j.HikariCheckpointRestoreLifecycle : Suspending Hikari pool
+2026-11-03T00:52:23.842Z  INFO 25843 --- [ionShutdownHook] o.s.b.j.HikariCheckpointRestoreLifecycle : Evicting Hikari connections
+2026-11-03T00:52:23.900Z  INFO 25843 --- [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-11-03T00:52:23.908Z  INFO 25843 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-11-03T00:52:23.910Z  INFO 25843 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.

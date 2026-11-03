@@ -37,6 +37,12 @@ echo
   echo "ERROR: missing LABEL"
   exit 1
 }
+# LABEL becomes part of file names (CSV, /tmp/gc_<label>.log) and of the per-run log folder that
+# the benchmark phase deletes and recreates, so it must not contain a path.
+[[ "$LABEL" =~ ^[A-Za-z0-9_-]+$ ]] || {
+  echo "ERROR: invalid LABEL '$LABEL' (letters, digits, _ and - only)"
+  exit 1
+}
 
 # ---------------- Configuration -----------------------
 # Log file configuration - different files for different phases
@@ -217,12 +223,16 @@ if [[ "$WARMUPS" -ne 3 || "$RUNS" -ne 7 ]]; then
   SMOKE_SUFFIX="_smoke"
 fi
 CSV_FILE="result_${LABEL}${CSV_SUFFIX}${SMOKE_SUFFIX}.csv"
+# Every measured run keeps its app log, GC log and /usr/bin/time output here, so the CSV values
+# can be checked later (/tmp/app_benchmark.log and /tmp/gc_<label>.log only hold the last run).
+RUN_LOG_DIR="run-logs/${LABEL}${CSV_SUFFIX}${SMOKE_SUFFIX}"
 
 # Debug information for configuration
 echo "DEBUG: Configuration set:"
 echo "  WARMUPS: $WARMUPS"
 echo "  RUNS: $RUNS"
 echo "  CSV_FILE: $CSV_FILE"
+echo "  RUN_LOG_DIR: $RUN_LOG_DIR"
 if [[ -n "$SMOKE_SUFFIX" ]]; then
   echo "NOTE: non-default run counts (smoke test): WARMUPS=$WARMUPS, RUNS=$RUNS. Writing $CSV_FILE."
 fi
@@ -479,6 +489,30 @@ extract_startup_time() {
   esac
 }
 
+# Startup time counted from process start, in seconds. "Started PetClinicApplication in X
+# seconds" (extract_startup_time) counts from SpringApplication.run(), so it leaves out JVM boot
+# and everything before main (for example loading the CDS archive or the Leyden AOT cache).
+# Spring prints the time since process start on the same line: "(process running for Y)". CRaC's
+# "restored JVM running for X ms" already counts from the start of the restored process, so it is
+# the same value as extract_startup_time.
+extract_process_startup_time() {
+  local label="$1"
+  local log_file="$2"
+  case "$label" in
+  "crac")
+    extract_startup_time "$label" "$log_file"
+    ;;
+  *)
+    local line=$(grep -m1 "Started PetClinicApplication in" "$log_file")
+    if [[ $line =~ process\ running\ for\ ([0-9.]+) ]]; then
+      echo "${BASH_REMATCH[1]}"
+    else
+      echo "N/A"
+    fi
+    ;;
+  esac
+}
+
 # Function to get current swap usage
 get_swap_used() {
   if [[ "$(uname)" == "Darwin" ]]; then
@@ -546,30 +580,33 @@ extract_pid_from_log() {
   esac
 }
 
+# GC pause counting, the same rule for every variant: one count per GC pause. G1 writes two
+# "Pause" lines per pause, a start line ([gc,start]) and an end line ([gc], with the heap sizes
+# and the duration). Only the end lines are counted. Before 2026-11-02 the script counted both
+# lines, so older CSVs (columns "Startup GCs" / "Benchmark GCs") hold twice the number of pauses.
+# Pauses include the Remark and Cleanup pauses of G1's concurrent marking cycles.
+
 # Function to extract GC counts from GraalVM Native Image logs
 # The native executable prints its -XX:+PrintGC / -XX:+VerboseGC output to stdout, so the GC
 # lines sit in the app log next to the Spring log lines. They carry [X.XXXs] process-uptime
 # stamps, so startup vs benchmark GCs split at the uptime when the app reported "Started".
-# Counting rule matches extract_gc_counts for the JVM variants: every GC log line that mentions
-# "Pause". G1 logs a start line and an end line per pause, so the columns count pause log
-# lines (about twice the number of pauses), the same way for every variant.
 extract_gc_counts_graalvm() {
   local app_log="$1"
   local gc_log="$2"
 
-  # If GC log doesn't exist, return 0,0
+  # Missing inputs give N/A, not 0, so a broken run can't pass for a run without GCs.
   if [[ ! -f "$gc_log" ]]; then
-    echo "0,0"
+    echo "N/A,N/A"
     return
   fi
 
   # GC pause lines in either format:
-  #   G1 (--gc=G1): [0.472s][info][gc,start ] GC(1) Pause Young (Concurrent Start) (G1 Evacuation Pause)
-  #   Serial:       [0.196s] GC(0) Pause Full GC (Collect on allocation) 32.50M->5.50M 16.560ms
+  #   G1 (--gc=G1), end line: [0.238s][info][gc       ] GC(1) Pause Young (Concurrent Start) (G1 Evacuation Pause) 121M->86M(173M) 17.645ms
+  #   Serial:                 [0.196s] GC(0) Pause Full GC (Collect on allocation) 32.50M->5.50M 16.560ms
   # Try the G1 format first and fall back to Serial only when it finds nothing, so a missing
   # "Using G1" header line can't silently turn the G1 counts into 0/0.
   local pause_lines
-  pause_lines=$(grep -E '^\[[0-9]+\.[0-9]+s\]\[[a-z]+\]\[gc[^]]*\].*Pause' "$gc_log")
+  pause_lines=$(grep -E '^\[[0-9]+\.[0-9]+s\]\[[a-z]+\]\[gc *\] GC\([0-9]+\) Pause' "$gc_log")
   if [[ -z "$pause_lines" ]]; then
     pause_lines=$(grep -E '^\[[0-9]+\.[0-9]+s\] .*(Pause Full GC|Pause Incremental GC)' "$gc_log")
   fi
@@ -586,8 +623,8 @@ extract_gc_counts_graalvm() {
     startup_time=$(grep -o "Started PetClinicApplication in [0-9.]\+ seconds" "$app_log" 2>/dev/null | grep -o "[0-9.]\+" | head -1)
   fi
   if [[ -z "$startup_time" ]]; then
-    # Can't determine startup time, return all as benchmark GCs
-    echo "0,$(printf '%s\n' "$pause_lines" | wc -l | tr -d ' ')"
+    # Can't determine startup time, so the split is unknown
+    echo "N/A,N/A"
     return
   fi
 
@@ -623,50 +660,49 @@ extract_gc_counts() {
     return
   fi
 
-  # If GC log doesn't exist, return 0,0
+  # Missing inputs give N/A, not 0, so a broken run can't pass for a run without GCs.
   if [[ ! -f "$gc_log" ]]; then
-    echo "0,0"
+    echo "N/A,N/A"
     return
   fi
 
   # Get startup timestamp from app log
   local startup_line=$(grep "Started PetClinicApplication\|Spring-managed lifecycle restart completed" "$app_log" | head -1)
   if [[ -z "$startup_line" ]]; then
-    echo "0,0"
+    echo "N/A,N/A"
     return
   fi
 
-  # Extract timestamp
+  # Extract the timestamp with milliseconds, e.g. 2026-11-01T08:53:27.954
   local startup_ts=$(echo "$startup_line" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}' | head -1)
   if [[ -z "$startup_ts" ]]; then
-    echo "0,0"
+    echo "N/A,N/A"
     return
   fi
 
-  # Convert to epoch for comparison
-  local startup_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${startup_ts%.*}" +%s 2>/dev/null || date -d "$startup_ts" +%s 2>/dev/null || echo "0")
-  if [[ "$startup_epoch" == "0" ]]; then
-    echo "0,0"
-    return
-  fi
+  # Compare with millisecond precision. Both logs come from the same JVM and print the host's
+  # local time, so the digits of the two timestamps (YYYYMMDDHHMMSSmmm) compare as numbers.
+  # (Before 2026-11-02 the script compared whole seconds, so a pause in the same second as
+  # startup counted as benchmark.) A pause counts as startup when it ended no later than the
+  # startup line was logged.
+  local startup_num=$((10#${startup_ts//[^0-9]/}))
 
-  # Count GC pause events before and after startup
+  # Count GC pause events before and after startup: one end line per pause, e.g.
+  #   [2026-11-01T08:53:27.960+0000][0.475s][info][gc          ] GC(0) Pause Young (Normal) (G1 Evacuation Pause) 15M->2M(258M) 5.455ms
   local startup_count=0
   local benchmark_count=0
 
   while IFS= read -r line; do
     local gc_ts=$(echo "$line" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}' | head -1)
     if [[ -n "$gc_ts" ]]; then
-      local gc_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%S" "${gc_ts%.*}" +%s 2>/dev/null || date -d "$gc_ts" +%s 2>/dev/null || echo "0")
-      if [[ "$gc_epoch" != "0" ]]; then
-        if [[ $gc_epoch -lt $startup_epoch ]]; then
-          ((startup_count++))
-        else
-          ((benchmark_count++))
-        fi
+      local gc_num=$((10#${gc_ts//[^0-9]/}))
+      if ((gc_num <= startup_num)); then
+        ((startup_count++))
+      else
+        ((benchmark_count++))
       fi
     fi
-  done < <(grep "Pause" "$gc_log" | grep -E "\[gc")
+  done < <(grep -E '\]\[gc *\] GC\([0-9]+\) Pause' "$gc_log")
 
   echo "${startup_count},${benchmark_count}"
 }
@@ -1491,13 +1527,19 @@ done
 
 # ---------------- Benchmark phase ---------------------
 echo "Starting $RUNS benchmark runs…"
-echo "Run,Startup Time (s),Max Memory (MB),Startup GCs,Benchmark GCs,Ran at,Size App (MB),Size Extra (MB)" >"$CSV_FILE"
+# Column 4 and 5 count GC pauses (see extract_gc_counts). Column 9 is the startup time counted
+# from process start (see extract_process_startup_time); column 2 stays Spring's own value.
+echo "Run,Startup Time (s),Max Memory (MB),Startup GC Pauses,Benchmark GC Pauses,Ran at,Size App (MB),Size Extra (MB),Startup From Process Start (s)" >"$CSV_FILE"
+
+# Fresh folder for this result's per-run logs (only this label/track/smoke combination)
+rm -rf "$RUN_LOG_DIR"
+mkdir -p "$RUN_LOG_DIR"
 
 # Capture swap usage before benchmark
 SWAP_BEFORE=$(get_swap_used)
 echo "Swap usage before benchmark: ${SWAP_BEFORE} MB"
 
-declare -a times mems startup_gcs benchmark_gcs
+declare -a times mems startup_gcs benchmark_gcs proc_times
 for ((i = 1; i <= RUNS; i++)); do
   echo "  Run $i"
   set_log_file "benchmark"
@@ -1575,6 +1617,7 @@ for ((i = 1; i <= RUNS; i++)); do
 
   if [[ $timeout_counter -lt 60 ]]; then
     s_time=$(extract_startup_time "$LABEL" "$LOG_FILE")
+    p_time=$(extract_process_startup_time "$LABEL" "$LOG_FILE")
     # For CRaC: retry PID detection now that the restored process is fully up
     # (port 8080 is in LISTEN state and Spring lifecycle is complete)
     if [[ "$LABEL" == "crac" && -z "$app_pid" ]]; then
@@ -1591,6 +1634,7 @@ for ((i = 1; i <= RUNS; i++)); do
     hit_urls # --- load generator ---
   else
     s_time="N/A"
+    p_time="N/A"
   fi
 
   # Kill the actual application process, fallback to time process if needed
@@ -1654,11 +1698,19 @@ for ((i = 1; i <= RUNS; i++)); do
     benchmark_gc="N/A"
   fi
 
-  echo "$i,$s_time,$m_rss,$startup_gc,$benchmark_gc,$start_timestamp,," >>"$CSV_FILE"
+  # Keep this run's logs (GraalVM has no separate GC log; its GC lines are in the app log)
+  cp "$LOG_FILE" "$RUN_LOG_DIR/run-${i}-app.log" 2>/dev/null
+  if [[ "$LABEL" != "graalvm" ]]; then
+    cp "/tmp/gc_${LABEL}.log" "$RUN_LOG_DIR/run-${i}-gc.log" 2>/dev/null
+  fi
+  cp /tmp/time_out.log "$RUN_LOG_DIR/run-${i}-time.log" 2>/dev/null
+
+  echo "$i,$s_time,$m_rss,$startup_gc,$benchmark_gc,$start_timestamp,,,$p_time" >>"$CSV_FILE"
   times+=("$s_time")
   mems+=("$m_rss")
   startup_gcs+=("$startup_gc")
   benchmark_gcs+=("$benchmark_gc")
+  proc_times+=("$p_time")
 
   # Display memory in MB for screen output
   if [[ "$m_rss" == "N/A" ]]; then
@@ -1695,6 +1747,7 @@ avg_time=$(trimmed_mean "${times[@]}")
 avg_mem=$(trimmed_mean "${mems[@]}")
 avg_startup_gc=$(trimmed_mean "${startup_gcs[@]}")
 avg_benchmark_gc=$(trimmed_mean "${benchmark_gcs[@]}")
+avg_proc_time=$(trimmed_mean "${proc_times[@]}")
 
 # Size Extra for cds, leyden and crac: compile-and-run.sh measures the sizes before this script
 # runs, when the CDS archive, the Leyden AOT cache and the CRaC checkpoint do not exist yet (it
@@ -1713,7 +1766,7 @@ fi
 
 # Capture calculation timestamp in ISO 8601 format
 calc_timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-echo "A,$avg_time,$avg_mem,$avg_startup_gc,$avg_benchmark_gc,$calc_timestamp,$SIZE_APP_MB,$SIZE_EXTRA_MB" >>"$CSV_FILE"
+echo "A,$avg_time,$avg_mem,$avg_startup_gc,$avg_benchmark_gc,$calc_timestamp,$SIZE_APP_MB,$SIZE_EXTRA_MB,$avg_proc_time" >>"$CSV_FILE"
 
 # Check swap usage after benchmark
 SWAP_AFTER=$(get_swap_used)

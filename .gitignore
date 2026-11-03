@@ -51,6 +51,7 @@ spring-petclinic*
 petclinic.aot
 petclinic.jsa
 result_*.csv
+/run-logs/
 default.iprof
 /.claude/settings.local.json
 /CLAUDE.local.md

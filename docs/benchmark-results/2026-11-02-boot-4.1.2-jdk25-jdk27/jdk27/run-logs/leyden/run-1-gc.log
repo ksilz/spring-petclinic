@@ -1,0 +1,149 @@
+[2026-11-03T03:13:05.698+0000][0.006s][info][gc,init] CardTable entry size: 512
+[2026-11-03T03:13:05.699+0000][0.006s][info][gc     ] Using G1
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] Version: 27+35 (release)
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] CPUs: 2 total, 2 available
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] Memory: 1905M
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] Large Page Support: Disabled
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] NUMA Support: Disabled
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] Compressed Oops: Enabled (32-bit)
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] Heap Region Size: 1M
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] Heap Min Capacity: 256M
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] Heap Initial Capacity: 256M
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] Heap Max Capacity: 768M
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] Pre-touch: Disabled
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] Parallel Workers: 2
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] Concurrent Workers: 1
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] Concurrent Refinement Workers: 2
+[2026-11-03T03:13:05.701+0000][0.009s][info][gc,init] Periodic GC: Disabled
+[2026-11-03T03:13:05.768+0000][0.076s][info][gc,metaspace] CDS archive(s) mapped at: [0x0000000014000000-0x000000001bdf9000-0x000000001bdf9000), size 132091904, SharedBaseAddress: 0x0000000014000000, ArchiveRelocationMode: 1.
+[2026-11-03T03:13:05.768+0000][0.076s][info][gc,metaspace] Compressed class space mapped at: 0x000000001c000000-0x000000005c000000, reserved size: 1073741824
+[2026-11-03T03:13:05.768+0000][0.076s][info][gc,metaspace] UseCompactObjectHeaders 1
+[2026-11-03T03:13:05.768+0000][0.076s][info][gc,metaspace] Narrow klass pointer bits 22, Max shift 10
+[2026-11-03T03:13:05.768+0000][0.076s][info][gc,metaspace] Narrow klass base: 0x0000000014000000, Narrow klass shift: 10
+[2026-11-03T03:13:05.768+0000][0.076s][info][gc,metaspace] Encoding Range: [0x0000000014000000 - 0x0000000114000000), (4294967296 bytes)
+[2026-11-03T03:13:05.768+0000][0.076s][info][gc,metaspace] Klass Range:    [0x0000000014000000 - 0x000000005c000000), (1207959552 bytes)
+[2026-11-03T03:13:05.768+0000][0.076s][info][gc,metaspace] Klass ID Range:  [1 - 1179648) (1179647)
+[2026-11-03T03:13:05.768+0000][0.076s][info][gc,metaspace] Protection zone: [0x0000000014000000 - 0x0000000014001000), (4096 bytes)
+[2026-11-03T03:13:06.665+0000][0.973s][info][gc,start    ] GC(0) Pause Young (Normal) (G1 Evacuation Pause)
+[2026-11-03T03:13:06.666+0000][0.973s][info][gc,task     ] GC(0) Using 2 workers of 2 for evacuation
+[2026-11-03T03:13:06.678+0000][0.985s][info][gc,phases   ] GC(0)   Pre Evacuate Collection Set: 0.11ms
+[2026-11-03T03:13:06.678+0000][0.985s][info][gc,phases   ] GC(0)   Merge Heap Roots: 0.04ms
+[2026-11-03T03:13:06.678+0000][0.985s][info][gc,phases   ] GC(0)   Evacuate Collection Set: 11.84ms
+[2026-11-03T03:13:06.678+0000][0.985s][info][gc,phases   ] GC(0)   Post Evacuate Collection Set: 0.34ms
+[2026-11-03T03:13:06.678+0000][0.985s][info][gc,phases   ] GC(0)   Other: 0.21ms
+[2026-11-03T03:13:06.678+0000][0.985s][info][gc,heap     ] GC(0) Eden regions: 14->0(94)
+[2026-11-03T03:13:06.678+0000][0.985s][info][gc,heap     ] GC(0) Survivor regions: 0->2(2)
+[2026-11-03T03:13:06.678+0000][0.985s][info][gc,heap     ] GC(0) Old regions: 14->19
+[2026-11-03T03:13:06.678+0000][0.985s][info][gc,heap     ] GC(0) Humongous regions: 1->1
+[2026-11-03T03:13:06.678+0000][0.985s][info][gc,metaspace] GC(0) Metaspace: 1119K(1280K)->1119K(1280K) NonClass: 1088K(1152K)->1088K(1152K) Class: 31K(128K)->31K(128K)
+[2026-11-03T03:13:06.678+0000][0.985s][info][gc          ] GC(0) Pause Young (Normal) (G1 Evacuation Pause) 28M->21M(270M) 12.754ms
+[2026-11-03T03:13:06.678+0000][0.985s][info][gc,cpu      ] GC(0) User=0.02s Sys=0.00s Real=0.01s
+[2026-11-03T03:13:09.707+0000][4.014s][info][gc,start    ] GC(1) Pause Young (Normal) (G1 Evacuation Pause)
+[2026-11-03T03:13:09.707+0000][4.014s][info][gc,task     ] GC(1) Using 2 workers of 2 for evacuation
+[2026-11-03T03:13:09.737+0000][4.044s][info][gc,phases   ] GC(1)   Pre Evacuate Collection Set: 0.26ms
+[2026-11-03T03:13:09.737+0000][4.044s][info][gc,phases   ] GC(1)   Merge Heap Roots: 0.03ms
+[2026-11-03T03:13:09.737+0000][4.044s][info][gc,phases   ] GC(1)   Evacuate Collection Set: 29.41ms
+[2026-11-03T03:13:09.737+0000][4.045s][info][gc,phases   ] GC(1)   Post Evacuate Collection Set: 0.68ms
+[2026-11-03T03:13:09.737+0000][4.045s][info][gc,phases   ] GC(1)   Other: 0.15ms
+[2026-11-03T03:13:09.737+0000][4.045s][info][gc,heap     ] GC(1) Eden regions: 94->0(109)
+[2026-11-03T03:13:09.737+0000][4.045s][info][gc,heap     ] GC(1) Survivor regions: 2->12(12)
+[2026-11-03T03:13:09.737+0000][4.045s][info][gc,heap     ] GC(1) Old regions: 19->19
+[2026-11-03T03:13:09.737+0000][4.045s][info][gc,heap     ] GC(1) Humongous regions: 1->1
+[2026-11-03T03:13:09.737+0000][4.045s][info][gc,metaspace] GC(1) Metaspace: 4784K(5056K)->4784K(5056K) NonClass: 4462K(4608K)->4462K(4608K) Class: 321K(448K)->321K(448K)
+[2026-11-03T03:13:09.737+0000][4.045s][info][gc          ] GC(1) Pause Young (Normal) (G1 Evacuation Pause) 115M->30M(270M) 30.729ms
+[2026-11-03T03:13:09.737+0000][4.045s][info][gc,cpu      ] GC(1) User=0.06s Sys=0.01s Real=0.03s
+[2026-11-03T03:13:23.291+0000][17.598s][info][gc,refine,start] Concurrent Refine Cycle
+[2026-11-03T03:13:23.291+0000][17.598s][info][gc,refine,start] Concurrent Refine Global Card Table Swap
+[2026-11-03T03:13:23.291+0000][17.599s][info][gc,refine      ] Concurrent Refine Global Card Table Swap 0.011ms
+[2026-11-03T03:13:23.291+0000][17.599s][info][gc,refine,start] Concurrent Refine Java Thread CT swap
+[2026-11-03T03:13:23.291+0000][17.599s][info][gc,refine      ] Concurrent Refine Java Thread CT swap 0.200ms
+[2026-11-03T03:13:23.291+0000][17.599s][info][gc,refine,start] Concurrent Refine GC Thread CT swap
+[2026-11-03T03:13:23.291+0000][17.599s][info][gc,refine      ] Concurrent Refine GC Thread CT swap 0.048ms
+[2026-11-03T03:13:23.291+0000][17.599s][info][gc,refine,start] Concurrent Refine Snapshot Heap
+[2026-11-03T03:13:23.292+0000][17.599s][info][gc,refine      ] Concurrent Refine Snapshot Heap 0.014ms
+[2026-11-03T03:13:23.292+0000][17.599s][info][gc,task        ] Concurrent Refine Sweep Using 1 of 2 Workers
+[2026-11-03T03:13:23.292+0000][17.599s][info][gc,refine,start] Concurrent Refine Table Step
+[2026-11-03T03:13:23.293+0000][17.600s][info][gc,refine      ] Concurrent Refine Table Step 1.028ms
+[2026-11-03T03:13:23.293+0000][17.600s][info][gc,refine,start] Concurrent Refine Complete Work
+[2026-11-03T03:13:23.293+0000][17.600s][info][gc,refine      ] Concurrent Refine Complete Work 0.012ms
+[2026-11-03T03:13:23.293+0000][17.600s][info][gc,refine      ] Concurrent Refine Cycle 1.533ms
+[2026-11-03T03:13:40.509+0000][34.816s][info][gc,refine,start] Concurrent Refine Cycle
+[2026-11-03T03:13:40.509+0000][34.816s][info][gc,refine,start] Concurrent Refine Global Card Table Swap
+[2026-11-03T03:13:40.509+0000][34.816s][info][gc,refine      ] Concurrent Refine Global Card Table Swap 0.008ms
+[2026-11-03T03:13:40.509+0000][34.816s][info][gc,refine,start] Concurrent Refine Java Thread CT swap
+[2026-11-03T03:13:40.509+0000][34.816s][info][gc,refine      ] Concurrent Refine Java Thread CT swap 0.107ms
+[2026-11-03T03:13:40.509+0000][34.816s][info][gc,refine,start] Concurrent Refine GC Thread CT swap
+[2026-11-03T03:13:40.509+0000][34.816s][info][gc,refine      ] Concurrent Refine GC Thread CT swap 0.036ms
+[2026-11-03T03:13:40.509+0000][34.816s][info][gc,refine,start] Concurrent Refine Snapshot Heap
+[2026-11-03T03:13:40.509+0000][34.816s][info][gc,refine      ] Concurrent Refine Snapshot Heap 0.014ms
+[2026-11-03T03:13:40.509+0000][34.816s][info][gc,task        ] Concurrent Refine Sweep Using 1 of 2 Workers
+[2026-11-03T03:13:40.509+0000][34.817s][info][gc,refine,start] Concurrent Refine Table Step
+[2026-11-03T03:13:40.510+0000][34.817s][info][gc,refine      ] Concurrent Refine Table Step 0.348ms
+[2026-11-03T03:13:40.510+0000][34.817s][info][gc,refine,start] Concurrent Refine Complete Work
+[2026-11-03T03:13:40.510+0000][34.817s][info][gc,refine      ] Concurrent Refine Complete Work 0.033ms
+[2026-11-03T03:13:40.510+0000][34.817s][info][gc,refine      ] Concurrent Refine Cycle 0.646ms
+[2026-11-03T03:14:02.498+0000][56.805s][info][gc,refine,start] Concurrent Refine Cycle
+[2026-11-03T03:14:02.498+0000][56.805s][info][gc,refine,start] Concurrent Refine Global Card Table Swap
+[2026-11-03T03:14:02.498+0000][56.805s][info][gc,refine      ] Concurrent Refine Global Card Table Swap 0.006ms
+[2026-11-03T03:14:02.498+0000][56.805s][info][gc,refine,start] Concurrent Refine Java Thread CT swap
+[2026-11-03T03:14:02.498+0000][56.806s][info][gc,refine      ] Concurrent Refine Java Thread CT swap 0.760ms
+[2026-11-03T03:14:02.498+0000][56.806s][info][gc,refine,start] Concurrent Refine GC Thread CT swap
+[2026-11-03T03:14:02.499+0000][56.806s][info][gc,refine      ] Concurrent Refine GC Thread CT swap 0.086ms
+[2026-11-03T03:14:02.499+0000][56.806s][info][gc,refine,start] Concurrent Refine Snapshot Heap
+[2026-11-03T03:14:02.499+0000][56.806s][info][gc,refine      ] Concurrent Refine Snapshot Heap 0.199ms
+[2026-11-03T03:14:02.499+0000][56.806s][info][gc,task        ] Concurrent Refine Sweep Using 1 of 2 Workers
+[2026-11-03T03:14:02.499+0000][56.806s][info][gc,refine,start] Concurrent Refine Table Step
+[2026-11-03T03:14:02.500+0000][56.807s][info][gc,refine      ] Concurrent Refine Table Step 1.163ms
+[2026-11-03T03:14:02.500+0000][56.807s][info][gc,refine,start] Concurrent Refine Complete Work
+[2026-11-03T03:14:02.500+0000][56.807s][info][gc,refine      ] Concurrent Refine Complete Work 0.008ms
+[2026-11-03T03:14:02.500+0000][56.807s][info][gc,refine      ] Concurrent Refine Cycle 2.564ms
+[2026-11-03T03:14:30.459+0000][84.767s][info][gc,refine,start] Concurrent Refine Cycle
+[2026-11-03T03:14:30.459+0000][84.767s][info][gc,refine,start] Concurrent Refine Global Card Table Swap
+[2026-11-03T03:14:30.459+0000][84.767s][info][gc,refine      ] Concurrent Refine Global Card Table Swap 0.007ms
+[2026-11-03T03:14:30.459+0000][84.767s][info][gc,refine,start] Concurrent Refine Java Thread CT swap
+[2026-11-03T03:14:30.459+0000][84.767s][info][gc,refine      ] Concurrent Refine Java Thread CT swap 0.123ms
+[2026-11-03T03:14:30.459+0000][84.767s][info][gc,refine,start] Concurrent Refine GC Thread CT swap
+[2026-11-03T03:14:30.460+0000][84.767s][info][gc,refine      ] Concurrent Refine GC Thread CT swap 0.036ms
+[2026-11-03T03:14:30.460+0000][84.767s][info][gc,refine,start] Concurrent Refine Snapshot Heap
+[2026-11-03T03:14:30.460+0000][84.767s][info][gc,refine      ] Concurrent Refine Snapshot Heap 0.016ms
+[2026-11-03T03:14:30.460+0000][84.767s][info][gc,task        ] Concurrent Refine Sweep Using 1 of 2 Workers
+[2026-11-03T03:14:30.460+0000][84.767s][info][gc,refine,start] Concurrent Refine Table Step
+[2026-11-03T03:14:30.460+0000][84.767s][info][gc,refine      ] Concurrent Refine Table Step 0.273ms
+[2026-11-03T03:14:30.460+0000][84.767s][info][gc,refine,start] Concurrent Refine Complete Work
+[2026-11-03T03:14:30.460+0000][84.767s][info][gc,refine      ] Concurrent Refine Complete Work 0.009ms
+[2026-11-03T03:14:30.460+0000][84.767s][info][gc,refine      ] Concurrent Refine Cycle 0.592ms
+[2026-11-03T03:15:05.937+0000][120.244s][info][gc,refine,start] Concurrent Refine Cycle
+[2026-11-03T03:15:05.937+0000][120.244s][info][gc,refine,start] Concurrent Refine Global Card Table Swap
+[2026-11-03T03:15:05.937+0000][120.244s][info][gc,refine      ] Concurrent Refine Global Card Table Swap 0.008ms
+[2026-11-03T03:15:05.937+0000][120.244s][info][gc,refine,start] Concurrent Refine Java Thread CT swap
+[2026-11-03T03:15:05.937+0000][120.244s][info][gc,refine      ] Concurrent Refine Java Thread CT swap 0.111ms
+[2026-11-03T03:15:05.937+0000][120.244s][info][gc,refine,start] Concurrent Refine GC Thread CT swap
+[2026-11-03T03:15:05.937+0000][120.244s][info][gc,refine      ] Concurrent Refine GC Thread CT swap 0.069ms
+[2026-11-03T03:15:05.937+0000][120.244s][info][gc,refine,start] Concurrent Refine Snapshot Heap
+[2026-11-03T03:15:05.937+0000][120.244s][info][gc,refine      ] Concurrent Refine Snapshot Heap 0.014ms
+[2026-11-03T03:15:05.937+0000][120.244s][info][gc,task        ] Concurrent Refine Sweep Using 1 of 2 Workers
+[2026-11-03T03:15:05.937+0000][120.244s][info][gc,refine,start] Concurrent Refine Table Step
+[2026-11-03T03:15:05.937+0000][120.245s][info][gc,refine      ] Concurrent Refine Table Step 0.272ms
+[2026-11-03T03:15:05.937+0000][120.245s][info][gc,refine,start] Concurrent Refine Complete Work
+[2026-11-03T03:15:05.937+0000][120.245s][info][gc,refine      ] Concurrent Refine Complete Work 0.008ms
+[2026-11-03T03:15:05.937+0000][120.245s][info][gc,refine      ] Concurrent Refine Cycle 0.608ms
+[2026-11-03T03:15:50.678+0000][164.986s][info][gc,refine,start] Concurrent Refine Cycle
+[2026-11-03T03:15:50.678+0000][164.986s][info][gc,refine,start] Concurrent Refine Global Card Table Swap
+[2026-11-03T03:15:50.678+0000][164.986s][info][gc,refine      ] Concurrent Refine Global Card Table Swap 0.008ms
+[2026-11-03T03:15:50.678+0000][164.986s][info][gc,refine,start] Concurrent Refine Java Thread CT swap
+[2026-11-03T03:15:50.679+0000][164.986s][info][gc,refine      ] Concurrent Refine Java Thread CT swap 0.137ms
+[2026-11-03T03:15:50.679+0000][164.986s][info][gc,refine,start] Concurrent Refine GC Thread CT swap
+[2026-11-03T03:15:50.679+0000][164.986s][info][gc,refine      ] Concurrent Refine GC Thread CT swap 0.048ms
+[2026-11-03T03:15:50.679+0000][164.986s][info][gc,refine,start] Concurrent Refine Snapshot Heap
+[2026-11-03T03:15:50.679+0000][164.986s][info][gc,refine      ] Concurrent Refine Snapshot Heap 0.020ms
+[2026-11-03T03:15:50.679+0000][164.986s][info][gc,task        ] Concurrent Refine Sweep Using 1 of 2 Workers
+[2026-11-03T03:15:50.679+0000][164.986s][info][gc,refine,start] Concurrent Refine Table Step
+[2026-11-03T03:15:50.679+0000][164.986s][info][gc,refine      ] Concurrent Refine Table Step 0.334ms
+[2026-11-03T03:15:50.679+0000][164.986s][info][gc,refine,start] Concurrent Refine Complete Work
+[2026-11-03T03:15:50.679+0000][164.986s][info][gc,refine      ] Concurrent Refine Complete Work 0.008ms
+[2026-11-03T03:15:50.679+0000][164.986s][info][gc,refine      ] Concurrent Refine Cycle 0.683ms
+[2026-11-03T03:15:57.823+0000][172.131s][info][gc,exit        ] Heap
+[2026-11-03T03:15:57.823+0000][172.131s][info][gc,exit        ]  garbage-first heap   total reserved 786432K, committed 276480K, used 98789K [0x00000000d0000000, 0x0000000100000000)
+[2026-11-03T03:15:57.823+0000][172.131s][info][gc,exit        ]   region size 1M, 66 eden (66M), 12 survivor (12M), 19 old (19M), 1 humongous (1M), 172 free (172M)
+[2026-11-03T03:15:57.823+0000][172.131s][info][gc,exit        ]  Metaspace       used 6759K, committed 7104K, reserved 1114112K
+[2026-11-03T03:15:57.823+0000][172.131s][info][gc,exit        ]   class space    used 395K, committed 576K, reserved 1048576K

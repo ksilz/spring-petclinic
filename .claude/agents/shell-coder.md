@@ -5,7 +5,7 @@ tools: Read, Edit, Write, Bash, Glob, Grep
 model: sonnet
 ---
 
-Updated: 2026-11-01 08:59 Europe/Berlin
+Updated: 2026-11-02 23:14 Europe/Berlin
 
 You are a shell script developer for the Spring PetClinic startup benchmark fork.
 
@@ -44,8 +44,8 @@ Check these before you change `benchmark.sh`:
 - **URL load:** 11 URLs x 5 rounds = 55 requests, `sleep 3` before each. That is about 165 s per run plus startup. Readiness poll on `:8080` waits up to 60 s.
 - **HTTP status guard:** every URL must return 200, except `/oups`, which must return 500. On a bad status, no response (000), or a readiness failure, `hit_urls` calls `stop_app_after_failure` and exits 1. This also applies to training runs. `stop_app_after_failure` sends TERM, then KILL, only to the launcher and its descendants (collected before any signal, so the app is not orphaned). `wait_for_port_free` stops only the port 8080 holder, and only if it is a benchmark app. It waits for port 8080 (`wait_for_port_free 30`). It removes `petclinic.jsa` for cds and `petclinic.aotconf` for leyden.
 - **CRaC:** engine is `-XX:CRaCEngine=warp`. Training removes an old `petclinic-crac/` first and fails fast if it cannot. The checkpoint counts as complete only when all hold: the log shows `warp: Checkpoint successful!`, the final `core.img` exists, no `core.img.*` temp file remains, and the `core.img` size is stable across two 1-s checks. `max_checkpoint_wait=120` s, then exit 1.
-- **CSV:** `result_<label>[_jdk27][_smoke].csv`. The `_jdk27` suffix applies on track 27 only, `_smoke` to non-default run counts only. Columns: `Run, Startup Time (s), Max Memory (MB), Startup GCs, Benchmark GCs, Ran at, Size App (MB), Size Extra (MB)`.
-- **GC columns:** count GC log lines that mention "Pause" (G1 writes two per pause). JVM variants split by the wall-clock time of the "Started" line. GraalVM splits by process uptime at "Started" ("process running for X", fallback "Started ... in X seconds"). JVM variants read `/tmp/gc_<label>.log` (`-Xlog:gc*`). GraalVM reads the app log, because the native executable prints GC lines to stdout and ignores `-Xlog:gc:file=...`. Never put shell redirects inside `APP_CMD` or `TRAIN_CMD`: they expand unquoted, so a redirect becomes a plain argument.
+- **CSV:** `result_<label>[_jdk27][_smoke].csv`. The `_jdk27` suffix applies on track 27 only, `_smoke` to non-default run counts only. Columns: `Run, Startup Time (s), Max Memory (MB), Startup GC Pauses, Benchmark GC Pauses, Ran at, Size App (MB), Size Extra (MB), Startup From Process Start (s)`. Each measured run's app, GC and time logs go to `run-logs/<label>[_jdk27][_smoke]/` (git-ignored).
+- **GC columns:** count GC pauses, one per pause: only G1's end line (`[gc] GC(n) Pause ...`) counts, not the `[gc,start]` line. Missing inputs give N/A, not 0. JVM variants split by the millisecond wall-clock time of the "Started" line. GraalVM splits by process uptime at "Started" ("process running for X", fallback "Started ... in X seconds"). JVM variants read `/tmp/gc_<label>.log` (`-Xlog:gc*`). GraalVM reads the app log, because the native executable prints GC lines to stdout and ignores `-Xlog:gc:file=...`. Never put shell redirects inside `APP_CMD` or `TRAIN_CMD`: they expand unquoted, so a redirect becomes a plain argument.
 
 ## Standards
 

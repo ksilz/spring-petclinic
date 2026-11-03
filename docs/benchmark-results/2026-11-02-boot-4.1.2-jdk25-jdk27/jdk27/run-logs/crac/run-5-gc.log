@@ -1,0 +1,46 @@
+[2026-11-03T03:57:34.489+0000][0.005s][info][gc,init] CardTable entry size: 512
+[2026-11-03T03:57:34.489+0000][0.005s][info][gc     ] Using G1
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] Version: 27+35 (release)
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] CPUs: 2 total, 2 available
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] Memory: 1905M
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] Large Page Support: Disabled
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] NUMA Support: Disabled
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] Compressed Oops: Enabled (32-bit)
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] Heap Region Size: 1M
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] Heap Min Capacity: 8M
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] Heap Initial Capacity: 8M
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] Heap Max Capacity: 478M
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] Pre-touch: Disabled
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] Parallel Workers: 2
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] Concurrent Workers: 1
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] Concurrent Refinement Workers: 2
+[2026-11-03T03:57:34.491+0000][0.007s][info][gc,init] Periodic GC: Disabled
+[2026-11-03T03:57:34.506+0000][0.022s][info][gc,metaspace] CDS archive(s) mapped at: [0x0000000034000000-0x0000000034dd8000-0x0000000034dd8000), size 14516224, SharedBaseAddress: 0x0000000034000000, ArchiveRelocationMode: 1.
+[2026-11-03T03:57:34.506+0000][0.022s][info][gc,metaspace] Compressed class space mapped at: 0x0000000035000000-0x0000000075000000, reserved size: 1073741824
+[2026-11-03T03:57:34.506+0000][0.022s][info][gc,metaspace] UseCompactObjectHeaders 1
+[2026-11-03T03:57:34.506+0000][0.022s][info][gc,metaspace] Narrow klass pointer bits 22, Max shift 10
+[2026-11-03T03:57:34.506+0000][0.022s][info][gc,metaspace] Narrow klass base: 0x0000000034000000, Narrow klass shift: 10
+[2026-11-03T03:57:34.506+0000][0.022s][info][gc,metaspace] Encoding Range: [0x0000000034000000 - 0x0000000134000000), (4294967296 bytes)
+[2026-11-03T03:57:34.506+0000][0.022s][info][gc,metaspace] Klass Range:    [0x0000000034000000 - 0x0000000075000000), (1090519040 bytes)
+[2026-11-03T03:57:34.506+0000][0.022s][info][gc,metaspace] Klass ID Range:  [1 - 1064960) (1064959)
+[2026-11-03T03:57:34.506+0000][0.022s][info][gc,metaspace] Protection zone: [0x0000000034000000 - 0x0000000034001000), (4096 bytes)
+[2026-11-03T03:57:34.535+0000][1401.422s][info][gc,refine,start] Concurrent Refine Cycle
+[2026-11-03T03:57:34.535+0000][1401.422s][info][gc,refine,start] Concurrent Refine Global Card Table Swap
+[2026-11-03T03:57:34.540+0000][1401.427s][info][gc,refine      ] Concurrent Refine Global Card Table Swap 4.963ms
+[2026-11-03T03:57:34.540+0000][1401.427s][info][gc,refine,start] Concurrent Refine Java Thread CT swap
+[2026-11-03T03:57:34.541+0000][1401.428s][info][gc,refine      ] Concurrent Refine Java Thread CT swap 0.806ms
+[2026-11-03T03:57:34.541+0000][1401.428s][info][gc,refine,start] Concurrent Refine GC Thread CT swap
+[2026-11-03T03:57:34.541+0000][1401.428s][info][gc,refine      ] Concurrent Refine GC Thread CT swap 0.080ms
+[2026-11-03T03:57:34.541+0000][1401.428s][info][gc,refine,start] Concurrent Refine Snapshot Heap
+[2026-11-03T03:57:34.541+0000][1401.428s][info][gc,refine      ] Concurrent Refine Snapshot Heap 0.020ms
+[2026-11-03T03:57:34.541+0000][1401.428s][info][gc,task        ] Concurrent Refine Sweep Using 1 of 2 Workers
+[2026-11-03T03:57:34.541+0000][1401.428s][info][gc,refine,start] Concurrent Refine Table Step
+[2026-11-03T03:57:34.543+0000][1401.430s][info][gc,refine      ] Concurrent Refine Table Step 2.008ms
+[2026-11-03T03:57:34.543+0000][1401.430s][info][gc,refine,start] Concurrent Refine Complete Work
+[2026-11-03T03:57:34.543+0000][1401.430s][info][gc,refine      ] Concurrent Refine Complete Work 0.009ms
+[2026-11-03T03:57:34.543+0000][1401.430s][info][gc,refine      ] Concurrent Refine Cycle 8.098ms
+[2026-11-03T04:00:26.955+0000][1573.842s][info][gc,exit        ] Heap
+[2026-11-03T04:00:26.955+0000][1573.842s][info][gc,exit        ]  garbage-first heap   total reserved 786432K, committed 264192K, used 171822K [0x00000000d0000000, 0x0000000100000000)
+[2026-11-03T04:00:26.955+0000][1573.842s][info][gc,exit        ]   region size 1M, 136 eden (136M), 0 survivor (0M), 33 old (33M), 0 humongous (0M), 89 free (89M)
+[2026-11-03T04:00:26.955+0000][1573.842s][info][gc,exit        ]  Metaspace       used 99341K, committed 100096K, reserved 1179648K
+[2026-11-03T04:00:26.955+0000][1573.842s][info][gc,exit        ]   class space    used 23225K, committed 23552K, reserved 1048576K
