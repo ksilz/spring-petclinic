@@ -87,6 +87,15 @@ main { padding: 40px 22px 80px; min-width: 0; }
   margin: 0 0 18px;
 }
 .masthead .lede { font-size: 20px; color: var(--ink-2); max-width: 64ch; margin: 0 0 22px; }
+.blogref {
+  display: block; max-width: 64ch; margin: 0 0 24px; padding: 14px 18px;
+  background: var(--surface); border-left: 4px solid var(--link); border-radius: 0 8px 8px 0;
+  box-shadow: 0 0 0 1px var(--hair); text-decoration: none; color: var(--ink-2);
+}
+.blogref .kicker { display: block; font-size: 14px; }
+.blogref .title { display: block; font-size: 20px; line-height: 1.3; font-weight: 600; color: var(--link); margin: 2px 0 4px; }
+.blogref:hover .title { text-decoration: underline; }
+.blogref .url { display: block; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
 .facts { display: flex; flex-wrap: wrap; gap: 8px 10px; margin: 0; padding: 0; list-style: none; }
 .facts li { background: var(--chip); border-radius: 999px; padding: 4px 12px; font-size: 14px; color: var(--ink-2); }
 .theme-toggle {
@@ -424,6 +433,10 @@ const DATA = /*__DATA__*/null;
   const head = el("header", { class: "masthead" },
     el("button", { class: "theme-toggle", type: "button", id: "theme" }, "Dunkles Design"),
     el("h1", {}, "Wie schnell startet Java? Die Messwerte zum Vortrag"),
+    D.blog ? el("a", { class: "blogref", href: D.blog.url },
+      el("span", { class: "kicker" }, "Dieser Bericht ist Teil des Blogbeitrags"),
+      el("span", { class: "title" }, D.blog.title + " →"),
+      el("span", { class: "url" }, D.blog.url.replace(/^https:\/\//, "").replace(/\/$/, ""))) : null,
     el("p", { class: "lede" }, D.lede),
     el("ul", { class: "facts" }, D.facts.map(f => el("li", {}, f))));
   app.append(head);
@@ -598,7 +611,8 @@ const DATA = /*__DATA__*/null;
     app.append(sec);
   }
 
-  app.append(el("footer", {}, D.footer));
+  app.append(el("footer", {}, D.footer,
+    D.blog ? [" Der Bericht ist Teil des Blogbeitrags „", el("a", { href: D.blog.url }, D.blog.title), "“ auf atra.consulting."] : null));
 
   // theme toggle
   const btn = document.getElementById("theme");

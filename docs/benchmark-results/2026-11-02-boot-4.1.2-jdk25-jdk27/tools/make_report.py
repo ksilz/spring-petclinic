@@ -342,6 +342,8 @@ def build_data(args):
         "captions": {"25": caption_list("25"), "27": caption_list("27")},
         "artifacts": artifacts, "build": build_rows, "method": method, "methodText": method_text,
         "versions": versions, "notes": notes, "footer": footer,
+        "blog": {"url": "https://atra.consulting/blog/java-schneller-starten-w-jax-2026/",
+                 "title": "W-JAX 2026: Wie kann ich Java schneller starten — und wann lohnt sich das?"},
     }
 
 
